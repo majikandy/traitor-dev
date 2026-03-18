@@ -4,18 +4,20 @@
 
 ## What This Project Is
 
-Traitor.dev is a website hosting platform. This monorepo contains:
+Traitor.dev is a website hosting platform. This repo contains the **platform** — not the customer sites themselves.
+
 - `portal/` - A Laravel app that manages all customer sites (dashboard, publish, rollback)
-- `sites/` - Customer website files, one folder per domain
-- `templates/` - Starter templates for new sites
+- `templates/` - Starter templates for new sites (blank, demo, etc.)
 - `infrastructure/` - Nginx config templates and server scripts
+
+**Customer sites live outside this repo** on the server's filesystem at a configurable path (`SITES_PATH` in portal `.env`, default `/var/www/sites`). They are versioned by the release system (drafts → releases → symlink), not by git. Git-backing sites could be added as a future feature but is not part of the core.
 
 ## How Sites Work
 
-Each site lives in `sites/{domain}/` with this structure:
+Each site lives in `{SITES_PATH}/{domain}/` on the server with this structure:
 
 ```
-sites/{domain}/
+{SITES_PATH}/{domain}/
 ├── drafts/                    # The working copy - edit files HERE
 │   ├── public/                # Web-accessible: index.php, about.php, css/, js/, images/
 │   └── includes/              # Shared partials: header.php, footer.php, config.php
@@ -37,7 +39,7 @@ When asked to create a site for a domain (e.g. "create me a site for bobtheleice
 ```bash
 php artisan site:create bobtheleicesterbuilder.com --template=business
 ```
-Templates available: `blank`, `business`, `portfolio`, `landing`
+Templates available: `blank`, `demo`, `business`, `portfolio`, `landing`
 
 ### Step 2: Configure
 Edit `sites/bobtheleicesterbuilder.com/drafts/includes/config.php`:
@@ -250,18 +252,27 @@ Publish step: `npm run build` in drafts, copy `dist/` to `releases/{N}/public/`.
 ## Project Structure Quick Reference
 
 ```
-traitordev/
-├── CLAUDE.md              ← You are here
-├── portal/                ← Laravel management app
-├── sites/                 ← Customer sites (one folder per domain)
-│   └── demo.traitor.dev/  ← Example site (the demo)
-├── templates/             ← Starter templates + DNS instructions
-└── infrastructure/        ← Nginx configs, server scripts
+traitordev/                        ← This repo (the platform)
+├── CLAUDE.md                      ← You are here
+├── portal/                        ← Laravel management app
+├── templates/                     ← Starter templates + DNS instructions
+│   ├── blank/                     ← Minimal starter
+│   ├── demo/                      ← Full demo site (traitor.dev showcase)
+│   └── dns-instructions.php       ← DNS setup page template
+└── infrastructure/                ← Nginx configs, server scripts
     ├── nginx/
-    │   ├── site.conf.template   ← Per-domain nginx config template
-    │   ├── preview.conf         ← Wildcard preview subdomain config
-    │   └── portal.conf          ← Portal dashboard config
+    │   ├── site.conf.template     ← Per-domain nginx config template
+    │   ├── preview.conf           ← Wildcard preview subdomain config
+    │   └── portal.conf            ← Portal dashboard config
     └── scripts/
         ├── generate-preview-map.sh  ← Regenerate preview routing
         └── certbot-hook.sh          ← SSL provisioning
+
+/var/www/sites/                    ← Customer sites (on server, NOT in git)
+├── bobtheleicesterbuilder.com/
+│   ├── drafts/                    ← Working copy
+│   ├── releases/                  ← Immutable snapshots
+│   └── live -> releases/2         ← Symlink to active release
+└── anotherdomain.com/
+    └── ...
 ```

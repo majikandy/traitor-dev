@@ -6,10 +6,10 @@ portal/storage/*.key
 portal/storage/logs/
 portal/bootstrap/cache/
 
-# Sites - don't track live symlinks or releases in git
-# (releases are deployment artifacts, not source)
-sites/*/releases/
-sites/*/live
+# Sites - customer sites live on disk, NOT in this repo
+# The portal manages them at a configurable path (SITES_PATH in .env)
+# The demo site is kept as a template reference only
+sites/
 
 # OS
 .DS_Store
