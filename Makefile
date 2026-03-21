@@ -1,7 +1,12 @@
-.PHONY: dev stop build create publish rollback sites status
+.PHONY: dev stop build logs shell migrate fresh
 
+# Start everything (foreground so you see logs)
 dev:
 	docker compose up --build
+
+# Start in background
+up:
+	docker compose up -d --build
 
 stop:
 	docker compose down
@@ -9,17 +14,18 @@ stop:
 build:
 	docker compose build --no-cache
 
-create:
-	docker compose exec -it app bash /var/www/docker/setup.sh
+logs:
+	docker compose logs -f
 
-publish:
-	docker compose exec app php artisan site:publish $(domain)
+# Drop into the PHP container
+shell:
+	docker compose exec app bash
 
-rollback:
-	docker compose exec app php artisan site:rollback $(domain)
+# Run migrations manually
+migrate:
+	docker compose exec app php artisan migrate --force
 
-sites:
-	docker compose exec app php artisan site:list
-
-status:
-	docker compose exec app php artisan site:status $(domain)
+# Nuclear reset — wipe volumes and rebuild
+fresh:
+	docker compose down -v
+	docker compose up --build

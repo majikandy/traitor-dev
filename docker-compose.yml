@@ -5,7 +5,7 @@ services:
       dockerfile: docker/Dockerfile
     volumes:
       - ./portal:/var/www/portal
-      - ./docker:/var/www/docker
+      - ./templates:/var/www/templates
       - sites:/var/www/sites
       - sqlite:/var/www/portal/database
     environment:

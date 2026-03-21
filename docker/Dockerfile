@@ -5,7 +5,8 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     unzip \
     git \
-    && docker-php-ext-install pdo_sqlite \
+    libzip-dev \
+    && docker-php-ext-install pdo_sqlite zip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -16,14 +17,12 @@ COPY portal/composer.json portal/composer.lock ./
 RUN composer install --no-scripts --no-autoloader
 
 COPY portal/ .
-
 RUN composer dump-autoload --optimize
 
-RUN cp -n .env.example .env || true \
-    && touch database/database.sqlite \
-    && php artisan key:generate \
-    && php artisan migrate --force
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 9000
 
+ENTRYPOINT ["entrypoint.sh"]
 CMD ["php-fpm"]
