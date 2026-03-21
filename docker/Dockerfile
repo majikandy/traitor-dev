@@ -17,6 +17,7 @@ COPY portal/composer.json portal/composer.lock ./
 RUN composer install --no-scripts --no-autoloader
 
 COPY portal/ .
+RUN mkdir -p bootstrap/cache && chmod 775 bootstrap/cache
 RUN composer dump-autoload --optimize
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
