@@ -5,6 +5,7 @@ cd /var/www/portal
 
 # Ensure directories exist (volume mount overwrites build artifacts)
 mkdir -p bootstrap/cache storage/framework/{cache,sessions,views} storage/logs
+chown -R www-data:www-data bootstrap/cache storage
 chmod -R 775 bootstrap/cache storage
 
 # Install dependencies (volume mount overwrites vendor from build)
@@ -24,7 +25,7 @@ if [ -z "$DB_HOST" ]; then
     echo "ERROR: DB_HOST is not set" >&2
     exit 1
 fi
-while ! php -r "new PDO('mysql:host='.\$_SERVER['DB_HOST'].';port='.\$_SERVER['DB_PORT'], \$_SERVER['DB_USERNAME'], \$_SERVER['DB_PASSWORD']);" 2>/dev/null; do
+while ! php -r "new PDO('mysql:host='.getenv('DB_HOST').';port='.getenv('DB_PORT'), getenv('DB_USERNAME'), getenv('DB_PASSWORD'));" 2>/dev/null; do
     sleep 1
 done
 echo "MySQL is ready."
