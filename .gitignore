@@ -9,7 +9,7 @@ portal/bootstrap/cache/
 # Sites - customer sites live on disk, NOT in this repo
 # The portal manages them at a configurable path (SITES_PATH in .env)
 # The demo site is kept as a template reference only
-sites/
+/sites/
 
 # OS
 .DS_Store
