@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Dropzone — show filename on select, highlight on drag
-    document.querySelectorAll('.dropzone').forEach(function (zone) {
+    document.querySelectorAll('[id="dropzone"]').forEach(function (zone) {
         var input = zone.querySelector('input[type="file"]');
         var text = zone.querySelector('.dropzone-text');
         var nameEl = zone.querySelector('.dropzone-filename');
@@ -28,15 +28,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         zone.addEventListener('dragover', function (e) {
             e.preventDefault();
-            zone.classList.add('dragover');
+            zone.classList.add('border-blue-500', 'bg-blue-50');
         });
 
         zone.addEventListener('dragleave', function () {
-            zone.classList.remove('dragover');
+            zone.classList.remove('border-blue-500', 'bg-blue-50');
         });
 
         zone.addEventListener('drop', function () {
-            zone.classList.remove('dragover');
+            zone.classList.remove('border-blue-500', 'bg-blue-50');
         });
     });
 });
+
+// Sidebar toggle for mobile
+function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebar-overlay');
+
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+}
