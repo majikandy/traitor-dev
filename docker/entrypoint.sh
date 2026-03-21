@@ -18,8 +18,10 @@ if ! grep -q "^APP_KEY=base64:" .env; then
     php artisan key:generate
 fi
 
-# Ensure sqlite DB exists and is migrated
+# Ensure sqlite DB exists and is writable
 touch database/database.sqlite
+chmod 664 database/database.sqlite
+chmod 775 database
 php artisan migrate --force
 
 # Ensure sites directory exists
