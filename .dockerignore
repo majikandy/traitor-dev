@@ -1,0 +1,5 @@
+portal/vendor
+portal/node_modules
+portal/.env
+portal/database/database.sqlite
+.git
