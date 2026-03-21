@@ -18,10 +18,14 @@ if ! grep -q "^APP_KEY=base64:" .env; then
     php artisan key:generate
 fi
 
-# Ensure sqlite DB exists and is writable
-touch database/database.sqlite
-chmod 664 database/database.sqlite
-chmod 775 database
+# Wait for MySQL to be ready
+echo "Waiting for MySQL..."
+while ! mysqladmin ping -h"${DB_HOST:-db}" --silent 2>/dev/null; do
+    sleep 1
+done
+echo "MySQL is ready."
+
+# Run migrations
 php artisan migrate --force
 
 # Ensure sites directory exists
