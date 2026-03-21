@@ -10,7 +10,7 @@ build:
 	docker compose build --no-cache
 
 create:
-	docker compose exec app php artisan site:create $(domain) --template=$(or $(template),business)
+	docker compose exec -it app bash /var/www/docker/setup.sh
 
 publish:
 	docker compose exec app php artisan site:publish $(domain)
