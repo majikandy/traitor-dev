@@ -1,4 +1,4 @@
-.PHONY: dev stop build
+.PHONY: dev stop build artisan
 
 dev:
 	docker compose up --build
@@ -8,3 +8,6 @@ stop:
 
 build:
 	docker compose build --no-cache
+
+artisan:
+	docker compose exec app php artisan $(cmd)
