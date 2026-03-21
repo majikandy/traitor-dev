@@ -24,7 +24,7 @@ if [ -z "$DB_HOST" ]; then
     echo "ERROR: DB_HOST is not set" >&2
     exit 1
 fi
-while ! mysqladmin ping -h"$DB_HOST" --silent 2>/dev/null; do
+while ! php -r "new PDO('mysql:host='.\$_SERVER['DB_HOST'].';port='.\$_SERVER['DB_PORT'], \$_SERVER['DB_USERNAME'], \$_SERVER['DB_PASSWORD']);" 2>/dev/null; do
     sleep 1
 done
 echo "MySQL is ready."
