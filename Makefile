@@ -1,4 +1,20 @@
-.PHONY: dev stop build logs shell migrate fresh
+.PHONY: help dev stop build logs shell migrate fresh
+
+.DEFAULT_GOAL := help
+
+# Show available commands
+help:
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "Targets:"
+	@echo "  dev      Start everything (foreground with logs)"
+	@echo "  up       Start in background"
+	@echo "  stop     Stop all containers"
+	@echo "  build    Rebuild containers (no cache)"
+	@echo "  logs     Tail container logs"
+	@echo "  shell    Drop into the PHP container"
+	@echo "  migrate  Run migrations"
+	@echo "  fresh    Nuclear reset — wipe volumes and rebuild"
 
 # Start everything (foreground so you see logs)
 dev:
