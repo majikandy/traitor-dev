@@ -61,7 +61,7 @@ class SiteService
 
     public function publish(Site $site, ?string $notes = null): Release
     {
-        $nextVersion = ($site->current_release ?? 0) + 1;
+        $nextVersion = $site->current_release + 1;
         $releasePath = $site->releasePath($nextVersion);
 
         // Copy drafts to new release

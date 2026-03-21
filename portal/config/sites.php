@@ -11,7 +11,7 @@ return [
     | — sites live on the server's filesystem independently.
     |
     */
-    'path' => env('SITES_PATH', '/var/www/sites'),
+    'path' => env('SITES_PATH'),
 
     /*
     |--------------------------------------------------------------------------
@@ -21,7 +21,7 @@ return [
     | Path to site templates used when scaffolding new sites.
     |
     */
-    'templates_path' => env('TEMPLATES_PATH', base_path('../templates')),
+    'templates_path' => env('TEMPLATES_PATH'),
 
     /*
     |--------------------------------------------------------------------------
@@ -32,7 +32,7 @@ return [
     | {slug}.{preview_domain} before a custom domain is connected.
     |
     */
-    'preview_domain' => env('PREVIEW_DOMAIN', 'sites.traitor.dev'),
+    'preview_domain' => env('PREVIEW_DOMAIN'),
 
     /*
     |--------------------------------------------------------------------------
@@ -43,7 +43,7 @@ return [
     | customers connect their custom domain.
     |
     */
-    'server_ip' => env('SERVER_IP', ''),
+    'server_ip' => env('SERVER_IP'),
 
     /*
     |--------------------------------------------------------------------------
@@ -54,5 +54,5 @@ return [
     | pruned during cleanup.
     |
     */
-    'max_releases' => env('MAX_RELEASES', 5),
+    'max_releases' => env('MAX_RELEASES'),
 ];

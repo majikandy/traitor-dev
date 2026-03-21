@@ -19,6 +19,9 @@ Follow SOLID. Single responsibility, open/closed, Liskov substitution, interface
 ### YAGNI
 Don't build it until you need it. No speculative features, no "we might need this later" abstractions, no configurability for scenarios that don't exist yet.
 
+### Never Swallow Errors
+Never catch exceptions and silently continue. If something fails, let it fail visibly. No empty catch blocks, no `catch (\Exception $e) { // ignore }`, no logging-and-continuing when the operation was critical. If you catch an exception, it must be to add context before re-throwing or to handle a specific, expected case.
+
 ### KISS
 Keep it simple. The simplest solution that works is the right one. Don't over-engineer, don't add layers of indirection without clear benefit.
 

@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('domain')->nullable()->unique();
             $table->enum('status', ['draft', 'live', 'paused'])->default('draft');
-            $table->unsignedInteger('current_release')->nullable();
+            $table->unsignedInteger('current_release')->default(0);
             $table->timestamps();
         });
 
