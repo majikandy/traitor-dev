@@ -20,7 +20,11 @@ fi
 
 # Wait for MySQL to be ready
 echo "Waiting for MySQL..."
-while ! mysqladmin ping -h"${DB_HOST:-db}" --silent 2>/dev/null; do
+if [ -z "$DB_HOST" ]; then
+    echo "ERROR: DB_HOST is not set" >&2
+    exit 1
+fi
+while ! mysqladmin ping -h"$DB_HOST" --silent 2>/dev/null; do
     sleep 1
 done
 echo "MySQL is ready."

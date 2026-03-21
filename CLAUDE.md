@@ -2,6 +2,31 @@
 
 > "Traitor to WordPress" - Simple, fast websites managed by AI.
 
+## Ground Rules
+
+### No Fallbacks. Ever.
+Never use fallback values, default alternatives, or silent recovery. If something is missing or wrong, **break loudly**. Fallbacks hide bugs until they surface as mysterious behaviour weeks later. A crash in development is a gift — it forces an immediate, permanent fix.
+
+This means:
+- No `?? 'default'` or `?:` fallbacks for config values that should exist
+- No `try/catch` that silently swallows errors and continues
+- No "graceful degradation" that masks a broken dependency
+- If a required env var is missing, crash. Don't guess.
+
+### SOLID Principles
+Follow SOLID. Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion. Classes should do one thing well.
+
+### YAGNI
+Don't build it until you need it. No speculative features, no "we might need this later" abstractions, no configurability for scenarios that don't exist yet.
+
+### KISS
+Keep it simple. The simplest solution that works is the right one. Don't over-engineer, don't add layers of indirection without clear benefit.
+
+### DRY — But Not Obsessively
+Repetition is fine until a pattern is clearly established. Duplicate code 2-3 times before extracting. Premature abstraction is worse than a bit of repetition. Only pull out shared code when it's genuinely the same concept, not just coincidentally similar.
+
+---
+
 ## What This Project Is
 
 Traitor.dev is a website hosting platform. This repo contains the **platform** — not the customer sites themselves.
