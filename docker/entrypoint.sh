@@ -3,6 +3,9 @@ set -e
 
 cd /var/www/portal
 
+# Install dependencies (volume mount overwrites vendor from build)
+composer install --no-interaction --quiet
+
 # Ensure .env exists
 if [ ! -f .env ]; then
     cp .env.example .env
