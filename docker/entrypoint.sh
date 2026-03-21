@@ -3,6 +3,10 @@ set -e
 
 cd /var/www/portal
 
+# Ensure directories exist (volume mount overwrites build artifacts)
+mkdir -p bootstrap/cache storage/framework/{cache,sessions,views} storage/logs
+chmod -R 775 bootstrap/cache storage
+
 # Install dependencies (volume mount overwrites vendor from build)
 composer install --no-interaction --quiet
 
