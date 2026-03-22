@@ -40,13 +40,13 @@
             @if($site->domain)
                 <a href="https://{{ $site->domain }}" target="_blank" class="text-brand-600 hover:underline">{{ $site->domain }}</a>
             @else
-                {{ $site->slug }}.sites.traitor.dev
+                {{ $site->slug }}
             @endif
         </p>
     </div>
-    <a href="https://{{ $site->previewUrl() }}" target="_blank" class="inline-flex items-center gap-2 self-start rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition">
+    <a href="{{ $site->previewUrl() }}" target="_blank" class="inline-flex items-center gap-2 self-start rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
-        Preview
+        Preview Draft
     </a>
 </div>
 
@@ -119,6 +119,7 @@
                     <div class="flex items-center gap-6">
                         <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes ?: '—' }}</span>
                         <span class="text-xs text-gray-400 min-w-[7rem] text-right">{{ $release->created_at->diffForHumans() }}</span>
+                        <a href="{{ $release->previewUrl() }}" target="_blank" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Preview</a>
                         @if($release->version !== $site->current_release)
                             <form action="{{ route('sites.rollback', $site) }}" method="POST">
                                 @csrf

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SiteController;
 use App\Models\Site;
 use Illuminate\Support\Facades\Route;
@@ -20,3 +21,5 @@ Route::post('/sites/{site}/upload', [SiteController::class, 'upload'])->name('si
 Route::post('/sites/{site}/publish', [SiteController::class, 'publish'])->name('sites.publish');
 Route::post('/sites/{site}/rollback', [SiteController::class, 'rollback'])->name('sites.rollback');
 Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
+
+Route::get('/preview/{token}/{path?}', PreviewController::class)->where('path', '.*')->name('preview');

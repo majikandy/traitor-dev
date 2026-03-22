@@ -43,7 +43,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-semibold text-gray-900 group-hover:text-brand-600 transition">{{ $site->name }}</h3>
-                        <p class="text-xs text-gray-400 mt-0.5">{{ $site->slug }}.sites.traitor.dev</p>
+                        <p class="text-xs text-gray-400 mt-0.5">{{ $site->slug }}</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
