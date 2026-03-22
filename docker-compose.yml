@@ -6,7 +6,7 @@ services:
     volumes:
       - ./portal:/var/www/portal
       - ./templates:/var/www/templates
-      - sites:/var/www/sites
+      - ./sites:/var/www/sites
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
@@ -28,7 +28,7 @@ services:
     volumes:
       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./portal:/var/www/portal
-      - sites:/var/www/sites
+      - ./sites:/var/www/sites
     depends_on:
       - app
 
@@ -50,5 +50,4 @@ services:
       retries: 10
 
 volumes:
-  sites:
   dbdata:

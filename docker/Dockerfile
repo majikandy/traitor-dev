@@ -22,6 +22,8 @@ RUN composer dump-autoload --optimize
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+RUN mkdir -p /var/www/sites && chown www-data:www-data /var/www/sites
+
 EXPOSE 9000
 
 ENTRYPOINT ["entrypoint.sh"]
