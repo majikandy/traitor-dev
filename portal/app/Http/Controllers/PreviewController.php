@@ -30,10 +30,20 @@ class PreviewController extends Controller
         $response = new BinaryFileResponse($filePath);
         $response->headers->set('Content-Type', $this->mimeType($filePath));
 
-        // Inject preview banner into HTML responses
+        // Inject <base> tag and preview banner into HTML responses
         if (str_ends_with($filePath, '.html') || str_ends_with($filePath, '.htm')) {
             $html = file_get_contents($filePath);
+            $baseUrl = url('/preview/' . $token) . '/';
+            $baseTag = '<base href="' . e($baseUrl) . '">';
             $banner = $this->banner($label);
+
+            // Inject <base> into <head> so all links resolve under the preview path
+            if (str_contains($html, '<head>')) {
+                $html = str_replace('<head>', '<head>' . $baseTag, $html);
+            } else {
+                $html = $baseTag . $html;
+            }
+
             $html = str_contains($html, '</body>')
                 ? str_replace('</body>', $banner . '</body>', $html)
                 : $html . $banner;
