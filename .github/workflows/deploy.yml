@@ -33,6 +33,12 @@ jobs:
             portal/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
 
+      - name: Deploy marketing site via rsync
+        run: |
+          rsync -azP --delete \
+            marketing/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.MARKETING_PATH }}/
+
       - name: Post-deploy commands
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
