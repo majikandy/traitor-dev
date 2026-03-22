@@ -47,24 +47,19 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    @if($site->status === 'live')
+                    @if($site->domain)
                         <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                             Live
                         </span>
-                    @elseif($site->status === 'draft')
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                            <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                            Draft
+                    @elseif($site->current_release > 0)
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">
+                            v{{ $site->current_release }}
                         </span>
                     @else
                         <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
-                            <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-                            Paused
+                            No releases
                         </span>
-                    @endif
-                    @if($site->current_release)
-                        <span class="text-xs font-medium text-gray-400">v{{ $site->current_release }}</span>
                     @endif
                     <svg class="h-5 w-5 text-gray-300 group-hover:text-brand-500 transition" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                 </div>

@@ -23,26 +23,26 @@
         </div>
     </a>
 
-    <a href="{{ route('sites.index') }}?status=live" class="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:border-emerald-300 hover:shadow-md transition">
+    <a href="{{ route('sites.index') }}" class="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:border-emerald-300 hover:shadow-md transition">
         <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
-                <svg class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                <svg class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
             </div>
             <div>
-                <p class="text-2xl font-bold text-gray-900">{{ $live }}</p>
-                <p class="text-sm text-gray-500 group-hover:text-emerald-600 transition">Live</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $withDomain }}</p>
+                <p class="text-sm text-gray-500 group-hover:text-emerald-600 transition">With Domain</p>
             </div>
         </div>
     </a>
 
-    <a href="{{ route('sites.index') }}?status=draft" class="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:border-amber-300 hover:shadow-md transition">
+    <a href="{{ route('sites.index') }}" class="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:border-brand-300 hover:shadow-md transition">
         <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
-                <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50">
+                <svg class="h-6 w-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" /></svg>
             </div>
             <div>
-                <p class="text-2xl font-bold text-gray-900">{{ $drafts }}</p>
-                <p class="text-sm text-gray-500 group-hover:text-amber-600 transition">Drafts</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $withReleases }}</p>
+                <p class="text-sm text-gray-500 group-hover:text-brand-600 transition">With Releases</p>
             </div>
         </div>
     </a>

@@ -59,24 +59,14 @@ class SiteService
         }
     }
 
-    public function publish(Site $site, ?string $notes = null): Release
+    public function createRelease(Site $site, ?string $notes = null): Release
     {
         $nextVersion = $site->current_release + 1;
         $releasePath = $site->releasePath($nextVersion);
 
-        // Copy drafts to new release
+        // Snapshot drafts into a new release
         File::copyDirectory($site->draftsPath(), $releasePath);
 
-        // Swap the symlink atomically
-        $livePath = $site->livePath();
-        $tempLink = $livePath . '.tmp';
-
-        // Point temp symlink at new release's public dir
-        $target = $site->sitesPath() . '/releases/' . $nextVersion . '/public';
-        symlink($target, $tempLink);
-        rename($tempLink, $livePath);
-
-        // Record the release
         $release = Release::create([
             'site_id' => $site->id,
             'version' => $nextVersion,
@@ -84,30 +74,9 @@ class SiteService
             'created_at' => now(),
         ]);
 
-        $site->update([
-            'current_release' => $nextVersion,
-            'status' => 'live',
-        ]);
+        $site->update(['current_release' => $nextVersion]);
 
         return $release;
-    }
-
-    public function rollback(Site $site, ?int $version = null): Release
-    {
-        $target = $version
-            ? $site->releases()->where('version', $version)->firstOrFail()
-            : $site->releases()->where('version', '<', $site->current_release)->firstOrFail();
-
-        $livePath = $site->livePath();
-        $tempLink = $livePath . '.tmp';
-        $relTarget = $site->sitesPath() . '/releases/' . $target->version . '/public';
-
-        symlink($relTarget, $tempLink);
-        rename($tempLink, $livePath);
-
-        $site->update(['current_release' => $target->version]);
-
-        return $target;
     }
 
     public function delete(Site $site): void

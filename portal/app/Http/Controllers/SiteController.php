@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Release;
 use App\Models\Site;
 use App\Services\SiteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use ZipArchive;
 
 class SiteController extends Controller
 {
@@ -40,9 +43,10 @@ class SiteController extends Controller
 
         if ($request->hasFile('zip')) {
             $this->siteService->upload($site, $request->file('zip'));
+            $this->siteService->createRelease($site, 'Initial release');
         }
 
-        return redirect()->route('sites.show', $site)->with('success', 'Site created! Upload your files or publish to go live.');
+        return redirect()->route('sites.show', $site)->with('success', 'Site created!');
     }
 
     public function show(Site $site)
@@ -52,33 +56,50 @@ class SiteController extends Controller
         return view('sites.show', compact('site'));
     }
 
-    public function upload(Request $request, Site $site)
+    public function createRelease(Request $request, Site $site)
     {
         $request->validate([
             'zip' => 'required|file|mimes:zip|max:51200',
         ]);
 
         $this->siteService->upload($site, $request->file('zip'));
+        $release = $this->siteService->createRelease($site, $request->input('notes'));
 
-        return redirect()->route('sites.show', $site)->with('success', 'Files uploaded to drafts.');
+        return redirect()->route('sites.show', $site)->with('success', "Release v{$release->version} created.");
     }
 
-    public function publish(Request $request, Site $site)
+    public function downloadDraft(Site $site): BinaryFileResponse
     {
-        $this->siteService->publish($site, $request->input('notes'));
-
-        return redirect()->route('sites.show', $site)->with('success', 'Published! Site is now live.');
+        return $this->zipAndDownload($site->draftsPath(), $site->slug . '-draft.zip');
     }
 
-    public function rollback(Site $site)
+    public function downloadRelease(Site $site, Release $release): BinaryFileResponse
     {
-        if ($site->current_release <= 1) {
-            return back()->with('error', 'Nothing to roll back to.');
+        return $this->zipAndDownload($site->releasePath($release->version), $site->slug . '-v' . $release->version . '.zip');
+    }
+
+    private function zipAndDownload(string $sourcePath, string $filename): BinaryFileResponse
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'site-download-');
+        $zip = new ZipArchive();
+
+        if ($zip->open($tempFile, ZipArchive::OVERWRITE) !== true) {
+            throw new \RuntimeException('Could not create zip file.');
         }
 
-        $release = $this->siteService->rollback($site);
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($sourcePath, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
 
-        return redirect()->route('sites.show', $site)->with('success', "Rolled back to version {$release->version}.");
+        foreach ($files as $file) {
+            $relativePath = substr($file->getPathname(), strlen($sourcePath) + 1);
+            $zip->addFile($file->getPathname(), $relativePath);
+        }
+
+        $zip->close();
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend();
     }
 
     public function destroy(Site $site)
