@@ -30,7 +30,6 @@ class SiteController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'zip' => 'nullable|file|mimes:zip|max:51200', // 50MB max
         ]);
 
         $slug = Str::slug($request->name);
@@ -41,12 +40,7 @@ class SiteController extends Controller
 
         $site = $this->siteService->create($request->name, $slug);
 
-        if ($request->hasFile('zip')) {
-            $this->siteService->upload($site, $request->file('zip'));
-            $this->siteService->createRelease($site, 'Initial release');
-        }
-
-        return redirect()->route('sites.show', $site)->with('success', 'Site created!');
+        return redirect()->route('sites.show', $site)->with('success', 'Site created! Upload a zip to create your first release.');
     }
 
     public function show(Site $site)
