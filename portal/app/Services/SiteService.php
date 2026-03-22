@@ -73,12 +73,31 @@ class SiteService
     }
 
     /**
+     * Remove junk entries that macOS/Windows zip tools leave behind.
+     */
+    private function removeZipJunk(string $path): void
+    {
+        $junk = ['__MACOSX', '.DS_Store', 'Thumbs.db', 'desktop.ini'];
+
+        foreach ($junk as $name) {
+            $target = $path . '/' . $name;
+            if (File::isDirectory($target)) {
+                File::deleteDirectory($target);
+            } elseif (File::exists($target)) {
+                File::delete($target);
+            }
+        }
+    }
+
+    /**
      * If a directory contains only a single subfolder and no files,
      * hoist everything from that subfolder up one level and remove it.
      * Handles the common case where a zip wraps everything in a root folder.
      */
     private function hoistIfWrappedInSingleFolder(string $path): void
     {
+        $this->removeZipJunk($path);
+
         $dirs = File::directories($path);
         $files = File::files($path);
 
