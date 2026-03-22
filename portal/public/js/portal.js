@@ -41,6 +41,34 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+// Release preview toggle — lazy-loads iframe on first expand
+function toggleReleasePreview(btn) {
+    var row = btn.closest('div').parentElement;
+    var panel = row.querySelector('.release-preview');
+    var chevron = btn.querySelector('.release-chevron');
+    var isOpen = !panel.classList.contains('hidden');
+
+    if (isOpen) {
+        panel.classList.add('hidden');
+        chevron.style.transform = '';
+        return;
+    }
+
+    // Inject iframe on first open
+    if (!panel.querySelector('iframe')) {
+        var url = btn.getAttribute('data-preview-url');
+        panel.innerHTML =
+            '<div class="relative w-full bg-gray-100 border-t border-gray-100" style="height:280px;overflow:hidden">' +
+            '<iframe src="' + url + '" class="absolute top-0 left-0 border-0" ' +
+            'style="width:1280px;height:800px;transform:scale(0.35);transform-origin:top left" ' +
+            'loading="lazy" sandbox="allow-same-origin"></iframe>' +
+            '</div>';
+    }
+
+    panel.classList.remove('hidden');
+    chevron.style.transform = 'rotate(90deg)';
+}
+
 // Sidebar toggle for mobile
 function toggleSidebar() {
     var sidebar = document.getElementById('sidebar');

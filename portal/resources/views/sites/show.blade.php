@@ -46,6 +46,26 @@
     </div>
 </div>
 
+{{-- Site Preview --}}
+@if($site->current_release > 0)
+    @php $latestRelease = $site->releases->sortByDesc('version')->first(); @endphp
+    <div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900">Live Preview</h2>
+            <a href="{{ $latestRelease->previewUrl() }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open full preview</a>
+        </div>
+        <div class="relative w-full bg-gray-100" style="height: 360px; overflow: hidden;">
+            <iframe
+                src="{{ $latestRelease->previewUrl() }}"
+                class="absolute top-0 left-0 border-0"
+                style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left;"
+                loading="lazy"
+                sandbox="allow-same-origin"
+            ></iframe>
+        </div>
+    </div>
+@endif
+
 {{-- Create Release --}}
 <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
     <div class="flex items-center gap-3 mb-1">
@@ -89,18 +109,26 @@
     @else
         <div class="divide-y divide-gray-100">
             @foreach($site->releases->sortByDesc('version') as $release)
-                <div class="flex items-center justify-between px-6 py-4 {{ $release->version === $site->current_release ? 'bg-brand-50/50' : '' }}">
-                    <div class="flex items-center gap-3">
-                        <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
-                        @if($release->version === $site->current_release)
-                            <span class="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">latest</span>
-                        @endif
+                <div>
+                    <div class="flex items-center justify-between px-6 py-4 {{ $release->version === $site->current_release ? 'bg-brand-50/50' : '' }}">
+                        <div class="flex items-center gap-3">
+                            <button onclick="toggleReleasePreview(this)" data-preview-url="{{ $release->previewUrl() }}" class="flex items-center gap-2 group">
+                                <svg class="release-chevron h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                                <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
+                            </button>
+                            @if($release->version === $site->current_release)
+                                <span class="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">latest</span>
+                            @endif
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes ?: '—' }}</span>
+                            <span class="text-xs text-gray-400 min-w-[7rem] text-right">{{ $release->created_at->diffForHumans() }}</span>
+                            <a href="{{ $release->previewUrl() }}" target="_blank" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Preview</a>
+                            <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Download</a>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes ?: '—' }}</span>
-                        <span class="text-xs text-gray-400 min-w-[7rem] text-right">{{ $release->created_at->diffForHumans() }}</span>
-                        <a href="{{ $release->previewUrl() }}" target="_blank" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Preview</a>
-                        <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Download</a>
+                    <div class="release-preview hidden">
+                        {{-- iframe injected by JS on expand --}}
                     </div>
                 </div>
             @endforeach
