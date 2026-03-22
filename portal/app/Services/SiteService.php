@@ -43,20 +43,7 @@ class SiteService
         $zip->extractTo($draftsPath);
         $zip->close();
 
-        // If the zip contained a single root directory, hoist its contents up
-        $items = File::directories($draftsPath);
-        $files = File::files($draftsPath);
-
-        if (count($items) === 1 && count($files) === 0) {
-            $innerDir = $items[0];
-            foreach (File::allFiles($innerDir) as $f) {
-                $relative = str_replace($innerDir . '/', '', $f->getPathname());
-                $dest = $draftsPath . '/' . $relative;
-                File::ensureDirectoryExists(dirname($dest));
-                File::move($f->getPathname(), $dest);
-            }
-            File::deleteDirectory($innerDir);
-        }
+        $this->hoistIfWrappedInSingleFolder($draftsPath);
     }
 
     public function createRelease(Site $site, ?string $notes = null): Release
@@ -83,6 +70,35 @@ class SiteService
     {
         File::deleteDirectory($site->sitesPath());
         $site->delete();
+    }
+
+    /**
+     * If a directory contains only a single subfolder and no files,
+     * hoist everything from that subfolder up one level and remove it.
+     * Handles the common case where a zip wraps everything in a root folder.
+     */
+    private function hoistIfWrappedInSingleFolder(string $path): void
+    {
+        $dirs = File::directories($path);
+        $files = File::files($path);
+
+        if (count($dirs) !== 1 || count($files) !== 0) {
+            return;
+        }
+
+        $innerDir = $dirs[0];
+
+        // Move all child directories
+        foreach (File::directories($innerDir) as $dir) {
+            File::moveDirectory($dir, $path . '/' . basename($dir));
+        }
+
+        // Move all child files
+        foreach (File::files($innerDir) as $file) {
+            File::move($file->getPathname(), $path . '/' . $file->getFilename());
+        }
+
+        File::deleteDirectory($innerDir);
     }
 
     private function placeholder(string $name): string
