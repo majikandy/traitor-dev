@@ -14,7 +14,8 @@ jobs:
       - name: Deploy marketing site via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.SSH_HOST }}
+          server: ftp.traitor.dev
+          port: 21
           username: ${{ secrets.FTP_USER_MARKETING }}
           password: ${{ secrets.FTP_PASS_MARKETING }}
           local-dir: marketing/
@@ -23,7 +24,8 @@ jobs:
       - name: Deploy portal via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.SSH_HOST }}
+          server: ftp.traitor.dev
+          port: 21
           username: ${{ secrets.FTP_USER_PORTAL }}
           password: ${{ secrets.FTP_PASS_PORTAL }}
           local-dir: portal/
