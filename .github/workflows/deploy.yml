@@ -11,43 +11,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install SSH key
-        run: |
-          install -m 600 -D /dev/null ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: Deploy marketing site via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.FTP_USER_MARKETING }}
+          password: ${{ secrets.FTP_PASS_MARKETING }}
+          local-dir: marketing/
+          server-dir: /
 
-      - name: Deploy portal via rsync
-        run: |
-          rsync -azP --delete \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='vendor' \
-            --exclude='node_modules' \
-            --exclude='.env' \
-            --exclude='storage/logs/*' \
-            --exclude='storage/framework/cache/*' \
-            --exclude='storage/framework/sessions/*' \
-            --exclude='storage/framework/views/*' \
-            --exclude='bootstrap/cache/*' \
-            portal/ \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-
-      - name: Deploy marketing site via rsync
-        run: |
-          rsync -azP --delete \
-            marketing/ \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.MARKETING_PATH }}/
-
-      - name: Post-deploy commands
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd ${{ secrets.DEPLOY_PATH }}
-            php composer.phar install --no-dev --optimize-autoloader 2>/dev/null \
-              || composer install --no-dev --optimize-autoloader 2>/dev/null \
-              || echo "Composer not available - install dependencies manually"
-            php artisan migrate --force 2>/dev/null || true
-            php artisan config:cache 2>/dev/null || true
-            php artisan route:cache 2>/dev/null || true
-            php artisan view:cache 2>/dev/null || true
-          EOF
+      - name: Deploy portal via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.FTP_USER_PORTAL }}
+          password: ${{ secrets.FTP_PASS_PORTAL }}
+          local-dir: portal/
+          server-dir: /
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/vendor/**
+            **/node_modules/**
+            **/.env
+            **/storage/logs/**
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
+            **/bootstrap/cache/**
