@@ -11,8 +11,13 @@ class Passkey extends Model
 
     public function credentialSource(): PublicKeyCredentialSource
     {
-        return PublicKeyCredentialSource::createFromArray(
-            json_decode($this->credential_source, true)
-        );
+        $data = json_decode($this->credential_source, true);
+
+        // Legacy records were double-encoded; decode again if we still have a string
+        if (is_string($data)) {
+            $data = json_decode($data, true);
+        }
+
+        return PublicKeyCredentialSource::createFromArray($data);
     }
 }
