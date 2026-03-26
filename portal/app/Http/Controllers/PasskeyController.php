@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Passkey;
 use App\Models\User;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Webauthn\AttestationStatement\AttestationStatementSupportManager;
 use Webauthn\AttestationStatement\NoneAttestationStatementSupport;
 use Webauthn\AuthenticatorAssertionResponse;
@@ -27,10 +31,42 @@ class PasskeyController extends Controller
     private string $rpName = 'Traitor.dev';
     private array $origins = ['https://portal.traitor.dev'];
 
+    public function invitePasskeyOptions(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+        ]);
+
+        $random = Str::random(32);
+
+        $status = Password::reset(
+            [...$request->only('email', 'token'), 'password' => $random, 'password_confirmation' => $random],
+            function (User $user, string $password) {
+                $user->forceFill(['password' => Hash::make($password)])->setRememberToken(Str::random(60));
+                $user->save();
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status !== Password::PasswordReset) {
+            return response()->json(['error' => __($status)], 422);
+        }
+
+        $user = User::where('email', $request->email)->firstOrFail();
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return $this->buildCreationOptions($user);
+    }
+
     public function registerOptions(Request $request): \Illuminate\Http\JsonResponse
     {
-        $user = Auth::user();
+        return $this->buildCreationOptions(Auth::user());
+    }
 
+    private function buildCreationOptions(User $user): \Illuminate\Http\JsonResponse
+    {
         $options = PublicKeyCredentialCreationOptions::create(
             rp: PublicKeyCredentialRpEntity::create($this->rpName, $this->rpId),
             user: PublicKeyCredentialUserEntity::create(

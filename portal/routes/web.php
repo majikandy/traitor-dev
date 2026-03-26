@@ -82,5 +82,6 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/passkeys/auth-options', [PasskeyController::class, 'authOptions'])->name('passkeys.auth-options');
 Route::post('/passkeys/authenticate', [PasskeyController::class, 'authenticate'])->name('passkeys.authenticate');
+Route::post('/passkeys/invite-options', [PasskeyController::class, 'invitePasskeyOptions'])->name('passkeys.invite-options');
 
 Route::get('/preview/{token}/{path?}', PreviewController::class)->where('path', '.*')->name('preview');
