@@ -21,9 +21,13 @@ class SiteService
         $sitePath = $site->sitesPath();
         File::ensureDirectoryExists($site->draftsPath());
         File::ensureDirectoryExists($sitePath . '/releases');
+        File::ensureDirectoryExists($sitePath . '/coming-soon/public');
 
-        // Drop a placeholder index so the preview works immediately
-        File::put($site->draftsPath() . '/index.html', $this->placeholder($name));
+        // Placeholder shown in the preview before any files are uploaded
+        File::put($site->draftsPath() . '/index.html', $this->draftPlaceholder($name));
+
+        // "Coming soon" page served on the real domain until first Go Live
+        File::put($sitePath . '/coming-soon/public/index.html', $this->comingSoon($name));
 
         return $site;
     }
@@ -102,9 +106,15 @@ class SiteService
             return;
         }
 
-        $target = $site->live_release
-            ? $site->sitesPath() . '/releases/' . $site->live_release
-            : $site->sitesPath() . '/drafts';
+        if ($site->live_release) {
+            $target = $site->sitesPath() . '/releases/' . $site->live_release;
+        } else {
+            $target = $site->sitesPath() . '/coming-soon';
+            if (!is_dir($target . '/public')) {
+                File::ensureDirectoryExists($target . '/public');
+                File::put($target . '/public/index.html', $this->comingSoon($site->name));
+            }
+        }
 
         symlink($target, $livePath);
     }
@@ -180,7 +190,7 @@ class SiteService
         File::deleteDirectory($innerDir);
     }
 
-    private function placeholder(string $name): string
+    private function draftPlaceholder(string $name): string
     {
         return <<<HTML
         <!DOCTYPE html>
@@ -200,6 +210,44 @@ class SiteService
             <div class="box">
                 <h1>{$name}</h1>
                 <p>Upload your site files to get started.</p>
+            </div>
+        </body>
+        </html>
+        HTML;
+    }
+
+    private function comingSoon(string $name): string
+    {
+        return <<<HTML
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>{$name} — Coming Soon</title>
+            <style>
+                *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    display: flex; align-items: center; justify-content: center;
+                    min-height: 100vh; background: #0f172a; color: #e2e8f0;
+                }
+                .box { text-align: center; padding: 2rem; max-width: 480px; }
+                .label {
+                    display: inline-block; font-size: 0.75rem; font-weight: 600;
+                    letter-spacing: 0.1em; text-transform: uppercase;
+                    color: #6366f1; background: rgba(99,102,241,0.15);
+                    padding: 0.25rem 0.75rem; border-radius: 9999px; margin-bottom: 1.5rem;
+                }
+                h1 { font-size: 2.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 1rem; color: #f8fafc; }
+                p { font-size: 1.1rem; color: #94a3b8; line-height: 1.6; }
+            </style>
+        </head>
+        <body>
+            <div class="box">
+                <span class="label">Coming Soon</span>
+                <h1>{$name}</h1>
+                <p>Something great is on its way. Check back soon.</p>
             </div>
         </body>
         </html>
