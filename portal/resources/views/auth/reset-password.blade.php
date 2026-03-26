@@ -119,7 +119,7 @@ async function setupPasskey() {
 
         // Step 3: register it (session is now authenticated from step 1)
         const body = {
-            name: 'My passkey',
+            name: detectPasskeyName(),
             id: credential.id,
             rawId: bufferToBase64url(credential.rawId),
             type: credential.type,
@@ -144,6 +144,29 @@ async function setupPasskey() {
         btn.disabled = false;
         btn.querySelector('span').textContent = 'Use passkey (Touch ID / Face ID)';
     }
+}
+
+function detectPasskeyName() {
+    const ua = navigator.userAgent;
+    let device, browser;
+
+    if (/iPhone/.test(ua))           device = 'iPhone';
+    else if (/iPad/.test(ua))        device = 'iPad';
+    else if (/Android/.test(ua))     device = 'Android';
+    else if (/Macintosh/.test(ua))   device = 'Mac';
+    else if (/Windows/.test(ua))     device = 'Windows';
+    else                             device = 'Device';
+
+    if (/iPhone|iPad|Android/.test(ua)) return device;
+
+    if (/Edg\//.test(ua))            browser = 'Edge';
+    else if (/OPR\//.test(ua))       browser = 'Opera';
+    else if (/Chrome\//.test(ua))    browser = 'Chrome';
+    else if (/Firefox\//.test(ua))   browser = 'Firefox';
+    else if (/Safari\//.test(ua))    browser = 'Safari';
+    else                             browser = 'Browser';
+
+    return browser + ' on ' + device;
 }
 
 function base64urlToBuffer(base64url) {

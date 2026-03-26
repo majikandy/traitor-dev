@@ -133,7 +133,7 @@ async function registerPasskey() {
         const credential = await navigator.credentials.create({ publicKey: options });
 
         const body = {
-            name: 'Passkey',
+            name: detectPasskeyName(),
             id: credential.id,
             rawId: bufferToBase64url(credential.rawId),
             type: credential.type,
@@ -165,6 +165,30 @@ async function registerPasskey() {
         btn.disabled = false;
         btn.textContent = 'Add passkey';
     }
+}
+
+function detectPasskeyName() {
+    const ua = navigator.userAgent;
+    let device, browser;
+
+    if (/iPhone/.test(ua))           device = 'iPhone';
+    else if (/iPad/.test(ua))        device = 'iPad';
+    else if (/Android/.test(ua))     device = 'Android';
+    else if (/Macintosh/.test(ua))   device = 'Mac';
+    else if (/Windows/.test(ua))     device = 'Windows';
+    else                             device = 'Device';
+
+    // Mobile devices: name is enough, no need for browser
+    if (/iPhone|iPad|Android/.test(ua)) return device;
+
+    if (/Edg\//.test(ua))            browser = 'Edge';
+    else if (/OPR\//.test(ua))       browser = 'Opera';
+    else if (/Chrome\//.test(ua))    browser = 'Chrome';
+    else if (/Firefox\//.test(ua))   browser = 'Firefox';
+    else if (/Safari\//.test(ua))    browser = 'Safari';
+    else                             browser = 'Browser';
+
+    return browser + ' on ' + device;
 }
 
 function base64urlToBuffer(base64url) {
