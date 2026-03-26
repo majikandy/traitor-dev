@@ -1,4 +1,4 @@
-.PHONY: help dev stop build logs shell migrate fresh prodlogs
+.PHONY: help dev stop build logs shell migrate fresh prodlogs deploy
 
 .DEFAULT_GOAL := help
 
@@ -15,7 +15,8 @@ help:
 	@echo "  shell    Drop into the PHP container"
 	@echo "  migrate  Run migrations"
 	@echo "  fresh    Nuclear reset — wipe volumes and rebuild"
-	@echo "  prodlogs Tail production Laravel logs over SSH"
+	@echo "  prodlogs  Tail production Laravel logs over SSH
+  deploy    Deploy directly to production (faster than CI)"
 
 # Start everything (foreground so you see logs)
 dev:
@@ -50,3 +51,7 @@ fresh:
 # Tail production Laravel logs over SSH
 prodlogs:
 	ssh -i ~/.ssh/traitordev_deploy traitor8921@traitor.dev 'tail -f ~/portal/shared/storage/logs/laravel.log'
+
+# Deploy directly to production, bypassing GitHub Actions
+deploy:
+	@bash scripts/deploy.sh
