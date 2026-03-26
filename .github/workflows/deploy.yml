@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Install SSH key
         run: |
@@ -17,12 +17,22 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
+      - name: Cache Composer vendor
+        id: vendor-cache
+        uses: actions/cache@v4.2.3
+        with:
+          path: portal/vendor
+          key: vendor-${{ hashFiles('portal/composer.lock') }}
+
       - name: Setup PHP 8.3
+        if: steps.vendor-cache.outputs.cache-hit != 'true'
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
+          tools: composer
 
       - name: Install PHP dependencies
+        if: steps.vendor-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p portal/bootstrap/cache
           composer install --no-dev --optimize-autoloader --working-dir=portal
@@ -40,8 +50,13 @@ jobs:
           DEPLOY_PATH=${{ secrets.DEPLOY_PATH }}
           SSH="ssh -q -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
 
-          # Upload new release, hardlinking unchanged files from previous release
           $SSH "mkdir -p ${DEPLOY_PATH}/releases/${RELEASE}"
+
+          # Skip uploading vendor if composer.lock hasn't changed on server
+          SERVER_LOCK=$($SSH "md5sum ${DEPLOY_PATH}/live/composer.lock 2>/dev/null | cut -d' ' -f1" || echo "none")
+          LOCAL_LOCK=$(md5sum portal/composer.lock | cut -d' ' -f1)
+          [ "$SERVER_LOCK" = "$LOCAL_LOCK" ] && VENDOR_EXCLUDE="--exclude=vendor/" || VENDOR_EXCLUDE=""
+
           rsync -azP \
             -e "ssh -q -o StrictHostKeyChecking=no" \
             --exclude='.git' \
@@ -49,15 +64,24 @@ jobs:
             --exclude='.env' \
             --exclude='storage' \
             --exclude='bootstrap/cache/*' \
+            $VENDOR_EXCLUDE \
             --link-dest="${DEPLOY_PATH}/live" \
             portal/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${DEPLOY_PATH}/releases/${RELEASE}/
 
-          # Link shared .env and storage
           $SSH "
+            set -e
+
+            # If vendor wasn't uploaded, hardlink it from the previous release (instant, zero extra disk)
+            if [ ! -d '${DEPLOY_PATH}/releases/${RELEASE}/vendor' ]; then
+              PREV=\$(readlink -f ${DEPLOY_PATH}/live)
+              cp -rl \$PREV/vendor ${DEPLOY_PATH}/releases/${RELEASE}/vendor
+            fi
+
             ln -sfn ${DEPLOY_PATH}/shared/.env ${DEPLOY_PATH}/releases/${RELEASE}/.env
             ln -sfn ${DEPLOY_PATH}/shared/storage ${DEPLOY_PATH}/releases/${RELEASE}/storage
             mkdir -p ${DEPLOY_PATH}/releases/${RELEASE}/bootstrap/cache
+
             cd ${DEPLOY_PATH}/releases/${RELEASE}
             php artisan migrate --force
             php artisan config:cache
@@ -65,8 +89,5 @@ jobs:
             php artisan view:cache
           "
 
-          # Atomic swap
           $SSH "ln -sfn ${DEPLOY_PATH}/releases/${RELEASE} ${DEPLOY_PATH}/live"
-
-          # Keep last 5 releases
           $SSH "ls -1dt ${DEPLOY_PATH}/releases/*/ | tail -n +6 | xargs rm -rf"
