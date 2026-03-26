@@ -14,10 +14,10 @@ class CpanelService
 
     public function __construct()
     {
-        $this->host       = config('services.cpanel.host');
-        $this->user       = config('services.cpanel.user');
-        $this->token      = config('services.cpanel.token');
-        $this->rootDomain = config('services.cpanel.root_domain');
+        $this->host       = config('services.cpanel.host')        ?? throw new \RuntimeException('CPANEL_HOST is not set in .env');
+        $this->user       = config('services.cpanel.user')        ?? throw new \RuntimeException('CPANEL_USER is not set in .env');
+        $this->token      = config('services.cpanel.token')       ?? throw new \RuntimeException('CPANEL_TOKEN is not set in .env');
+        $this->rootDomain = config('services.cpanel.root_domain') ?? throw new \RuntimeException('CPANEL_ROOT_DOMAIN is not set in .env');
     }
 
     public function createAddonDomain(string $domain, string $docroot): void
