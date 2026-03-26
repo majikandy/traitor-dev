@@ -146,10 +146,11 @@ class SiteService
 
     public function disableMaintenance(Site $site): void
     {
-        if ($site->live_release) {
-            $this->swapLiveSymlink($site, $site->sitesPath() . '/releases/' . $site->live_release);
-        }
-        // If no live_release, leave live pointing at coming-soon — that's correct
+        $target = $site->live_release
+            ? $site->sitesPath() . '/releases/' . $site->live_release
+            : $site->sitesPath() . '/drafts';
+
+        $this->swapLiveSymlink($site, $target);
         $site->update(['maintenance_mode' => false]);
     }
 
