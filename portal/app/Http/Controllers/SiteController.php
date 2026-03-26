@@ -136,6 +136,10 @@ class SiteController extends Controller
 
         $this->siteService->promote($site, $release->version);
 
+        if (request()->expectsJson()) {
+            return response()->json(['version' => $version]);
+        }
+
         return back()->with('success', "v{$release->version} is now live.");
     }
 

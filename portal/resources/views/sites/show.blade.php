@@ -35,7 +35,7 @@
             @if($site->live_release)
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                    Release {{ $site->live_release }} live
+                    <span id="live-status-badge">Release {{ $site->live_release }} live</span>
                 </span>
             @elseif($site->current_release > 0)
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
@@ -142,14 +142,12 @@
                 data-preview-url="{{ $release->previewUrl() }}"
                 data-version="v{{ $release->version }}"
                 onclick="selectRelease(this)">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3" data-badges>
                     <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
                     @if($isLive)
-                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                        <span class="live-badge inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live
                         </span>
-                    @elseif($release->version === $site->current_release)
-                        <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">staged</span>
                     @endif
                     @if($release->notes)
                         <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes }}</span>
@@ -159,10 +157,11 @@
                     <span class="text-xs text-gray-400">{{ $release->created_at->diffForHumans() }}</span>
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
                     @if(!$isLive)
-                        <form method="POST" action="{{ route('sites.releases.promote', [$site, $release->version]) }}">
-                            @csrf
-                            <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition">Go Live</button>
-                        </form>
+                        <button type="button"
+                            class="go-live-btn rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition"
+                            data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
+                            data-version="{{ $release->version }}"
+                            onclick="event.stopPropagation(); goLive(this)">Go Live</button>
                     @endif
                 </div>
             </div>
@@ -173,17 +172,60 @@
 <script>
 function selectRelease(row) {
     document.querySelectorAll('.release-row').forEach(function(r) {
-        r.classList.remove('bg-brand-50', 'ring-2', 'ring-inset', 'ring-brand-200');
         if (!r.classList.contains('bg-emerald-50/50')) r.classList.remove('bg-brand-50');
     });
-    row.classList.add('bg-brand-50');
-    var url = row.dataset.previewUrl;
-    document.getElementById('preview-iframe').src = url;
-    document.getElementById('preview-open-link').href = url;
+    if (!row.classList.contains('bg-emerald-50/50')) row.classList.add('bg-brand-50');
+    document.getElementById('preview-iframe').src = row.dataset.previewUrl;
+    document.getElementById('preview-open-link').href = row.dataset.previewUrl;
     document.getElementById('preview-label').textContent = row.dataset.version;
 }
 function resetPreview() {
-    document.getElementById('preview-iframe').src = document.getElementById('preview-iframe').src;
+    var f = document.getElementById('preview-iframe');
+    f.src = f.src;
+}
+function goLive(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Going live…';
+    fetch(btn.dataset.url, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+        }
+    })
+    .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(data) {
+        var newVersion = data.version;
+        document.querySelectorAll('.release-row').forEach(function(row) {
+            var v = parseInt(row.dataset.version.replace('v', ''));
+            var badge = row.querySelector('.live-badge');
+            var goLiveBtn = row.querySelector('.go-live-btn');
+            if (v === newVersion) {
+                row.classList.add('bg-emerald-50/50');
+                row.classList.remove('bg-brand-50', 'hover:bg-gray-50');
+                if (!badge) {
+                    row.querySelector('[data-badges]').insertAdjacentHTML('beforeend',
+                        '<span class="live-badge inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live</span>');
+                }
+                if (goLiveBtn) goLiveBtn.remove();
+            } else {
+                if (badge) {
+                    badge.remove();
+                    row.classList.remove('bg-emerald-50/50');
+                    row.classList.add('hover:bg-gray-50');
+                }
+            }
+        });
+        // Update header badge and domain "currently serving"
+        var headerBadge = document.getElementById('live-status-badge');
+        if (headerBadge) headerBadge.textContent = 'Release ' + newVersion + ' live';
+        var serving = document.getElementById('currently-serving');
+        if (serving) serving.textContent = 'Release ' + newVersion;
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Go Live';
+    });
 }
 function toggleExpand() {
     var c = document.getElementById('preview-container');
@@ -298,7 +340,7 @@ function toggleExpand() {
             @if($site->maintenance_mode)
                 <span class="text-amber-600 font-medium">Coming Soon page (maintenance mode)</span>
             @elseif($site->live_release)
-                <span class="text-emerald-700 font-medium">Release {{ $site->live_release }}</span>
+                <span id="currently-serving" class="text-emerald-700 font-medium">Release {{ $site->live_release }}</span>
             @else
                 <span class="text-gray-500 font-medium">Coming Soon page — press Go Live on a release to publish</span>
             @endif
