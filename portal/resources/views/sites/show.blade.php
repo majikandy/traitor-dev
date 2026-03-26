@@ -89,106 +89,132 @@
     </form>
 </div>
 
-{{-- Site Preview --}}
-@if($site->current_release > 0)
-    @php $latestRelease = $site->releases->sortByDesc('version')->first(); @endphp
-    <div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <h2 class="text-base font-semibold text-gray-900">Preview</h2>
-                <span class="text-xs text-gray-400">Click around — it's interactive</span>
+{{-- Releases + Preview --}}
+@if($site->releases->isNotEmpty())
+@php $sortedReleases = $site->releases->sortByDesc('version'); $firstRelease = $sortedReleases->first(); @endphp
+<div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6">
+    {{-- Section header --}}
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-900">Releases</h2>
+        @if($site->domain_status === 'active')
+            <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}">
+                @csrf
+                <button type="submit" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition
+                    {{ $site->maintenance_mode
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
+                    {{ $site->maintenance_mode ? 'Bring back online' : 'Maintenance mode' }}
+                </button>
+            </form>
+        @endif
+    </div>
+
+    {{-- Release rows --}}
+    <div class="divide-y divide-gray-100">
+        @foreach($sortedReleases as $release)
+            @php $isLive = $release->version === $site->live_release; @endphp
+            <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
+                    {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
+                data-preview-url="{{ $release->previewUrl() }}"
+                data-version="v{{ $release->version }}"
+                onclick="selectRelease(this)">
+                <div class="flex items-center gap-3">
+                    <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
+                    @if($isLive)
+                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live
+                        </span>
+                    @elseif($release->version === $site->current_release)
+                        <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">staged</span>
+                    @endif
+                    @if($release->notes)
+                        <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes }}</span>
+                    @endif
+                </div>
+                <div class="flex items-center gap-3" onclick="event.stopPropagation()">
+                    <span class="text-xs text-gray-400">{{ $release->created_at->diffForHumans() }}</span>
+                    <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
+                    @if(!$isLive)
+                        <form method="POST" action="{{ route('sites.releases.promote', [$site, $release]) }}">
+                            @csrf
+                            <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition">Go Live</button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- Preview panel --}}
+    <div class="border-t border-gray-100">
+        <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-medium text-gray-500">Previewing</span>
+                <span id="preview-label" class="text-xs font-semibold text-gray-900">v{{ $firstRelease->version }}</span>
+                <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1">↺</button>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="resetPreview()" class="text-xs text-gray-500 hover:text-gray-700 transition">↺ Home</button>
-                <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-500 hover:text-gray-700 transition">⤢ Expand</button>
-                <a href="{{ $latestRelease->previewUrl() }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
+                <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
+                <a id="preview-open-link" href="{{ $firstRelease->previewUrl() }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
             </div>
         </div>
         <div id="preview-container" class="relative w-full bg-gray-100 overflow-hidden transition-all duration-300" style="height: 360px;">
             <iframe
                 id="preview-iframe"
-                src="{{ $latestRelease->previewUrl() }}"
-                data-src="{{ $latestRelease->previewUrl() }}"
+                src="{{ $firstRelease->previewUrl() }}"
                 class="absolute border-0"
                 style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left; left: calc(50% - 288px); top: 0;"
                 loading="lazy"
             ></iframe>
         </div>
-        <script>
-        function resetPreview() {
-            var f = document.getElementById('preview-iframe');
-            f.src = f.dataset.src;
-        }
-        function toggleExpand() {
-            var c = document.getElementById('preview-container');
-            var f = document.getElementById('preview-iframe');
-            var btn = document.getElementById('expand-btn');
-            if (c.style.height === '360px') {
-                c.style.height = '700px';
-                f.style.transform = 'scale(0.875)';
-                f.style.left = 'calc(50% - 560px)';
-                f.style.height = '800px';
-                btn.textContent = '⤡ Collapse';
-            } else {
-                c.style.height = '360px';
-                f.style.transform = 'scale(0.45)';
-                f.style.left = 'calc(50% - 288px)';
-                btn.textContent = '⤢ Expand';
-            }
-        }
-        </script>
     </div>
-@endif
+</div>
 
-{{-- Releases --}}
+<script>
+function selectRelease(row) {
+    document.querySelectorAll('.release-row').forEach(function(r) {
+        r.classList.remove('bg-brand-50', 'ring-2', 'ring-inset', 'ring-brand-200');
+        if (!r.classList.contains('bg-emerald-50/50')) r.classList.remove('bg-brand-50');
+    });
+    row.classList.add('bg-brand-50');
+    var url = row.dataset.previewUrl;
+    document.getElementById('preview-iframe').src = url;
+    document.getElementById('preview-open-link').href = url;
+    document.getElementById('preview-label').textContent = row.dataset.version;
+    // Scroll preview into view
+    document.getElementById('preview-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function resetPreview() {
+    document.getElementById('preview-iframe').src = document.getElementById('preview-iframe').src;
+}
+function toggleExpand() {
+    var c = document.getElementById('preview-container');
+    var f = document.getElementById('preview-iframe');
+    var btn = document.getElementById('expand-btn');
+    if (c.style.height === '360px') {
+        c.style.height = '700px';
+        f.style.transform = 'scale(0.875)';
+        f.style.left = 'calc(50% - 560px)';
+        f.style.height = '800px';
+        btn.textContent = '⤡ Collapse';
+    } else {
+        c.style.height = '360px';
+        f.style.transform = 'scale(0.45)';
+        f.style.left = 'calc(50% - 288px)';
+        btn.textContent = '⤢ Expand';
+    }
+}
+</script>
+@else
 <div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="text-base font-semibold text-gray-900">Releases</h2>
     </div>
-
-    @if($site->releases->isEmpty())
-        <div class="p-8 text-center">
-            <p class="text-sm text-gray-500">No releases yet. Upload a .zip above to create the first one.</p>
-        </div>
-    @else
-        <div class="divide-y divide-gray-100">
-            @foreach($site->releases->sortByDesc('version') as $release)
-                <div>
-                    <div class="flex items-center justify-between px-6 py-4 {{ $release->version === $site->live_release ? 'bg-emerald-50/60' : ($release->version === $site->current_release ? 'bg-brand-50/50' : '') }}">
-                        <div class="flex items-center gap-3">
-                            <button onclick="toggleReleasePreview(this)" data-preview-url="{{ $release->previewUrl() }}" class="flex items-center gap-2 group">
-                                <svg class="release-chevron h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-transform duration-150" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-                                <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
-                            </button>
-                            @if($release->version === $site->live_release)
-                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live
-                                </span>
-                            @elseif($release->version === $site->current_release)
-                                <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">staged</span>
-                            @endif
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes ?: '—' }}</span>
-                            <span class="text-xs text-gray-400 min-w-[7rem] text-right">{{ $release->created_at->diffForHumans() }}</span>
-                            <a href="{{ $release->previewUrl() }}" target="_blank" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Preview</a>
-                            <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Download</a>
-                            @if($release->version !== $site->live_release)
-                                <form method="POST" action="{{ route('sites.releases.promote', [$site, $release]) }}">
-                                    @csrf
-                                    <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition">Go Live</button>
-                                </form>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="release-preview hidden">
-                        {{-- iframe injected by JS on expand --}}
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
+    <div class="p-8 text-center">
+        <p class="text-sm text-gray-500">No releases yet. Upload a .zip above to create the first one.</p>
+    </div>
 </div>
+@endif
 
 {{-- Domain --}}
 <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
@@ -257,7 +283,7 @@
 
     @elseif($site->domain_status === 'active')
         {{-- Domain active --}}
-        <div class="flex items-center gap-3 mb-3">
+        <div class="flex items-center gap-3 mb-2">
             @if($site->maintenance_mode)
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                     <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Maintenance
@@ -279,16 +305,7 @@
                 <span class="text-gray-500 font-medium">Coming Soon page — press Go Live on a release to publish</span>
             @endif
         </p>
-        <div class="flex items-center justify-between">
-            <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}">
-                @csrf
-                <button type="submit" class="rounded-lg border px-4 py-2 text-sm font-semibold transition
-                    {{ $site->maintenance_mode
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                        : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
-                    {{ $site->maintenance_mode ? 'Bring back online' : 'Enable maintenance mode' }}
-                </button>
-            </form>
+        <div class="flex justify-end">
             <form method="POST" action="{{ route('sites.domain.detach', $site) }}">
                 @csrf
                 @method('DELETE')
