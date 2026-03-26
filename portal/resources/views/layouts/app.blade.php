@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Traitor.dev')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
+        tailwind = { config: {
             theme: {
                 extend: {
                     colors: {
@@ -16,8 +15,9 @@
                     }
                 }
             }
-        }
+        }}
     </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         [x-cloak] { display: none !important; }
     </style>

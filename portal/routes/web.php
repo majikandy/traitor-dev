@@ -2,8 +2,20 @@
 
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SiteController;
+use App\Http\Middleware\PasswordGate;
 use App\Models\Site;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/gate', fn() => view('gate'))->name('gate');
+Route::post('/gate', function (\Illuminate\Http\Request $request) {
+    if ($request->input('password') !== env('PORTAL_PASSWORD')) {
+        return back()->withErrors(['password' => 'Wrong password.']);
+    }
+    $request->session()->put('portal_authed', true);
+    return redirect('/');
+})->name('gate.check');
+
+Route::middleware(PasswordGate::class)->group(function () {
 
 Route::get('/', function () {
     return view('welcome', [
@@ -23,3 +35,5 @@ Route::get('/sites/{site}/download/{release}', [SiteController::class, 'download
 Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
 Route::get('/preview/{token}/{path?}', PreviewController::class)->where('path', '.*')->name('preview');
+
+}); // end PasswordGate
