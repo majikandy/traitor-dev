@@ -35,53 +35,43 @@ class PreviewController extends Controller
 
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-        // Execute PHP files and inject the preview banner
         if ($ext === 'php') {
             ob_start();
             include $filePath;
             $html = ob_get_clean();
+            return response($this->injectPreview($html, $token, $label))->header('Content-Type', 'text/html');
+        }
 
-            $baseUrl = url('/preview/' . $token) . '/';
-            $baseTag = '<base href="' . e($baseUrl) . '">';
-            $banner  = $this->banner($label);
-
-            if (str_contains($html, '<head>')) {
-                $html = str_replace('<head>', '<head>' . $baseTag, $html);
-            } else {
-                $html = $baseTag . $html;
-            }
-
-            $html = str_contains($html, '</body>')
-                ? str_replace('</body>', $banner . '</body>', $html)
-                : $html . $banner;
-
-            return response($html)->header('Content-Type', 'text/html');
+        if ($ext === 'html' || $ext === 'htm') {
+            $html = file_get_contents($filePath);
+            return response($this->injectPreview($html, $token, $label))->header('Content-Type', 'text/html');
         }
 
         $response = new BinaryFileResponse($filePath);
         $response->headers->set('Content-Type', $this->mimeType($filePath));
 
-        // Inject <base> tag and preview banner into static HTML responses
-        if ($ext === 'html' || $ext === 'htm') {
-            $html = file_get_contents($filePath);
-            $baseUrl = url('/preview/' . $token) . '/';
-            $baseTag = '<base href="' . e($baseUrl) . '">';
-            $banner = $this->banner($label);
-
-            if (str_contains($html, '<head>')) {
-                $html = str_replace('<head>', '<head>' . $baseTag, $html);
-            } else {
-                $html = $baseTag . $html;
-            }
-
-            $html = str_contains($html, '</body>')
-                ? str_replace('</body>', $banner . '</body>', $html)
-                : $html . $banner;
-
-            return response($html)->header('Content-Type', 'text/html');
-        }
-
         return $response;
+    }
+
+    private function injectPreview(string $html, string $token, string $label): string
+    {
+        $previewBase = '/preview/' . $token . '/';
+
+        // Rewrite root-relative URLs (href="/...", src="/...") to go through the preview route.
+        // Skips protocol-relative (//), absolute (https://), anchors (#), and data: URIs.
+        $html = preg_replace_callback(
+            '/((?:href|src|action)=")(\\/(?!\\/)[^"]*?)(")/i',
+            fn($m) => $m[1] . $previewBase . ltrim($m[2], '/') . $m[3],
+            $html
+        );
+
+        $banner = $this->banner($label);
+
+        $html = str_contains($html, '</body>')
+            ? str_replace('</body>', $banner . '</body>', $html)
+            : $html . $banner;
+
+        return $html;
     }
 
     private function findFile(string $candidate): ?string

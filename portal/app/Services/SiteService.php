@@ -127,13 +127,38 @@ class SiteService
             throw new \RuntimeException("Release {$version} not found at {$releasePath}.");
         }
 
+        $this->swapLiveSymlink($site, $releasePath);
+
+        $site->update(['live_release' => $version, 'maintenance_mode' => false]);
+    }
+
+    public function enableMaintenance(Site $site): void
+    {
+        $comingSoon = $site->sitesPath() . '/coming-soon';
+        if (!is_dir($comingSoon . '/public')) {
+            File::ensureDirectoryExists($comingSoon . '/public');
+            File::put($comingSoon . '/public/index.html', $this->comingSoon($site->name));
+        }
+
+        $this->swapLiveSymlink($site, $comingSoon);
+        $site->update(['maintenance_mode' => true]);
+    }
+
+    public function disableMaintenance(Site $site): void
+    {
+        if ($site->live_release) {
+            $this->swapLiveSymlink($site, $site->sitesPath() . '/releases/' . $site->live_release);
+        }
+        // If no live_release, leave live pointing at coming-soon — that's correct
+        $site->update(['maintenance_mode' => false]);
+    }
+
+    private function swapLiveSymlink(Site $site, string $target): void
+    {
         $livePath = $site->sitesPath() . '/live';
         $tmpPath  = $livePath . '_tmp_' . uniqid();
-
-        symlink($releasePath, $tmpPath);
-        rename($tmpPath, $livePath); // atomic on Linux
-
-        $site->update(['live_release' => $version]);
+        symlink($target, $tmpPath);
+        rename($tmpPath, $livePath);
     }
 
     public function delete(Site $site): void

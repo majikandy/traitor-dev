@@ -128,19 +128,43 @@
 
     @elseif($site->domain_status === 'active')
         {{-- Domain live --}}
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3">
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Active
-                </span>
+                @if($site->maintenance_mode)
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Maintenance
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Active
+                    </span>
+                @endif
                 <a href="https://{{ $site->domain }}" target="_blank" class="text-sm font-medium text-brand-600 hover:underline">{{ $site->domain }}</a>
             </div>
-            <form method="POST" action="{{ route('sites.domain.detach', $site) }}">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition" onclick="return confirm('Remove {{ $site->domain }}?')">Remove</button>
-            </form>
+            <div class="flex items-center gap-3">
+                <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}">
+                    @csrf
+                    <button type="submit" class="text-xs {{ $site->maintenance_mode ? 'text-emerald-600 hover:text-emerald-800' : 'text-amber-600 hover:text-amber-800' }} transition">
+                        {{ $site->maintenance_mode ? 'Bring online' : 'Maintenance' }}
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('sites.domain.detach', $site) }}">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition" onclick="return confirm('Remove {{ $site->domain }}?')">Remove</button>
+                </form>
+            </div>
         </div>
+        <p class="text-xs text-gray-500">
+            Currently serving:
+            @if($site->maintenance_mode)
+                <span class="text-amber-600 font-medium">Coming Soon page (maintenance mode)</span>
+            @elseif($site->live_release)
+                <span class="text-emerald-700 font-medium">Release {{ $site->live_release }}</span>
+            @else
+                <span class="text-gray-400 font-medium">Coming Soon page — press Go Live on a release to publish</span>
+            @endif
+        </p>
     @endif
 </div>
 
@@ -251,7 +275,7 @@
                                 </span>
                             @endif
                             @if($release->version === $site->current_release && $release->version !== $site->live_release)
-                                <span class="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">latest</span>
+                                <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">staged</span>
                             @endif
                         </div>
                         <div class="flex items-center gap-4">

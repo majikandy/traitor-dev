@@ -147,6 +147,17 @@ class SiteController extends Controller
         return back()->with('success', 'Site renamed.');
     }
 
+    public function toggleMaintenance(Site $site)
+    {
+        if ($site->maintenance_mode) {
+            $this->siteService->disableMaintenance($site);
+            return back()->with('success', 'Site is back online.');
+        }
+
+        $this->siteService->enableMaintenance($site);
+        return back()->with('success', 'Maintenance mode enabled — visitors now see the coming soon page.');
+    }
+
     public function destroy(Site $site)
     {
         $name = $site->name;

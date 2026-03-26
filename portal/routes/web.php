@@ -72,6 +72,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/sites/{site}/domain/check-dns', [SiteController::class, 'checkDns'])->name('sites.domain.check-dns');
     Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraft'])->name('sites.download.draft');
     Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
+    Route::post('/sites/{site}/maintenance', [SiteController::class, 'toggleMaintenance'])->name('sites.maintenance.toggle');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
     Route::get('/users', [UsersController::class, 'index'])->name('users.index');

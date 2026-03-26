@@ -8,7 +8,9 @@ use Illuminate\Support\Str;
 
 class Site extends Model
 {
-    protected $fillable = ['name', 'slug', 'preview_token', 'domain', 'domain_status', 'status', 'current_release', 'live_release'];
+    protected $fillable = ['name', 'slug', 'preview_token', 'domain', 'domain_status', 'maintenance_mode', 'status', 'current_release', 'live_release'];
+
+    protected $casts = ['maintenance_mode' => 'boolean'];
 
     protected static function booted(): void
     {
