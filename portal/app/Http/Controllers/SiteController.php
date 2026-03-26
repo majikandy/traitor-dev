@@ -96,6 +96,14 @@ class SiteController extends Controller
         return response()->download($tempFile, $filename)->deleteFileAfterSend();
     }
 
+    public function update(Request $request, Site $site)
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        $site->update(['name' => $request->name]);
+
+        return back()->with('success', 'Site renamed.');
+    }
+
     public function destroy(Site $site)
     {
         $name = $site->name;

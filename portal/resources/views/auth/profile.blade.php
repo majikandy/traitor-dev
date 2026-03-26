@@ -35,11 +35,17 @@
         </form>
     </div>
 
-    {{-- Change password --}}
+    {{-- Change / set password --}}
     <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-base font-semibold text-gray-900 mb-4">Change password</h2>
+        @if(auth()->user()->has_password)
+            <h2 class="text-base font-semibold text-gray-900 mb-4">Change password</h2>
+        @else
+            <h2 class="text-base font-semibold text-gray-900 mb-1">Set a password</h2>
+            <p class="text-sm text-gray-500 mb-4">Optional — you can sign in with your passkey instead. A password lets you sign in from devices where your passkey isn't available.</p>
+        @endif
         <form method="POST" action="{{ route('profile.password') }}">
             @csrf
+            @if(auth()->user()->has_password)
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Current password</label>
                 <input type="password" name="current_password" required
@@ -48,18 +54,19 @@
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
             </div>
+            @endif
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">New password</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ auth()->user()->has_password ? 'New password' : 'Password' }}</label>
                 <input type="password" name="password" required
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
             </div>
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Confirm new password</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Confirm {{ auth()->user()->has_password ? 'new ' : '' }}password</label>
                 <input type="password" name="password_confirmation" required
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
             </div>
             <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition">
-                Update password
+                {{ auth()->user()->has_password ? 'Update password' : 'Set password' }}
             </button>
         </form>
     </div>

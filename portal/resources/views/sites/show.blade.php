@@ -18,7 +18,20 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <div class="flex items-center gap-3">
-            <h1 class="text-2xl font-bold text-gray-900">{{ $site->name }}</h1>
+            {{-- Inline name editor --}}
+            <form id="rename-form" method="POST" action="{{ route('sites.update', $site) }}" class="hidden items-center gap-2">
+                @csrf
+                @method('PATCH')
+                <input id="rename-input" type="text" name="name" value="{{ $site->name }}"
+                    class="text-2xl font-bold text-gray-900 border-b-2 border-brand-500 bg-transparent outline-none w-64"
+                    onkeydown="if(event.key==='Escape') cancelRename()">
+                <button type="submit" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Save</button>
+                <button type="button" onclick="cancelRename()" class="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+            </form>
+            <h1 id="site-name-display" class="text-2xl font-bold text-gray-900 cursor-pointer hover:text-brand-600 transition group flex items-center gap-2" onclick="startRename()" title="Click to rename">
+                {{ $site->name }}
+                <svg class="h-4 w-4 text-gray-300 group-hover:text-brand-400 transition" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
+            </h1>
             @if($site->domain)
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
@@ -166,6 +179,23 @@
         </div>
     @endif
 </div>
+
+<script>
+function startRename() {
+    document.getElementById('site-name-display').classList.add('hidden');
+    var form = document.getElementById('rename-form');
+    form.classList.remove('hidden');
+    form.classList.add('flex');
+    var input = document.getElementById('rename-input');
+    input.focus();
+    input.select();
+}
+function cancelRename() {
+    document.getElementById('rename-form').classList.add('hidden');
+    document.getElementById('rename-form').classList.remove('flex');
+    document.getElementById('site-name-display').classList.remove('hidden');
+}
+</script>
 
 {{-- Danger Zone --}}
 <div class="mt-6 rounded-xl border border-red-200 bg-white p-6 shadow-sm">

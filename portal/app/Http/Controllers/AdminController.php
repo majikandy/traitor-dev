@@ -2,8 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
+use Illuminate\Http\Request;
+
 class AdminController extends Controller
 {
+    public function settings(): \Illuminate\View\View
+    {
+        return view('admin.settings', [
+            'businessName' => Setting::get('business_name', ''),
+        ]);
+    }
+
+    public function updateSettings(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $request->validate(['business_name' => 'nullable|string|max:255']);
+        Setting::set('business_name', $request->input('business_name'));
+
+        return back()->with('success', 'Settings saved.');
+    }
+
     public function logs(): \Illuminate\View\View
     {
         $logPath = storage_path('logs/laravel.log');

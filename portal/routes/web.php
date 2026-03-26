@@ -41,7 +41,7 @@ Route::post('/reset-password', function (Request $request) {
         'password' => 'required|min:8|confirmed',
     ]);
     $status = Password::reset($request->only('email', 'password', 'password_confirmation', 'token'), function ($user, $password) {
-        $user->forceFill(['password' => Hash::make($password)])->setRememberToken(Str::random(60));
+        $user->forceFill(['password' => Hash::make($password), 'has_password' => true])->setRememberToken(Str::random(60));
         $user->save();
         event(new PasswordReset($user));
     });
@@ -64,6 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/sites/create', [SiteController::class, 'create'])->name('sites.create');
     Route::post('/sites', [SiteController::class, 'store'])->name('sites.store');
     Route::get('/sites/{site}', [SiteController::class, 'show'])->name('sites.show');
+    Route::patch('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
     Route::post('/sites/{site}/release', [SiteController::class, 'createRelease'])->name('sites.release');
     Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraft'])->name('sites.download.draft');
     Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
@@ -75,6 +76,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(AdminMiddleware::class)->group(function () {
         Route::get('/admin/logs', [AdminController::class, 'logs'])->name('admin.logs');
+        Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
+        Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
     });
 
     Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile');

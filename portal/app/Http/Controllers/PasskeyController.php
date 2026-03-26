@@ -171,6 +171,12 @@ class PasskeyController extends Controller
     public function destroy(Passkey $passkey): \Illuminate\Http\RedirectResponse
     {
         abort_if((int) $passkey->user_id !== (int) Auth::id(), 403);
+
+        $user = Auth::user();
+        if (!$user->has_password && $user->passkeys()->count() <= 1) {
+            return back()->with('error', 'You cannot remove your only passkey without setting a password first.');
+        }
+
         $passkey->delete();
 
         return back()->with('success', 'Passkey removed.');
