@@ -62,12 +62,17 @@
 
             {{-- Footer --}}
             <div class="px-6 py-4 border-t border-white/10">
-                <p class="text-xs text-sidebar-text font-medium truncate">{{ auth()->user()->name }}</p>
-                <p class="text-xs text-sidebar-muted truncate mb-2">{{ auth()->user()->email }}</p>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="text-xs text-sidebar-muted hover:text-sidebar-text transition">Sign out</button>
-                </form>
+                <a href="{{ route('profile') }}" class="block hover:opacity-80 transition">
+                    <p class="text-xs text-sidebar-text font-medium truncate">{{ auth()->user()->name }}</p>
+                    <p class="text-xs text-sidebar-muted truncate">{{ auth()->user()->email }}</p>
+                </a>
+                <div class="flex items-center justify-between mt-2">
+                    <a href="{{ route('profile') }}" class="text-xs text-sidebar-muted hover:text-sidebar-text transition">Profile</a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="text-xs text-sidebar-muted hover:text-sidebar-text transition">Sign out</button>
+                    </form>
+                </div>
             </div>
         </aside>
 
