@@ -17,7 +17,9 @@ jobs:
           php-version: '8.3'
 
       - name: Install PHP dependencies
-        run: composer install --no-dev --optimize-autoloader --working-dir=portal
+        run: |
+          mkdir -p portal/bootstrap/cache
+          composer install --no-dev --optimize-autoloader --working-dir=portal
 
       - name: Deploy marketing site via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
