@@ -70,16 +70,34 @@
 
     @if(!$site->domain)
         {{-- No domain: attach form --}}
-        <form method="POST" action="{{ route('sites.domain.attach', $site) }}" class="flex gap-3">
+        <form method="POST" action="{{ route('sites.domain.attach', $site) }}" class="flex gap-3" id="attach-domain-form" onsubmit="startAttaching(this)">
             @csrf
-            <input type="text" name="domain" placeholder="toptoast.com"
+            <input type="text" name="domain" id="domain-input" placeholder="toptoast.com"
                 value="{{ old('domain') }}"
                 class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 {{ $errors->has('domain') ? 'border-red-400' : '' }}">
-            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition">Attach domain</button>
+            <button type="submit" id="attach-btn" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition whitespace-nowrap">
+                Attach domain
+            </button>
         </form>
+        <p id="attach-status" class="mt-2 text-xs text-gray-500 hidden"></p>
         @error('domain')
             <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
         @enderror
+        <script>
+        function startAttaching(form) {
+            var input = document.getElementById('domain-input');
+            var btn   = document.getElementById('attach-btn');
+            var status = document.getElementById('attach-status');
+            input.disabled = true;
+            input.classList.add('bg-gray-50', 'text-gray-400');
+            btn.disabled = true;
+            btn.textContent = 'Attaching…';
+            btn.classList.remove('hover:bg-brand-700');
+            btn.classList.add('opacity-60', 'cursor-not-allowed');
+            status.textContent = 'Registering domain with the web server — this takes a few seconds…';
+            status.classList.remove('hidden');
+        }
+        </script>
 
     @elseif($site->domain_status === 'pending_dns')
         {{-- Waiting for DNS --}}
