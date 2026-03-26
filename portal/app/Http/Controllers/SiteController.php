@@ -96,6 +96,15 @@ class SiteController extends Controller
         return response()->download($tempFile, $filename)->deleteFileAfterSend();
     }
 
+    public function promoteRelease(Site $site, Release $release)
+    {
+        abort_if($release->site_id !== $site->id, 404);
+
+        $this->siteService->promote($site, $release->version);
+
+        return back()->with('success', "v{$release->version} is now live.");
+    }
+
     public function update(Request $request, Site $site)
     {
         $request->validate(['name' => 'required|string|max:255']);

@@ -66,6 +66,23 @@ class SiteService
         return $release;
     }
 
+    public function promote(Site $site, int $version): void
+    {
+        $releasePath = $site->sitesPath() . '/releases/' . $version;
+
+        if (!is_dir($releasePath)) {
+            throw new \RuntimeException("Release {$version} not found at {$releasePath}.");
+        }
+
+        $livePath = $site->sitesPath() . '/live';
+        $tmpPath  = $livePath . '_tmp_' . uniqid();
+
+        symlink($releasePath, $tmpPath);
+        rename($tmpPath, $livePath); // atomic on Linux
+
+        $site->update(['live_release' => $version]);
+    }
+
     public function delete(Site $site): void
     {
         File::deleteDirectory($site->sitesPath());

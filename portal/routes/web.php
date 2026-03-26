@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/sites/{site}', [SiteController::class, 'show'])->name('sites.show');
     Route::patch('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
     Route::post('/sites/{site}/release', [SiteController::class, 'createRelease'])->name('sites.release');
+    Route::post('/sites/{site}/releases/{release}/promote', [SiteController::class, 'promoteRelease'])->name('sites.releases.promote');
     Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraft'])->name('sites.download.draft');
     Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
