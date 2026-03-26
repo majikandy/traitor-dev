@@ -152,7 +152,11 @@ async function registerPasskey() {
             body: JSON.stringify(body),
         });
 
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+            const ct = res.headers.get('content-type') || '';
+            const msg = ct.includes('application/json') ? (await res.json()).message : null;
+            throw new Error(msg || `Server error (${res.status}) — check the admin logs.`);
+        }
 
         window.location.reload();
     } catch (e) {

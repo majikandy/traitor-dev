@@ -58,6 +58,14 @@
                         {{ $navSite->name }}
                     </a>
                 @endforeach
+
+                @if(auth()->user()->is_admin)
+                    <p class="px-3 mt-6 mb-2 text-xs font-semibold uppercase tracking-wider text-sidebar-muted">Admin</p>
+                    <a href="{{ route('admin.logs') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->is('admin/logs') ? 'bg-sidebar-active text-white' : 'text-sidebar-text hover:bg-sidebar-hover' }} transition">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" /></svg>
+                        Logs
+                    </a>
+                @endif
             </nav>
 
             {{-- Footer --}}

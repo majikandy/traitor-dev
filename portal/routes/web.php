@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasskeyController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UsersController;
+use App\Http\Middleware\AdminMiddleware;
 use App\Models\Site;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
@@ -70,6 +72,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', [UsersController::class, 'index'])->name('users.index');
     Route::post('/users', [UsersController::class, 'store'])->name('users.store');
     Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
+
+    Route::middleware(AdminMiddleware::class)->group(function () {
+        Route::get('/admin/logs', [AdminController::class, 'logs'])->name('admin.logs');
+    });
 
     Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile');
     Route::post('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
