@@ -40,7 +40,7 @@ jobs:
           DEPLOY_PATH=${{ secrets.DEPLOY_PATH }}
           SSH="ssh -q -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
 
-          # Upload new release
+          # Upload new release, hardlinking unchanged files from previous release
           $SSH "mkdir -p ${DEPLOY_PATH}/releases/${RELEASE}"
           rsync -azP \
             -e "ssh -q -o StrictHostKeyChecking=no" \
@@ -49,6 +49,7 @@ jobs:
             --exclude='.env' \
             --exclude='storage' \
             --exclude='bootstrap/cache/*' \
+            --link-dest="${DEPLOY_PATH}/live" \
             portal/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${DEPLOY_PATH}/releases/${RELEASE}/
 
