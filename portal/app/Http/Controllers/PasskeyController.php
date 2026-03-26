@@ -170,7 +170,7 @@ class PasskeyController extends Controller
 
     public function destroy(Passkey $passkey): \Illuminate\Http\RedirectResponse
     {
-        abort_if($passkey->user_id !== Auth::id(), 403);
+        abort_if((int) $passkey->user_id !== (int) Auth::id(), 403);
         $passkey->delete();
 
         return back()->with('success', 'Passkey removed.');
