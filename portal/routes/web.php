@@ -34,6 +34,6 @@ Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraf
 Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
 Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
-Route::get('/preview/{token}/{path?}', PreviewController::class)->where('path', '.*')->name('preview');
-
 }); // end PasswordGate
+
+Route::get('/preview/{token}/{path?}', PreviewController::class)->where('path', '.*')->name('preview');
