@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class UsersController extends Controller
@@ -24,18 +25,13 @@ class UsersController extends Controller
             'email' => 'required|email|unique:users,email',
         ]);
 
-        $password = Str::random(12);
-
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($password),
+            'password' => Hash::make(Str::random(32)),
         ]);
 
-        Mail::raw(
-            "Hi {$user->name},\n\nYou've been added to Traitor.dev.\n\nLogin: https://portal.traitor.dev\nEmail: {$user->email}\nPassword: {$password}\n\nChange your password after logging in.\n\nTraitor.dev",
-            fn($m) => $m->to($user->email)->subject('Your Traitor.dev account')
-        );
+        Password::sendResetLink(['email' => $user->email]);
 
         return back()->with('success', "Account created for {$user->name}. Login details sent to {$user->email}.");
     }
