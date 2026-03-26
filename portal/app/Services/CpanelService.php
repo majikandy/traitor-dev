@@ -10,11 +10,14 @@ class CpanelService
     private string $user;
     private string $token;
 
+    private string $rootDomain;
+
     public function __construct()
     {
-        $this->host  = config('services.cpanel.host');
-        $this->user  = config('services.cpanel.user');
-        $this->token = config('services.cpanel.token');
+        $this->host       = config('services.cpanel.host');
+        $this->user       = config('services.cpanel.user');
+        $this->token      = config('services.cpanel.token');
+        $this->rootDomain = config('services.cpanel.root_domain');
     }
 
     public function createAddonDomain(string $domain, string $docroot): void
@@ -35,7 +38,7 @@ class CpanelService
     {
         $this->v2('AddonDomain', 'deladdondomain', [
             'domain'    => $domain,
-            'subdomain' => $this->subdomainHandle($domain),
+            'subdomain' => $this->subdomainHandle($domain) . '.' . $this->rootDomain,
         ]);
     }
 
