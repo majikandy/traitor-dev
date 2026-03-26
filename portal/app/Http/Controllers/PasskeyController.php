@@ -93,7 +93,7 @@ class PasskeyController extends Controller
         }
 
         $factory = new CeremonyStepManagerFactory();
-        $validator = AuthenticatorAttestationResponseValidator::create($factory->creationCeremony());
+        $validator = AuthenticatorAttestationResponseValidator::create(ceremonyStepManager: $factory->creationCeremony());
 
         $source = $validator->check(
             authenticatorAttestationResponse: $credential->response,
@@ -145,7 +145,7 @@ class PasskeyController extends Controller
         $passkey = Passkey::where('credential_id', bin2hex($credential->rawId))->firstOrFail();
 
         $factory = new CeremonyStepManagerFactory();
-        $validator = AuthenticatorAssertionResponseValidator::create($factory->requestCeremony());
+        $validator = AuthenticatorAssertionResponseValidator::create(ceremonyStepManager: $factory->requestCeremony());
 
         $updatedSource = $validator->check(
             credentialId: $passkey->credentialSource(),

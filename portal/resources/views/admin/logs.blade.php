@@ -58,11 +58,28 @@
                             </details>
                         @endif
                     </div>
-                    <span class="shrink-0 text-xs text-gray-400">{{ $entry['date'] }}</span>
+                    <div class="shrink-0 flex items-center gap-2">
+                        <span class="text-xs text-gray-400">{{ $entry['date'] }}</span>
+                        <button
+                            onclick="copyLog(this, {{ json_encode($message . ($detail ? "\n" . $detail : '')) }})"
+                            class="text-xs text-gray-400 hover:text-gray-600 transition"
+                            title="Copy">
+                            Copy
+                        </button>
+                    </div>
                 </div>
             </div>
         @endforeach
     @endif
 
 </div>
+
+<script>
+function copyLog(btn, text) {
+    navigator.clipboard.writeText(text).then(function() {
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+    });
+}
+</script>
 @endsection
