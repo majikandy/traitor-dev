@@ -24,7 +24,7 @@ $SSH "mkdir -p $DEPLOY_PATH/releases/$RELEASE"
 rsync -az --delete \
     -e "$RSYNC_SSH" \
     marketing/ \
-    $SSH_USER@$SSH_HOST:$(dirname $DEPLOY_PATH)/traitor.dev/ &
+    $SSH_USER@$SSH_HOST:/home/$SSH_USER/public_html/ &
 
 rsync -az \
     -e "$RSYNC_SSH" \
