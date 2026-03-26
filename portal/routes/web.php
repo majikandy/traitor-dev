@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/gate', fn() => view('gate'))->name('gate');
 Route::post('/gate', function (\Illuminate\Http\Request $request) {
-    if ($request->input('password') !== env('PORTAL_PASSWORD')) {
+    if ($request->input('password') !== config('portal.password')) {
         return back()->withErrors(['password' => 'Wrong password.']);
     }
     $request->session()->put('portal_authed', true);
