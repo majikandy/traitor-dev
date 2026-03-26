@@ -56,7 +56,9 @@ class CpanelService
     {
         $response = Http::withHeaders(['Authorization' => "cpanel {$this->user}:{$this->token}"])
             ->withoutVerifying()
-            ->get("https://{$this->host}:2083/json-api/cpanel", array_merge([
+            ->timeout(15)
+            ->asForm()
+            ->post("https://{$this->host}:2083/json-api/cpanel", array_merge([
                 'cpanel_jsonapi_apiversion' => '2',
                 'cpanel_jsonapi_module'     => $module,
                 'cpanel_jsonapi_func'       => $func,
@@ -69,7 +71,9 @@ class CpanelService
     {
         $response = Http::withHeaders(['Authorization' => "cpanel {$this->user}:{$this->token}"])
             ->withoutVerifying()
-            ->get("https://{$this->host}:2083/execute/{$module}/{$func}", $params);
+            ->timeout(15)
+            ->asForm()
+            ->post("https://{$this->host}:2083/execute/{$module}/{$func}", $params);
 
         return $response->json() ?? [];
     }
