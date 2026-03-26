@@ -112,8 +112,9 @@ cPanel subdomains:
 - Create user `traitor8921_portaluser` with a strong password
 - Add user to database → grant **All Privileges**
 
-**2. cPanel — set PHP version:**
+**2. cPanel — set PHP version and extensions:**
 - cPanel → MultiPHP Manager → set `portal.traitor.dev` to **PHP 8.3**
+- cPanel → MultiPHP INI Editor → PHP 8.3 → enable `zip` and `bcmath` extensions (curl, openssl, mbstring, intl, pcntl, fileinfo are on by default)
 
 **3. cPanel — set subdomain document roots:**
 - `traitor.dev` → `public_html`

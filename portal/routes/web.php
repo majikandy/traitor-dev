@@ -1,39 +1,74 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SiteController;
-use App\Http\Middleware\PasswordGate;
+use App\Http\Controllers\UsersController;
 use App\Models\Site;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
-Route::get('/gate', fn() => view('gate'))->name('gate');
-Route::post('/gate', function (\Illuminate\Http\Request $request) {
-    if ($request->input('password') !== config('portal.password')) {
-        return back()->withErrors(['password' => 'Wrong password.']);
-    }
-    $request->session()->put('portal_authed', true);
-    return redirect('/');
-})->name('gate.check');
+// Auth
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::middleware(PasswordGate::class)->group(function () {
+// Password reset
+Route::get('/forgot-password', fn() => view('auth.forgot-password'))->name('password.request');
+Route::post('/forgot-password', function (Request $request) {
+    $request->validate(['email' => 'required|email']);
+    $status = Password::sendResetLink($request->only('email'));
+    return $status === Password::ResetLinkSent
+        ? back()->with('status', 'Reset link sent — check your email.')
+        : back()->withErrors(['email' => __($status)]);
+})->name('password.email');
 
-Route::get('/', function () {
-    return view('welcome', [
-        'total' => Site::count(),
-        'withDomain' => Site::whereNotNull('domain')->count(),
-        'withReleases' => Site::where('current_release', '>', 0)->count(),
+Route::get('/reset-password/{token}', function (string $token, Request $request) {
+    return view('auth.reset-password', ['token' => $token, 'email' => $request->email]);
+})->name('password.reset');
+
+Route::post('/reset-password', function (Request $request) {
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => 'required|min:8|confirmed',
     ]);
+    $status = Password::reset($request->only('email', 'password', 'password_confirmation', 'token'), function ($user, $password) {
+        $user->forceFill(['password' => Hash::make($password)])->setRememberToken(Str::random(60));
+        $user->save();
+        event(new PasswordReset($user));
+    });
+    return $status === Password::PasswordReset
+        ? redirect()->route('login')->with('status', 'Password reset successfully.')
+        : back()->withErrors(['email' => __($status)]);
+})->name('password.update');
+
+// Protected routes
+Route::middleware('auth')->group(function () {
+    Route::get('/', function () {
+        return view('welcome', [
+            'total' => Site::count(),
+            'withDomain' => Site::whereNotNull('domain')->count(),
+            'withReleases' => Site::where('current_release', '>', 0)->count(),
+        ]);
+    });
+
+    Route::get('/sites', [SiteController::class, 'index'])->name('sites.index');
+    Route::get('/sites/create', [SiteController::class, 'create'])->name('sites.create');
+    Route::post('/sites', [SiteController::class, 'store'])->name('sites.store');
+    Route::get('/sites/{site}', [SiteController::class, 'show'])->name('sites.show');
+    Route::post('/sites/{site}/release', [SiteController::class, 'createRelease'])->name('sites.release');
+    Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraft'])->name('sites.download.draft');
+    Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
+    Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
+
+    Route::get('/users', [UsersController::class, 'index'])->name('users.index');
+    Route::post('/users', [UsersController::class, 'store'])->name('users.store');
+    Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
 });
-
-Route::get('/sites', [SiteController::class, 'index'])->name('sites.index');
-Route::get('/sites/create', [SiteController::class, 'create'])->name('sites.create');
-Route::post('/sites', [SiteController::class, 'store'])->name('sites.store');
-Route::get('/sites/{site}', [SiteController::class, 'show'])->name('sites.show');
-Route::post('/sites/{site}/release', [SiteController::class, 'createRelease'])->name('sites.release');
-Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraft'])->name('sites.download.draft');
-Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
-Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
-
-}); // end PasswordGate
 
 Route::get('/preview/{token}/{path?}', PreviewController::class)->where('path', '.*')->name('preview');
