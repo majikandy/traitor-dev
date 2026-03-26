@@ -132,10 +132,8 @@ async function registerPasskey() {
 
         const credential = await navigator.credentials.create({ publicKey: options });
 
-        const name = prompt('Name this passkey (e.g. "MacBook Touch ID"):', 'Passkey') || 'Passkey';
-
         const body = {
-            name,
+            name: 'Passkey',
             id: credential.id,
             rawId: bufferToBase64url(credential.rawId),
             type: credential.type,
