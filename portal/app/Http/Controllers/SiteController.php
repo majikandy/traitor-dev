@@ -130,9 +130,9 @@ class SiteController extends Controller
         return back()->with('error', 'DNS not yet propagated — ' . $site->domain . ' does not point to this server yet. Try again in a few minutes.');
     }
 
-    public function promoteRelease(Site $site, Release $release)
+    public function promoteRelease(Site $site, int $version)
     {
-        abort_if($release->site_id !== $site->id, 404);
+        $release = $site->releases()->where('version', $version)->firstOrFail();
 
         $this->siteService->promote($site, $release->version);
 

@@ -159,7 +159,7 @@
                     <span class="text-xs text-gray-400">{{ $release->created_at->diffForHumans() }}</span>
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
                     @if(!$isLive)
-                        <form method="POST" action="{{ route('sites.releases.promote', [$site, $release]) }}">
+                        <form method="POST" action="{{ route('sites.releases.promote', [$site, $release->version]) }}">
                             @csrf
                             <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition">Go Live</button>
                         </form>
