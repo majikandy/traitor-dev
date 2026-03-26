@@ -16,6 +16,7 @@ jobs:
         with:
           server: ftp.traitor.dev
           port: 21
+          protocol: ftps
           username: ${{ secrets.FTP_USER_MARKETING }}
           password: ${{ secrets.FTP_PASS_MARKETING }}
           local-dir: marketing/
@@ -26,6 +27,7 @@ jobs:
         with:
           server: ftp.traitor.dev
           port: 21
+          protocol: ftps
           username: ${{ secrets.FTP_USER_PORTAL }}
           password: ${{ secrets.FTP_PASS_PORTAL }}
           local-dir: portal/
