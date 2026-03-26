@@ -109,8 +109,32 @@
         @endif
     </div>
 
+    {{-- Preview panel --}}
+    <div>
+        <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-medium text-gray-500">Previewing</span>
+                <span id="preview-label" class="text-xs font-semibold text-gray-900">v{{ $firstRelease->version }}</span>
+                <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1">↺</button>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
+                <a id="preview-open-link" href="{{ $firstRelease->previewUrl() }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
+            </div>
+        </div>
+        <div id="preview-container" class="relative w-full bg-gray-100 overflow-hidden transition-all duration-300" style="height: 360px;">
+            <iframe
+                id="preview-iframe"
+                src="{{ $firstRelease->previewUrl() }}"
+                class="absolute border-0"
+                style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left; left: calc(50% - 288px); top: 0;"
+                loading="lazy"
+            ></iframe>
+        </div>
+    </div>
+
     {{-- Release rows --}}
-    <div class="divide-y divide-gray-100">
+    <div class="divide-y divide-gray-100 border-t border-gray-100">
         @foreach($sortedReleases as $release)
             @php $isLive = $release->version === $site->live_release; @endphp
             <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
@@ -144,30 +168,6 @@
             </div>
         @endforeach
     </div>
-
-    {{-- Preview panel --}}
-    <div class="border-t border-gray-100">
-        <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-medium text-gray-500">Previewing</span>
-                <span id="preview-label" class="text-xs font-semibold text-gray-900">v{{ $firstRelease->version }}</span>
-                <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1">↺</button>
-            </div>
-            <div class="flex items-center gap-3">
-                <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
-                <a id="preview-open-link" href="{{ $firstRelease->previewUrl() }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
-            </div>
-        </div>
-        <div id="preview-container" class="relative w-full bg-gray-100 overflow-hidden transition-all duration-300" style="height: 360px;">
-            <iframe
-                id="preview-iframe"
-                src="{{ $firstRelease->previewUrl() }}"
-                class="absolute border-0"
-                style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left; left: calc(50% - 288px); top: 0;"
-                loading="lazy"
-            ></iframe>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -181,8 +181,6 @@ function selectRelease(row) {
     document.getElementById('preview-iframe').src = url;
     document.getElementById('preview-open-link').href = url;
     document.getElementById('preview-label').textContent = row.dataset.version;
-    // Scroll preview into view
-    document.getElementById('preview-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 function resetPreview() {
     document.getElementById('preview-iframe').src = document.getElementById('preview-iframe').src;
