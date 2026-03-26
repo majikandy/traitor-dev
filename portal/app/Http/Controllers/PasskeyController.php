@@ -32,8 +32,8 @@ class PasskeyController extends Controller
 
     private function loader(): PublicKeyCredentialLoader
     {
-        $manager = AttestationStatementSupportManager::create()
-            ->add(NoneAttestationStatementSupport::create());
+        $manager = AttestationStatementSupportManager::create();
+        $manager->add(NoneAttestationStatementSupport::create());
 
         return PublicKeyCredentialLoader::create(AttestationObjectLoader::create($manager));
     }
