@@ -11,6 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install SSH key
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
       - name: Setup PHP 8.3
         uses: shivammathur/setup-php@v2
         with:
@@ -21,32 +27,45 @@ jobs:
           mkdir -p portal/bootstrap/cache
           composer install --no-dev --optimize-autoloader --working-dir=portal
 
-      - name: Deploy marketing site via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ftp.traitor.dev
-          port: 21
-          protocol: ftps
-          security: loose
-          username: ${{ secrets.FTP_USER_MARKETING }}
-          password: ${{ secrets.FTP_PASS_MARKETING }}
-          local-dir: marketing/
-          server-dir: /
+      - name: Deploy marketing site
+        run: |
+          rsync -azP --delete \
+            -e "ssh -q -o StrictHostKeyChecking=no" \
+            marketing/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.MARKETING_PATH }}/
 
-      - name: Deploy portal via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ftp.traitor.dev
-          port: 21
-          protocol: ftps
-          security: loose
-          username: ${{ secrets.FTP_USER_PORTAL }}
-          password: ${{ secrets.FTP_PASS_PORTAL }}
-          local-dir: portal/
-          server-dir: /
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/.env
-            **/bootstrap/cache/**
+      - name: Deploy portal (zero-downtime)
+        run: |
+          RELEASE=$(date +%Y%m%d%H%M%S)
+          DEPLOY_PATH=${{ secrets.DEPLOY_PATH }}
+          SSH="ssh -q -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+
+          # Upload new release
+          $SSH "mkdir -p ${DEPLOY_PATH}/releases/${RELEASE}"
+          rsync -azP \
+            -e "ssh -q -o StrictHostKeyChecking=no" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='storage' \
+            --exclude='bootstrap/cache/*' \
+            portal/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${DEPLOY_PATH}/releases/${RELEASE}/
+
+          # Link shared .env and storage
+          $SSH "
+            ln -sfn ${DEPLOY_PATH}/shared/.env ${DEPLOY_PATH}/releases/${RELEASE}/.env
+            ln -sfn ${DEPLOY_PATH}/shared/storage ${DEPLOY_PATH}/releases/${RELEASE}/storage
+            mkdir -p ${DEPLOY_PATH}/releases/${RELEASE}/bootstrap/cache
+            cd ${DEPLOY_PATH}/releases/${RELEASE}
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+          "
+
+          # Atomic swap
+          $SSH "ln -sfn ${DEPLOY_PATH}/releases/${RELEASE} ${DEPLOY_PATH}/live"
+
+          # Keep last 5 releases
+          $SSH "ls -1dt ${DEPLOY_PATH}/releases/*/ | tail -n +6 | xargs rm -rf"
