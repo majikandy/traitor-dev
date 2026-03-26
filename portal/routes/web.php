@@ -67,6 +67,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
     Route::post('/sites/{site}/release', [SiteController::class, 'createRelease'])->name('sites.release');
     Route::post('/sites/{site}/releases/{release}/promote', [SiteController::class, 'promoteRelease'])->name('sites.releases.promote');
+    Route::post('/sites/{site}/domain', [SiteController::class, 'attachDomain'])->name('sites.domain.attach');
+    Route::delete('/sites/{site}/domain', [SiteController::class, 'detachDomain'])->name('sites.domain.detach');
+    Route::post('/sites/{site}/domain/check-dns', [SiteController::class, 'checkDns'])->name('sites.domain.check-dns');
     Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraft'])->name('sites.download.draft');
     Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');

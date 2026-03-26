@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'cpanel' => [
+        'host'  => env('CPANEL_HOST'),
+        'user'  => env('CPANEL_USER'),
+        'token' => env('CPANEL_TOKEN'),
+    ],
+
 ];

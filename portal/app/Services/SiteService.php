@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Release;
 use App\Models\Site;
+use App\Services\CpanelService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
@@ -64,6 +65,48 @@ class SiteService
         $site->update(['current_release' => $nextVersion]);
 
         return $release;
+    }
+
+    public function attachDomain(Site $site, string $domain, CpanelService $cpanel): void
+    {
+        $this->ensureLiveSymlink($site);
+
+        $homeDir  = '/home/' . config('services.cpanel.user');
+        $docroot  = ltrim(str_replace($homeDir . '/', '', $site->sitesPath() . '/live/public'), '/');
+
+        $cpanel->createAddonDomain($domain, $docroot);
+
+        $site->update(['domain' => $domain, 'domain_status' => 'pending_dns']);
+    }
+
+    public function detachDomain(Site $site, CpanelService $cpanel): void
+    {
+        $cpanel->removeAddonDomain($site->domain);
+
+        $site->update(['domain' => null, 'domain_status' => null]);
+    }
+
+    public function checkDns(Site $site): bool
+    {
+        $serverIp = config('app.server_ip');
+        $resolved = gethostbyname($site->domain);
+
+        return $resolved === $serverIp;
+    }
+
+    private function ensureLiveSymlink(Site $site): void
+    {
+        $livePath = $site->sitesPath() . '/live';
+
+        if (file_exists($livePath) || is_link($livePath)) {
+            return;
+        }
+
+        $target = $site->live_release
+            ? $site->sitesPath() . '/releases/' . $site->live_release
+            : $site->sitesPath() . '/drafts';
+
+        symlink($target, $livePath);
     }
 
     public function promote(Site $site, int $version): void

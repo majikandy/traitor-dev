@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Release;
 use App\Models\Site;
+use App\Services\CpanelService;
 use App\Services\SiteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -94,6 +95,39 @@ class SiteController extends Controller
         $zip->close();
 
         return response()->download($tempFile, $filename)->deleteFileAfterSend();
+    }
+
+    public function attachDomain(Request $request, Site $site, CpanelService $cpanel)
+    {
+        $request->validate(['domain' => 'required|string|max:255|regex:/^[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}$/']);
+
+        $domain = strtolower($request->domain);
+
+        if (Site::where('domain', $domain)->where('id', '!=', $site->id)->exists()) {
+            return back()->withErrors(['domain' => 'That domain is already attached to another site.']);
+        }
+
+        $this->siteService->attachDomain($site, $domain, $cpanel);
+
+        return back()->with('success', "Domain {$domain} attached. Now point its A record to " . config('app.server_ip') . '.');
+    }
+
+    public function detachDomain(Site $site, CpanelService $cpanel)
+    {
+        $this->siteService->detachDomain($site, $cpanel);
+
+        return back()->with('success', 'Domain removed.');
+    }
+
+    public function checkDns(Site $site, CpanelService $cpanel)
+    {
+        if ($this->siteService->checkDns($site)) {
+            $site->update(['domain_status' => 'active']);
+            $cpanel->triggerAutoSsl();
+            return back()->with('success', 'DNS verified! SSL is being provisioned automatically.');
+        }
+
+        return back()->with('error', 'DNS not yet propagated — ' . $site->domain . ' does not point to this server yet. Try again in a few minutes.');
     }
 
     public function promoteRelease(Site $site, Release $release)

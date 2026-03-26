@@ -59,6 +59,73 @@
     </div>
 </div>
 
+{{-- Domain --}}
+<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
+    <div class="flex items-center gap-3 mb-4">
+        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-50">
+            <svg class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5a17.92 17.92 0 0 1-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" /></svg>
+        </div>
+        <h2 class="text-base font-semibold text-gray-900">Custom Domain</h2>
+    </div>
+
+    @if(!$site->domain)
+        {{-- No domain: attach form --}}
+        <form method="POST" action="{{ route('sites.domain.attach', $site) }}" class="flex gap-3">
+            @csrf
+            <input type="text" name="domain" placeholder="toptoast.com"
+                value="{{ old('domain') }}"
+                class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 {{ $errors->has('domain') ? 'border-red-400' : '' }}">
+            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition">Attach domain</button>
+        </form>
+        @error('domain')
+            <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+        @enderror
+
+    @elseif($site->domain_status === 'pending_dns')
+        {{-- Waiting for DNS --}}
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                        <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>Waiting for DNS
+                    </span>
+                    <span class="text-sm font-medium text-gray-900">{{ $site->domain }}</span>
+                </div>
+                <p class="text-sm text-gray-500 mb-3">Point your domain's A record to <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono">{{ config('app.server_ip') }}</code> then click Check DNS.</p>
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-mono text-gray-700 space-y-1 mb-4">
+                    <div><span class="text-gray-400 mr-4">@</span>A<span class="float-right">{{ config('app.server_ip') }}</span></div>
+                    <div><span class="text-gray-400 mr-2">www</span>A<span class="float-right">{{ config('app.server_ip') }}</span></div>
+                </div>
+                <form method="POST" action="{{ route('sites.domain.check-dns', $site) }}">
+                    @csrf
+                    <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition">Check DNS</button>
+                </form>
+            </div>
+            <form method="POST" action="{{ route('sites.domain.detach', $site) }}">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition" onclick="return confirm('Remove {{ $site->domain }}?')">Remove</button>
+            </form>
+        </div>
+
+    @elseif($site->domain_status === 'active')
+        {{-- Domain live --}}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Active
+                </span>
+                <a href="https://{{ $site->domain }}" target="_blank" class="text-sm font-medium text-brand-600 hover:underline">{{ $site->domain }}</a>
+            </div>
+            <form method="POST" action="{{ route('sites.domain.detach', $site) }}">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition" onclick="return confirm('Remove {{ $site->domain }}?')">Remove</button>
+            </form>
+        </div>
+    @endif
+</div>
+
 {{-- Site Preview --}}
 @if($site->current_release > 0)
     @php $latestRelease = $site->releases->sortByDesc('version')->first(); @endphp
