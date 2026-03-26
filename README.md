@@ -107,14 +107,28 @@ cPanel subdomains:
 
 ### First-time server setup
 
-Run once after provisioning (requires shell access):
+**1. cPanel — create the MySQL database:**
+- cPanel → MySQL Databases → create database `traitor8921_portal`
+- Create user `traitor8921_portaluser` with a strong password
+- Add user to database → grant **All Privileges**
 
+**2. cPanel — set PHP version:**
+- cPanel → MultiPHP Manager → set `portal.traitor.dev` to **PHP 8.3**
+
+**3. cPanel — set subdomain document roots:**
+- `traitor.dev` → `public_html`
+- `portal.traitor.dev` → `portal/live/public`
+
+**4. Create shared storage (run once via SSH):**
 ```bash
 mkdir -p ~/portal/shared/storage/logs
 mkdir -p ~/portal/shared/storage/app/public
 mkdir -p ~/portal/shared/storage/framework/{cache/data,sessions,views}
-# Upload .env.production as ~/portal/shared/.env
 ```
+
+**5. Upload `.env`:**
+- Copy `portal/.env.production` to `~/portal/shared/.env` on the server
+- Never commit `.env` to git
 
 ### SSH deploy key setup
 
@@ -134,17 +148,14 @@ ssh-keygen -t ed25519 -C "traitor.dev deploy" -f ~/.ssh/traitordev_deploy -N ""
 | Secret | Value |
 |---|---|
 | `SSH_PRIVATE_KEY` | `cat ~/.ssh/traitordev_deploy` |
-| `SSH_KNOWN_HOSTS` | `ssh-keyscan grh17.myukcloud.com` |
-| `SSH_HOST` | `grh17.myukcloud.com` |
+| `SSH_KNOWN_HOSTS` | `ssh-keyscan traitor.dev` |
+| `SSH_HOST` | `traitor.dev` |
 | `SSH_USER` | `traitor8921` |
-| `DEPLOY_PATH` | `~/portal` |
-| `MARKETING_PATH` | `~/public_html` |
+| `DEPLOY_PATH` | `/home/traitor8921/portal` |
+| `MARKETING_PATH` | `/home/traitor8921/public_html` |
 
 **4. Trigger a deploy** — push to `main` or Actions → Deploy → Run workflow.
 
-### .env setup
-
-Copy `portal/.env.production` to `~/portal/shared/.env` on the server. Never commit `.env` to git.
 
 ## License
 
