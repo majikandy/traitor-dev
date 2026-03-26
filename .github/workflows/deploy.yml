@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader --working-dir=portal
+
       - name: Deploy marketing site via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -37,7 +40,6 @@ jobs:
           exclude: |
             **/.git*
             **/.git*/**
-            **/vendor/**
             **/node_modules/**
             **/.env
             **/storage/logs/**
