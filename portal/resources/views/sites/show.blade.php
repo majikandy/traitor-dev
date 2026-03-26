@@ -51,18 +51,49 @@
     @php $latestRelease = $site->releases->sortByDesc('version')->first(); @endphp
     <div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="text-base font-semibold text-gray-900">Live Preview</h2>
-            <a href="{{ $latestRelease->previewUrl() }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open full preview</a>
+            <div class="flex items-center gap-3">
+                <h2 class="text-base font-semibold text-gray-900">Live Preview</h2>
+                <span class="text-xs text-gray-400">Click around — it's interactive</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="resetPreview()" class="text-xs text-gray-500 hover:text-gray-700 transition">↺ Home</button>
+                <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-500 hover:text-gray-700 transition">⤢ Expand</button>
+                <a href="{{ $latestRelease->previewUrl() }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
+            </div>
         </div>
-        <div class="relative w-full bg-gray-100" style="height: 360px; overflow: hidden;">
+        <div id="preview-container" class="relative w-full bg-gray-100 overflow-hidden transition-all duration-300" style="height: 360px;">
             <iframe
+                id="preview-iframe"
                 src="{{ $latestRelease->previewUrl() }}"
-                class="absolute top-0 left-0 border-0"
-                style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left;"
+                data-src="{{ $latestRelease->previewUrl() }}"
+                class="absolute border-0"
+                style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left; left: calc(50% - 288px); top: 0;"
                 loading="lazy"
-                sandbox="allow-same-origin"
             ></iframe>
         </div>
+        <script>
+        function resetPreview() {
+            var f = document.getElementById('preview-iframe');
+            f.src = f.dataset.src;
+        }
+        function toggleExpand() {
+            var c = document.getElementById('preview-container');
+            var f = document.getElementById('preview-iframe');
+            var btn = document.getElementById('expand-btn');
+            if (c.style.height === '360px') {
+                c.style.height = '700px';
+                f.style.transform = 'scale(0.875)';
+                f.style.left = 'calc(50% - 560px)';
+                f.style.height = '800px';
+                btn.textContent = '⤡ Collapse';
+            } else {
+                c.style.height = '360px';
+                f.style.transform = 'scale(0.45)';
+                f.style.left = 'calc(50% - 288px)';
+                btn.textContent = '⤢ Expand';
+            }
+        }
+        </script>
     </div>
 @endif
 
