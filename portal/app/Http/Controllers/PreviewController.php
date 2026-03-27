@@ -105,7 +105,8 @@ class PreviewController extends Controller
     {
         $site = Site::where('preview_token', $token)->first();
         if ($site) {
-            return [$site->livePath() . '/public', $site->name];
+            $label = $site->maintenance_mode ? $site->name . ' — Maintenance mode' : $site->name . ' (live)';
+            return [$site->livePath() . '/public', $label];
         }
 
         $release = Release::where('preview_token', $token)->first();
