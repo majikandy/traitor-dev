@@ -79,13 +79,29 @@ class GitHubController extends Controller
             'branch'    => ['nullable', 'string', 'max:255'],
         ]);
 
+        $repo     = $request->input('repo');
+        $repoPath = $request->filled('repo_path') ? trim($request->input('repo_path'), '/') : null;
+        $branch   = $request->filled('branch') ? $request->input('branch') : null;
+
         $site->update([
-            'github_repo'      => $request->input('repo'),
-            'github_repo_path' => $request->filled('repo_path') ? trim($request->input('repo_path'), '/') : null,
-            'github_branch'    => $request->filled('branch') ? $request->input('branch') : null,
+            'github_repo'      => $repo,
+            'github_repo_path' => $repoPath,
+            'github_branch'    => $branch,
         ]);
 
-        return redirect()->route('sites.show', $site)->with('success', 'GitHub repository connected.');
+        $installationId = $site->organisation->github_installation_id;
+        $ref            = $branch ?? 'HEAD';
+        $zipPath        = $this->github->downloadZipball($installationId, $repo, $ref);
+
+        try {
+            $this->siteService->uploadFromPath($site, $zipPath, $repoPath);
+            $release = $this->siteService->createRelease($site, "Initial import from {$repo}");
+        } finally {
+            @unlink($zipPath);
+        }
+
+        return redirect()->route('sites.show', $site)
+            ->with('success', "GitHub connected and release v{$release->version} created from {$repo}.");
     }
 
     public function toggleAutoDeploy(Site $site): RedirectResponse
