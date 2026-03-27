@@ -161,7 +161,7 @@
                         <button id="view-desktop-btn" onclick="setView('desktop')" class="rounded-md px-2 py-1 text-xs font-medium bg-white text-gray-900 shadow-sm transition">Desktop</button>
                         <button id="view-mobile-btn" onclick="setView('mobile')" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition">Mobile</button>
                     </div>
-                    <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢</button>
+                    <button onclick="toggleExpand()" id="expand-btn" class="text-sm text-gray-400 hover:text-gray-600 transition leading-none p-1">⤢</button>
                     <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline flex-shrink-0">↗</a>
                 </div>
             </div>
