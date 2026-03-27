@@ -38,7 +38,7 @@
                 <a href="{{ route('github.select-repo-form', $site) }}" class="text-sm text-gray-500 hover:text-gray-700 transition">Refresh</a>
             </div>
         @else
-            <form method="POST" action="{{ route('github.select-repo', $site) }}">
+            <form method="POST" action="{{ route('github.select-repo', $site) }}" id="repo-form">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Repository</label>
@@ -62,12 +62,26 @@
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                 </div>
                 <div class="flex items-center gap-3">
-                    <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition">
-                        Connect repository
+                    <button type="submit" id="submit-btn" class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed">
+                        <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                        </svg>
+                        <span id="submit-label">Connect repository</span>
                     </button>
                     <a href="{{ route('sites.show', $site) }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
                 </div>
             </form>
+            <script>
+                document.getElementById('repo-form').addEventListener('submit', function () {
+                    var btn = document.getElementById('submit-btn');
+                    var spinner = document.getElementById('submit-spinner');
+                    var label = document.getElementById('submit-label');
+                    btn.disabled = true;
+                    spinner.classList.remove('hidden');
+                    label.textContent = 'Connecting…';
+                });
+            </script>
         @endif
     </div>
 </div>
