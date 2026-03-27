@@ -105,7 +105,7 @@ class PreviewController extends Controller
     {
         $site = Site::where('preview_token', $token)->first();
         if ($site) {
-            return [$site->draftsPath(), $site->name . ' (draft)'];
+            return [$site->livePath() . '/public', $site->name];
         }
 
         $release = Release::where('preview_token', $token)->first();
