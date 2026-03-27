@@ -16,21 +16,21 @@ class MultiTenancyTest extends TestCase
     {
         $org1  = Organisation::factory()->create();
         $user1 = User::factory()->create(['organisation_id' => $org1->id]);
-        $site1 = Site::factory()->create(['organisation_id' => $org1->id, 'name' => 'Org1 Site']);
+        Site::factory()->create(['organisation_id' => $org1->id, 'name' => 'Org1 Site']);
 
         $org2  = Organisation::factory()->create();
         $user2 = User::factory()->create(['organisation_id' => $org2->id]);
-        $site2 = Site::factory()->create(['organisation_id' => $org2->id, 'name' => 'Org2 Site']);
+        Site::factory()->create(['organisation_id' => $org2->id, 'name' => 'Org2 Site']);
 
-        // user1 sees only their site
-        $this->actingAs($user1);
-        $this->assertCount(1, Site::all());
-        $this->assertSame('Org1 Site', Site::first()->name);
+        $this->actingAs($user1)->get('/sites')
+            ->assertOk()
+            ->assertSee('Org1 Site')
+            ->assertDontSee('Org2 Site');
 
-        // user2 sees only their site
-        $this->actingAs($user2);
-        $this->assertCount(1, Site::all());
-        $this->assertSame('Org2 Site', Site::first()->name);
+        $this->actingAs($user2)->get('/sites')
+            ->assertOk()
+            ->assertSee('Org2 Site')
+            ->assertDontSee('Org1 Site');
     }
 
     public function test_cannot_view_another_orgs_site(): void

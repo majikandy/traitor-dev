@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Organisation;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -33,14 +34,15 @@ class TeamTest extends TestCase
                  ->assertDontSee('Carol');
     }
 
-    public function test_team_page_shows_org_name_in_members_header(): void
+    public function test_team_page_shows_business_name_in_members_header(): void
     {
-        $org  = Organisation::factory()->create(['name' => 'Fancy Agency']);
+        $org  = Organisation::factory()->create();
         $user = User::factory()->create(['organisation_id' => $org->id]);
+        Setting::create(['key' => 'business_name', 'value' => 'Fancy Agency', 'organisation_id' => $org->id]);
 
-        // Business name comes from settings; org name comes from the org relation
-        // The view shows "{businessName} organisation"
-        $this->actingAs($user)->get('/team')->assertOk();
+        $this->actingAs($user)->get('/team')
+            ->assertOk()
+            ->assertSee('Fancy Agency');
     }
 
     public function test_cannot_remove_yourself(): void

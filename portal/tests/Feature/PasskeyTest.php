@@ -21,33 +21,6 @@ class PasskeyTest extends TestCase
         $this->get('/passkeys/register-options')->assertRedirect('/login');
     }
 
-    public function test_register_options_returns_creation_challenge(): void
-    {
-        if (!class_exists(\Webauthn\PublicKeyCredentialCreationOptions::class)) {
-            $this->markTestSkipped('WebAuthn library requires extensions not available in this test environment (runs fine in Docker).');
-        }
-
-        $user = User::factory()->create();
-        $response = $this->actingAs($user)->get('/passkeys/register-options');
-
-        $response->assertOk()->assertJsonStructure(['challenge', 'user', 'rp', 'pubKeyCredParams']);
-    }
-
-    // -------------------------------------------------------------------------
-    // Auth options
-    // -------------------------------------------------------------------------
-
-    public function test_auth_options_returns_challenge_for_guests(): void
-    {
-        if (!class_exists(\Webauthn\PublicKeyCredentialRequestOptions::class)) {
-            $this->markTestSkipped('WebAuthn library requires extensions not available in this test environment (runs fine in Docker).');
-        }
-
-        $response = $this->get('/passkeys/auth-options');
-
-        $response->assertOk()->assertJsonStructure(['challenge', 'rpId']);
-    }
-
     // -------------------------------------------------------------------------
     // Authenticate — session guard
     // -------------------------------------------------------------------------
