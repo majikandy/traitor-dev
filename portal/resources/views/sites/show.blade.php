@@ -154,48 +154,35 @@
                 <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1" title="Back to live site">↺</button>
             </div>
             <div class="flex items-center gap-3">
+                {{-- Mobile / Desktop toggle --}}
+                <div class="flex items-center gap-0.5 rounded-lg bg-gray-200 p-0.5">
+                    <button id="view-desktop-btn" onclick="setView('desktop')" class="rounded-md px-2.5 py-1 text-xs font-medium bg-white text-gray-900 shadow-sm transition">Desktop</button>
+                    <button id="view-mobile-btn" onclick="setView('mobile')" class="rounded-md px-2.5 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition">Mobile</button>
+                </div>
                 <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
                 <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
             </div>
         </div>
-        <div id="preview-container" class="flex w-full overflow-hidden transition-all duration-300" style="height: 360px; background: #e5e7eb;">
-            {{-- iPhone 17 preview --}}
-            <div id="phone-panel" class="flex-shrink-0 flex items-start justify-center overflow-hidden border-r border-gray-300 bg-gray-200/60 transition-all duration-300" style="width: 180px;">
-                <div id="phone-frame" style="width: 414px; transform: scale(0.38); transform-origin: top center; position: relative; flex-shrink: 0;">
-                    {{-- Device body --}}
-                    <div style="background:#1c1c1e;border-radius:50px;padding:44px 12px 32px;box-shadow:0 0 0 1px #3a3a3c,inset 0 0 0 1px #444,0 30px 70px rgba(0,0,0,0.6);position:relative;">
-                        {{-- Volume up --}}
-                        <div style="position:absolute;left:-3px;top:160px;width:3px;height:32px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
-                        {{-- Volume down --}}
-                        <div style="position:absolute;left:-3px;top:210px;width:3px;height:64px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
-                        {{-- Action button --}}
+        <div id="preview-container" class="relative w-full overflow-hidden transition-all duration-300" style="height: 360px; background: #e5e7eb;">
+            {{-- Mobile / iPhone 17 view (hidden by default) --}}
+            <div id="phone-view" class="absolute inset-0 hidden" style="background:#e5e7eb;">
+                <div id="phone-frame" style="position:absolute;top:0;left:calc(50% - 207px);width:414px;transform:scale(0.38);transform-origin:top center;">
+                    <div style="background:#1c1c1e;border-radius:50px;padding:10px 8px 10px;box-shadow:0 0 0 1px #3a3a3c,inset 0 0 0 1px #444,0 30px 70px rgba(0,0,0,0.6);position:relative;">
                         <div style="position:absolute;left:-3px;top:110px;width:3px;height:36px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
-                        {{-- Power --}}
+                        <div style="position:absolute;left:-3px;top:160px;width:3px;height:32px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
+                        <div style="position:absolute;left:-3px;top:210px;width:3px;height:64px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
                         <div style="position:absolute;right:-3px;top:200px;width:3px;height:80px;background:#3a3a3c;border-radius:0 2px 2px 0;"></div>
-                        {{-- Screen --}}
                         <div style="width:390px;height:844px;background:#000;border-radius:44px;overflow:hidden;position:relative;">
-                            {{-- Dynamic Island --}}
                             <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:34px;background:#000;border-radius:20px;z-index:10;box-shadow:0 0 0 3px #111;pointer-events:none;"></div>
-                            <iframe
-                                id="preview-mobile-iframe"
-                                src="{{ $defaultPreviewSrc }}"
-                                style="width:390px;height:844px;border:none;display:block;"
-                                loading="lazy"
-                            ></iframe>
+                            <iframe id="preview-mobile-iframe" src="{{ $defaultPreviewSrc }}" style="width:390px;height:844px;border:none;display:block;" loading="lazy"></iframe>
                         </div>
                     </div>
                 </div>
             </div>
-            {{-- Desktop preview --}}
-            <div class="flex-1 relative overflow-hidden">
-                <iframe
-                    id="preview-iframe"
-                    src="{{ $defaultPreviewSrc }}"
-                    class="absolute border-0"
-                    style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left; left: calc(50% - 288px); top: 0;"
-                    loading="lazy"
-                ></iframe>
-            </div>
+            {{-- Desktop view (shown by default) --}}
+            <iframe id="preview-iframe" src="{{ $defaultPreviewSrc }}" class="absolute border-0"
+                style="width:1280px;height:800px;transform:scale(0.45);transform-origin:top left;left:calc(50% - 288px);top:0;"
+                loading="lazy"></iframe>
         </div>
     </div>
 
@@ -386,29 +373,53 @@ function goLive(btn) {
         btn.textContent = 'Go Live';
     });
 }
+var currentView = 'desktop';
+function setView(view) {
+    currentView = view;
+    var phoneView = document.getElementById('phone-view');
+    var desktopIframe = document.getElementById('preview-iframe');
+    var dBtn = document.getElementById('view-desktop-btn');
+    var mBtn = document.getElementById('view-mobile-btn');
+    var active = 'bg-white text-gray-900 shadow-sm';
+    var inactive = 'text-gray-500 hover:text-gray-700';
+    if (view === 'mobile') {
+        phoneView.classList.remove('hidden');
+        desktopIframe.style.visibility = 'hidden';
+        mBtn.className = 'rounded-md px-2.5 py-1 text-xs font-medium transition ' + active;
+        dBtn.className = 'rounded-md px-2.5 py-1 text-xs font-medium transition ' + inactive;
+    } else {
+        phoneView.classList.add('hidden');
+        desktopIframe.style.visibility = '';
+        dBtn.className = 'rounded-md px-2.5 py-1 text-xs font-medium transition ' + active;
+        mBtn.className = 'rounded-md px-2.5 py-1 text-xs font-medium transition ' + inactive;
+    }
+}
 function toggleExpand() {
     var c = document.getElementById('preview-container');
-    var f = document.getElementById('preview-iframe');
-    var phonePanel = document.getElementById('phone-panel');
-    var phoneFrame = document.getElementById('phone-frame');
     var btn = document.getElementById('expand-btn');
-    if (c.style.height === '360px') {
-        c.style.height = '700px';
-        f.style.transform = 'scale(0.875)';
-        f.style.left = 'calc(50% - 560px)';
-        f.style.height = '800px';
-        phonePanel.style.width = '320px';
-        phoneFrame.style.transform = 'scale(0.72)';
-        btn.textContent = '⤡ Collapse';
+    var expanded = c.style.height === '700px';
+    if (currentView === 'desktop') {
+        var f = document.getElementById('preview-iframe');
+        if (!expanded) {
+            c.style.height = '700px';
+            f.style.transform = 'scale(0.875)';
+            f.style.left = 'calc(50% - 560px)';
+        } else {
+            c.style.height = '360px';
+            f.style.transform = 'scale(0.45)';
+            f.style.left = 'calc(50% - 288px)';
+        }
     } else {
-        c.style.height = '360px';
-        f.style.transform = 'scale(0.45)';
-        f.style.left = 'calc(50% - 288px)';
-        f.style.height = '800px';
-        phonePanel.style.width = '180px';
-        phoneFrame.style.transform = 'scale(0.38)';
-        btn.textContent = '⤢ Expand';
+        var pf = document.getElementById('phone-frame');
+        if (!expanded) {
+            c.style.height = '700px';
+            pf.style.transform = 'scale(0.72)';
+        } else {
+            c.style.height = '360px';
+            pf.style.transform = 'scale(0.38)';
+        }
     }
+    btn.textContent = expanded ? '⤢ Expand' : '⤡ Collapse';
 }
 </script>
 @else
