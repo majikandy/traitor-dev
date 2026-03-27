@@ -62,6 +62,23 @@ class GitHubService
         return $tmpPath;
     }
 
+    public function setCommitStatus(int $installationId, string $repo, string $sha, string $state, string $description): void
+    {
+        $token = $this->getInstallationToken($installationId);
+
+        $response = Http::withToken($token)
+            ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28'])
+            ->post("https://api.github.com/repos/{$repo}/statuses/{$sha}", [
+                'state'       => $state,
+                'description' => $description,
+                'context'     => 'traitor.dev',
+            ]);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException("GitHub status update failed: " . $response->body());
+        }
+    }
+
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
         $expected = 'sha256=' . hash_hmac('sha256', $payload, $this->webhookSecret);

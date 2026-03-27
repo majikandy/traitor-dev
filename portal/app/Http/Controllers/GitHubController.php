@@ -123,21 +123,30 @@ class GitHubController extends Controller
             }
         }
 
-        $zipPath = $this->github->downloadZipball($installationId, $repoFullName, $data['after']);
+        $sha = $data['after'];
+
+        $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'pending', 'Creating release...');
+
+        $zipPath = $this->github->downloadZipball($installationId, $repoFullName, $sha);
 
         try {
             $this->siteService->uploadFromPath($site, $zipPath, $site->github_repo_path);
             $release = $this->siteService->createRelease(
                 $site,
-                'Auto-deployed from GitHub (' . substr($data['after'], 0, 7) . ')'
+                'Auto-deployed from GitHub (' . substr($sha, 0, 7) . ')'
             );
 
             if ($site->github_auto_deploy) {
                 $this->siteService->promote($site, $release->version);
             }
+        } catch (\Throwable $e) {
+            $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'failure', 'Release failed: ' . $e->getMessage());
+            throw $e;
         } finally {
             @unlink($zipPath);
         }
+
+        $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'success', 'Release v' . $release->version . ' created');
 
         return response()->json(['message' => 'deployed', 'version' => $release->version]);
     }
