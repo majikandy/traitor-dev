@@ -7,12 +7,12 @@
           {
             "type": "command",
             "if": "Bash(git commit*)",
-            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d['tool_input']['command'])\"); if echo \"$CMD\" | grep -q 'git commit'; then VERSION=$(date +\"%Y%m%d.%H%M\"); printf \"%s\" \"$VERSION\" > /Users/majikandy/Dev/traitordev/portal/VERSION; git -C /Users/majikandy/Dev/traitordev add portal/VERSION; echo \"Version set to: $VERSION\"; fi"
+            "command": "/Users/majikandy/Dev/traitordev/scripts/version-on-commit.sh"
           },
           {
             "type": "command",
             "if": "Bash(git push*)",
-            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d['tool_input']['command'])\"); if echo \"$CMD\" | grep -q 'git push'; then REPO=/Users/majikandy/Dev/traitordev; TODAY=$(date +\"%Y%m%d\"); COMMITTED=$(git -C \"$REPO\" show HEAD:portal/VERSION 2>/dev/null || echo \"\"); if [[ \"$COMMITTED\" != \"$TODAY\"* ]]; then VERSION=$(date +\"%Y%m%d.%H%M\"); printf \"%s\" \"$VERSION\" > \"$REPO/portal/VERSION\"; git -C \"$REPO\" add portal/VERSION; git -C \"$REPO\" commit -m \"Bump version to $VERSION\"; echo \"Version bumped to: $VERSION (pre-push fix)\"; else echo \"Version already current: $COMMITTED\"; fi; fi"
+            "command": "/Users/majikandy/Dev/traitordev/scripts/version-on-push.sh"
           }
         ]
       }
