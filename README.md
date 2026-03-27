@@ -158,32 +158,6 @@ ssh-keygen -t ed25519 -C "traitor.dev deploy" -f ~/.ssh/traitordev_deploy -N ""
 **4. Trigger a deploy** — push to `main` or Actions → Deploy → Run workflow.
 
 
-## Roadmap
-
-### AI / Core product
-- [ ] **LLM site builder** — describe changes in a text box, AI edits draft files directly and creates a release. The whole "Traitor to WordPress" pitch in one feature.
-- [ ] **AI-generated release notes** — auto-summarise what changed between releases by diffing the files
-
-### Workflow
-- [x] **Rollback with one tap** — prominent Rollback button on older releases
-- [ ] **Scheduled go-live** — pick a date/time for a release to go live automatically
-- [ ] **Compare releases** — visual diff between two releases in the preview (split view or toggle)
-
-### Visibility
-- [ ] **Analytics** — page view counts per site, server-side log parsing, no JS or cookie banners needed
-- [ ] **Uptime monitoring** — ping each live domain, show status dot, alert on downtime
-- [ ] **Form submissions** — catch `<form>` POSTs from customer sites, store and display in the portal
-
-### Collaboration / business
-- [ ] **Client portal** — read-only view for the end client to approve a release before it goes live
-- [ ] **Activity log per site** — who uploaded, who promoted, when — full audit trail
-
-### Technical
-- [ ] **Deploy from GitHub** — connect a repo, auto-create a release on push to main
-- [ ] **Custom 404 / error pages** — per-site, uploaded or edited in the portal
-
----
-
 ## License
 
 Proprietary.
