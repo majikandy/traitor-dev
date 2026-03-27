@@ -112,8 +112,9 @@
     $firstRelease = $sortedReleases->first();
     $hasDomain = $site->domain && $site->domain_status === 'active';
     $liveUrl = $hasDomain ? 'https://' . $site->domain : $site->previewUrl();
-    // Default preview = portal preview of the live/ symlink (always current, no release-specific)
-    $defaultPreviewSrc = $site->previewUrl();
+    // Default preview: live symlink when something is published, otherwise latest release
+    $defaultPreviewSrc = $site->live_release ? $site->previewUrl() : $firstRelease->previewUrl();
+    $defaultLabel = $site->live_release ? 'Live site' : ('v' . $firstRelease->version . ' (not live)');
     if ($site->maintenance_mode) {
         $defaultBadgeClass = 'bg-amber-100 text-amber-700';
         $defaultDotClass   = 'bg-amber-500';
@@ -145,7 +146,7 @@
             <div class="flex items-center justify-between gap-2 min-w-0">
                 <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
                     <span class="text-xs font-medium text-gray-400 hidden sm:inline">Previewing</span>
-                    <span id="preview-label" class="text-xs font-semibold text-gray-900 truncate hidden sm:inline">Live site</span>
+                    <span id="preview-label" class="text-xs font-semibold text-gray-900 truncate hidden sm:inline">{{ $defaultLabel }}</span>
                     <span id="preview-state-badge" class="{{ $defaultBadgeClass }} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold flex-shrink-0">
                         <span class="h-1.5 w-1.5 rounded-full {{ $defaultDotClass }}"></span>
                         {{ $defaultBadgeText }}
@@ -238,10 +239,12 @@
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
-                    @if($isLive && $hasDomain)
-                        <a href="{{ $liveUrl }}" target="_blank"
-                           class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
-                    @elseif(!$isLive && $hasDomain)
+                    @if($isLive)
+                        @if($hasDomain)
+                            <a href="{{ $liveUrl }}" target="_blank"
+                               class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
+                        @endif
+                    @else
                         @php $isRollback = $site->live_release && $release->version < $site->live_release; @endphp
                         <button type="button"
                             class="go-live-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition
@@ -250,8 +253,6 @@
                             data-version="{{ $release->version }}"
                             data-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
                             onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '↩ Rollback' : 'Go Live' }}</button>
-                    @elseif(!$hasDomain && $loop->first)
-                        <a href="{{ route('sites.show', $site) }}#domain" class="text-xs text-brand-600 hover:underline" onclick="event.stopPropagation()">Add domain ↓</a>
                     @endif
                 </div>
             </div>
@@ -262,8 +263,10 @@
 <script>
 var siteMetaLiveUrl = "{{ addslashes($liveUrl) }}";
 var siteMetaDefaultSrc = "{{ addslashes($defaultPreviewSrc) }}";
+var siteMetaDefaultLabel = "{{ addslashes($defaultLabel) }}";
 var siteMetaLiveVersion = {{ $site->live_release ?? 'null' }};
 var siteMaintenanceActive = {{ $site->maintenance_mode ? 'true' : 'false' }};
+var siteMetaHasDomain = {{ $hasDomain ? 'true' : 'false' }};
 
 function updatePreviewIndicator(isLive, isMaintenance) {
     var header = document.getElementById('preview-header');
@@ -306,9 +309,9 @@ function resetPreview() {
     });
     document.getElementById('preview-iframe').src = siteMetaDefaultSrc;
     document.getElementById('preview-mobile-iframe').src = siteMetaDefaultSrc;
-    document.getElementById('preview-open-link').href = siteMetaLiveUrl;
-    document.getElementById('preview-label').textContent = 'Live site';
-    updatePreviewIndicator(false, siteMaintenanceActive);
+    document.getElementById('preview-open-link').href = siteMetaDefaultSrc;
+    document.getElementById('preview-label').textContent = siteMetaDefaultLabel;
+    updatePreviewIndicator(!!siteMetaLiveVersion, siteMaintenanceActive);
 }
 function goLive(btn) {
     if (btn.dataset.confirm && !confirm(btn.dataset.confirm)) return;
@@ -340,7 +343,7 @@ function goLive(btn) {
                         '<span class="live-badge inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live</span>');
                 }
                 if (goLiveBtn) goLiveBtn.remove();
-                if (!visitLink && actionsDiv) {
+                if (!visitLink && actionsDiv && siteMetaHasDomain) {
                     actionsDiv.insertAdjacentHTML('beforeend',
                         '<a href="' + siteMetaLiveUrl + '" target="_blank" class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live \u2197</a>');
                 }
