@@ -29,10 +29,14 @@
         </div>
 
         @if(count($repos) === 0)
-            <p class="text-sm text-gray-500 mb-4">No repositories found. Make sure you granted access to at least one repo when installing the GitHub App.</p>
-            <a href="{{ route('github.install', $site) }}" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition">
-                Reinstall GitHub App
-            </a>
+            <p class="text-sm text-gray-500 mb-4">No repositories found. Grant access to at least one repository in the GitHub App settings, then come back.</p>
+            <div class="flex items-center gap-4">
+                <a href="{{ $site->organisation->githubInstallationUrl() }}" target="_blank" rel="noopener"
+                   class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition">
+                    Add repo access on GitHub ↗
+                </a>
+                <a href="{{ route('github.select-repo-form', $site) }}" class="text-sm text-gray-500 hover:text-gray-700 transition">Refresh</a>
+            </div>
         @else
             <form method="POST" action="{{ route('github.select-repo', $site) }}">
                 @csrf

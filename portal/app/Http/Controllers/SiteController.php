@@ -48,7 +48,7 @@ class SiteController extends Controller
 
     public function show(Site $site)
     {
-        $site->load('releases');
+        $site->load('releases', 'organisation');
 
         return view('sites.show', compact('site'));
     }

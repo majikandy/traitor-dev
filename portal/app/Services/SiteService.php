@@ -195,14 +195,17 @@ class SiteService
 
     public function delete(Site $site, GitHubService $github): void
     {
-        if ($site->github_installation_id) {
+        $org = $site->organisation;
+
+        if ($org && $org->github_installation_id) {
             $otherSites = Site::withoutGlobalScopes()
-                ->where('github_installation_id', $site->github_installation_id)
+                ->where('organisation_id', $org->id)
                 ->where('id', '!=', $site->id)
                 ->exists();
 
             if (!$otherSites) {
-                $github->deleteInstallation($site->github_installation_id);
+                $github->deleteInstallation($org->github_installation_id);
+                $org->update(['github_installation_id' => null]);
             }
         }
 

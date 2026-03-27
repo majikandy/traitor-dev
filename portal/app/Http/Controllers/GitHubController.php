@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Organisation;
 use App\Models\Site;
 use App\Services\GitHubService;
 use App\Services\SiteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class GitHubController extends Controller
@@ -17,26 +19,54 @@ class GitHubController extends Controller
         private SiteService $siteService,
     ) {}
 
+    /**
+     * Kick off the GitHub App installation flow.
+     * We remember which site the user came from so we can redirect back after.
+     */
     public function install(Site $site): RedirectResponse
     {
-        session(['github_connect_site_id' => $site->id]);
+        session([
+            'github_connect_site_id' => $site->id,
+            'github_connect_org_id'  => Auth::user()->organisation_id,
+        ]);
+
         return redirect($this->github->installUrl());
     }
 
-    public function callback(Request $request): RedirectResponse|View
+    /**
+     * GitHub redirects back here after installation.
+     * Save the installation_id on the organisation, then send the user
+     * to the repo-picker for their site.
+     */
+    public function callback(Request $request): RedirectResponse
     {
-        $siteId        = session('github_connect_site_id');
+        $siteId         = session('github_connect_site_id');
+        $orgId          = session('github_connect_org_id');
         $installationId = $request->integer('installation_id');
-        $action        = $request->input('setup_action');
+        $action         = $request->input('setup_action');
 
-        abort_unless($siteId && $installationId && in_array($action, ['install', 'update']), 400, 'Invalid GitHub callback.');
+        abort_unless($siteId && $orgId && $installationId && in_array($action, ['install', 'update']), 400, 'Invalid GitHub callback.');
+
+        Organisation::findOrFail($orgId)->update(['github_installation_id' => $installationId]);
+
+        session()->forget(['github_connect_site_id', 'github_connect_org_id']);
 
         $site = Site::findOrFail($siteId);
-        $site->update(['github_installation_id' => $installationId, 'github_repo' => null]);
 
-        session()->forget('github_connect_site_id');
+        return redirect()->route('github.select-repo-form', $site)
+            ->with('success', 'GitHub App installed. Now pick a repository for this site.');
+    }
 
-        $repos = $this->github->listRepos($installationId);
+    /**
+     * Show the repo picker for a site whose org already has a GitHub installation.
+     */
+    public function selectRepoForm(Site $site): View
+    {
+        $org  = $site->organisation;
+
+        abort_unless($org->hasGitHub(), 400, 'No GitHub installation for this organisation.');
+
+        $repos = $this->github->listRepos($org->github_installation_id);
 
         return view('github.select-repo', compact('site', 'repos'));
     }
@@ -65,19 +95,27 @@ class GitHubController extends Controller
         return redirect()->route('sites.show', $site);
     }
 
+    /**
+     * Disconnect the repo from this site only.
+     * The org-level GitHub installation is NOT removed here — other sites may use it.
+     */
     public function disconnect(Site $site): RedirectResponse
     {
         $site->update([
-            'github_installation_id' => null,
-            'github_repo'            => null,
-            'github_repo_path'       => null,
-            'github_branch'          => null,
-            'github_auto_deploy'     => false,
+            'github_repo'        => null,
+            'github_repo_path'   => null,
+            'github_branch'      => null,
+            'github_auto_deploy' => false,
         ]);
 
-        return redirect()->route('sites.show', $site)->with('success', 'GitHub disconnected.');
+        return redirect()->route('sites.show', $site)->with('success', 'GitHub repository disconnected.');
     }
 
+    /**
+     * Receive push events from GitHub.
+     * Fan out to all sites in the org that watch the pushed repo.
+     * Download the zipball once and reuse it across multiple sites.
+     */
     public function webhook(Request $request): JsonResponse
     {
         $payload   = $request->getContent();
@@ -96,58 +134,82 @@ class GitHubController extends Controller
         $defaultBranch  = $data['repository']['default_branch'] ?? 'main';
         $installationId = $data['installation']['id'] ?? null;
         $repoFullName   = $data['repository']['full_name'] ?? null;
+        $sha            = $data['after'] ?? null;
 
-        abort_unless($installationId && $repoFullName, 400, 'Missing installation or repository in payload.');
+        abort_unless($installationId && $repoFullName && $sha, 400, 'Missing required fields in webhook payload.');
 
-        $site = Site::withoutGlobalScopes()
-            ->where('github_installation_id', $installationId)
+        $org = Organisation::where('github_installation_id', $installationId)->firstOrFail();
+
+        $sites = Site::withoutGlobalScopes()
+            ->where('organisation_id', $org->id)
             ->where('github_repo', $repoFullName)
-            ->firstOrFail();
+            ->get();
 
-        $watchBranch = $site->github_branch ?? $defaultBranch;
+        if ($sites->isEmpty()) {
+            return response()->json(['message' => 'no sites watching this repo']);
+        }
 
-        if ($ref !== "refs/heads/{$watchBranch}") {
+        // Filter to sites where the push is on the watched branch
+        $sites = $sites->filter(function (Site $site) use ($ref, $defaultBranch) {
+            $watchBranch = $site->github_branch ?? $defaultBranch;
+            return $ref === "refs/heads/{$watchBranch}";
+        });
+
+        if ($sites->isEmpty()) {
             return response()->json(['message' => 'not watched branch, ignored']);
         }
 
-        if ($site->github_repo_path !== null) {
-            $changedFiles = collect($data['commits'] ?? [])
-                ->flatMap(fn($c) => array_merge($c['added'] ?? [], $c['modified'] ?? [], $c['removed'] ?? []))
-                ->all();
+        // Further filter by path if set — a site watching a subfolder only deploys when that path changes
+        $changedFiles = collect($data['commits'] ?? [])
+            ->flatMap(fn($c) => array_merge($c['added'] ?? [], $c['modified'] ?? [], $c['removed'] ?? []))
+            ->all();
 
-            $prefix = rtrim($site->github_repo_path, '/') . '/';
-            $relevant = array_filter($changedFiles, fn($f) => str_starts_with($f, $prefix));
-
-            if (empty($relevant)) {
-                return response()->json(['message' => 'no changes in repo path, ignored']);
+        $sites = $sites->filter(function (Site $site) use ($changedFiles) {
+            if ($site->github_repo_path === null) {
+                return true;
             }
+            $prefix = rtrim($site->github_repo_path, '/') . '/';
+            return !empty(array_filter($changedFiles, fn($f) => str_starts_with($f, $prefix)));
+        });
+
+        if ($sites->isEmpty()) {
+            return response()->json(['message' => 'no changes in any watched repo path, ignored']);
         }
 
-        $sha = $data['after'];
+        // Set pending status on all affected sites
+        foreach ($sites as $site) {
+            $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'pending', 'Creating release...');
+        }
 
-        $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'pending', 'Creating release...');
-
+        // Download zipball once for all sites
         $zipPath = $this->github->downloadZipball($installationId, $repoFullName, $sha);
 
-        try {
-            $this->siteService->uploadFromPath($site, $zipPath, $site->github_repo_path);
-            $release = $this->siteService->createRelease(
-                $site,
-                'Auto-deployed from GitHub (' . substr($sha, 0, 7) . ')'
-            );
+        $results = [];
 
-            if ($site->github_auto_deploy) {
-                $this->siteService->promote($site, $release->version);
+        try {
+            foreach ($sites as $site) {
+                try {
+                    $this->siteService->uploadFromPath($site, $zipPath, $site->github_repo_path);
+                    $release = $this->siteService->createRelease(
+                        $site,
+                        'Auto-deployed from GitHub (' . substr($sha, 0, 7) . ')'
+                    );
+
+                    if ($site->github_auto_deploy) {
+                        $this->siteService->promote($site, $release->version);
+                    }
+
+                    $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'success', 'Release v' . $release->version . ' created');
+                    $results[$site->slug] = ['version' => $release->version];
+                } catch (\Throwable $e) {
+                    $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'failure', 'Release failed: ' . $e->getMessage());
+                    $results[$site->slug] = ['error' => $e->getMessage()];
+                }
             }
-        } catch (\Throwable $e) {
-            $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'failure', 'Release failed: ' . $e->getMessage());
-            throw $e;
         } finally {
             @unlink($zipPath);
         }
 
-        $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'success', 'Release v' . $release->version . ' created');
-
-        return response()->json(['message' => 'deployed', 'version' => $release->version]);
+        return response()->json(['message' => 'processed', 'sites' => $results]);
     }
 }

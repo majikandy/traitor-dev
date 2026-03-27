@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Organisation extends Model
 {
     use HasFactory;
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'github_installation_id'];
 
     public function users(): HasMany
     {
@@ -19,5 +19,15 @@ class Organisation extends Model
     public function sites(): HasMany
     {
         return $this->hasMany(Site::class);
+    }
+
+    public function hasGitHub(): bool
+    {
+        return $this->github_installation_id !== null;
+    }
+
+    public function githubInstallationUrl(): string
+    {
+        return "https://github.com/settings/installations/{$this->github_installation_id}";
     }
 }
