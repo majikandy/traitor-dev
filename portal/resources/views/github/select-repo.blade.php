@@ -52,9 +52,11 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder <span class="text-gray-400 font-normal">(optional — for monorepos)</span></label>
-                    <input type="text" name="repo_path" placeholder="e.g. sites/my-site"
+                    <input type="text" name="repo_path" id="repo-path" placeholder="e.g. sites/my-site" autocomplete="off"
+                        list="dirs-list"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
-                    <p class="mt-1 text-xs text-gray-400">Leave blank to use the entire repository.</p>
+                    <datalist id="dirs-list"></datalist>
+                    <p class="mt-1 text-xs text-gray-400" id="dirs-hint">Select a repository above to browse its folders.</p>
                 </div>
                 <div class="mb-6">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Branch <span class="text-gray-400 font-normal">(optional — defaults to repo default branch)</span></label>
@@ -81,6 +83,40 @@
                     spinner.classList.remove('hidden');
                     label.textContent = 'Importing…';
                 });
+
+                (function () {
+                    var repoSelect = document.querySelector('select[name="repo"]');
+                    var datalist   = document.getElementById('dirs-list');
+                    var hint       = document.getElementById('dirs-hint');
+                    var dirsUrl    = '{{ route('github.repo-dirs', $site) }}';
+
+                    repoSelect.addEventListener('change', function () {
+                        var repo = this.value;
+                        datalist.innerHTML = '';
+                        if (!repo) {
+                            hint.textContent = 'Select a repository above to browse its folders.';
+                            return;
+                        }
+                        hint.textContent = 'Loading folders…';
+                        fetch(dirsUrl + '?repo=' + encodeURIComponent(repo), {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                        .then(function (r) { return r.json(); })
+                        .then(function (dirs) {
+                            dirs.forEach(function (d) {
+                                var opt = document.createElement('option');
+                                opt.value = d;
+                                datalist.appendChild(opt);
+                            });
+                            hint.textContent = dirs.length
+                                ? dirs.length + ' folders found — type to filter.'
+                                : 'No subfolders found. Leave blank to use the whole repo.';
+                        })
+                        .catch(function () {
+                            hint.textContent = 'Could not load folders — type the path manually.';
+                        });
+                    });
+                })();
             </script>
         @endif
     </div>

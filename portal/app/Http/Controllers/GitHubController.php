@@ -71,6 +71,22 @@ class GitHubController extends Controller
         return view('github.select-repo', compact('site', 'repos'));
     }
 
+    /**
+     * Return a JSON list of directories in a repo — used by the subfolder picker.
+     */
+    public function repoDirs(Request $request, Site $site): JsonResponse
+    {
+        $repo = $request->string('repo')->toString();
+        abort_unless(preg_match('/^[\w.\-]+\/[\w.\-]+$/', $repo), 422, 'Invalid repo.');
+
+        $org  = $site->organisation;
+        abort_unless($org->hasGitHub(), 400, 'No GitHub installation for this organisation.');
+
+        $dirs = $this->github->listDirs($org->github_installation_id, $repo);
+
+        return response()->json($dirs);
+    }
+
     public function selectRepo(Request $request, Site $site): RedirectResponse
     {
         $request->validate([

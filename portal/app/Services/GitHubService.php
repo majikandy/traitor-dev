@@ -43,6 +43,30 @@ class GitHubService
             ->all();
     }
 
+    /**
+     * Returns all directory paths in the repo (type=tree), sorted.
+     * Uses the recursive tree API so it's one request regardless of depth.
+     */
+    public function listDirs(int $installationId, string $repo, string $ref = 'HEAD'): array
+    {
+        $token = $this->getInstallationToken($installationId);
+
+        $response = Http::withToken($token)
+            ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28'])
+            ->get("https://api.github.com/repos/{$repo}/git/trees/{$ref}", ['recursive' => 1]);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException("GitHub tree API error for {$repo}: " . $response->body());
+        }
+
+        return collect($response->json('tree') ?? [])
+            ->where('type', 'tree')
+            ->pluck('path')
+            ->sort()
+            ->values()
+            ->all();
+    }
+
     public function downloadZipball(int $installationId, string $repo, string $ref = 'HEAD'): string
     {
         $token = $this->getInstallationToken($installationId);
