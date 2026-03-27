@@ -37,7 +37,7 @@ class SiteController extends Controller
         $slug = Str::slug($request->name);
 
         if (Site::where('slug', $slug)->exists()) {
-            return back()->withInput()->with('error', 'A site with that name already exists.');
+            return back()->withInput()->with('error', 'You already have a site with that name.');
         }
 
         $site = $this->siteService->create($request->name, $slug, Auth::user()->organisation_id);
