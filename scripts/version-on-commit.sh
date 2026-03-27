@@ -9,6 +9,14 @@ if [[ "$COMMAND" != *"git commit"* ]]; then
 fi
 
 REPO=/Users/majikandy/Dev/traitordev
+
+# Run tests — block the commit if they fail
+cd "$REPO/portal" && php artisan test --no-ansi 2>&1
+if [ $? -ne 0 ]; then
+    echo '{"continue": false, "stopReason": "Tests failed — fix before committing."}'
+    exit 1
+fi
+
 VERSION=$(date +"%Y%m%d.%H%M")
 printf "%s" "$VERSION" > "$REPO/portal/VERSION"
 git -C "$REPO" add portal/VERSION
