@@ -1,15 +1,2 @@
 {
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/majikandy/Dev/traitordev/scripts/version-on-commit.sh"
-          }
-        ]
-      }
-    ]
-  }
 }
