@@ -33,12 +33,12 @@
                 <svg class="h-4 w-4 text-gray-300 group-hover:text-brand-400 transition" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
             </h1>
             @if($site->maintenance_mode)
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                <span id="site-header-badge" class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                     <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
                     Maintenance
                 </span>
             @elseif($site->live_release)
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                <span id="site-header-badge" class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                     <span id="live-status-badge">Release {{ $site->live_release }} live</span>
                 </span>
@@ -148,6 +148,9 @@
                     <span class="h-1.5 w-1.5 rounded-full {{ $defaultDotClass }}"></span>
                     {{ $defaultBadgeText }}
                 </span>
+                <span id="preview-maintenance-warning" class="hidden inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>maintenance active
+                </span>
                 <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1" title="Back to live site">↺</button>
             </div>
             <div class="flex items-center gap-3">
@@ -168,6 +171,30 @@
 
     {{-- Release rows --}}
     <div class="divide-y divide-gray-100 border-t border-gray-100">
+        @if($site->maintenance_mode)
+            <div id="maintenance-row"
+                class="release-row flex items-center justify-between px-6 py-3 cursor-pointer bg-amber-50/60 transition-colors"
+                data-preview-url="{{ $site->previewUrl() }}"
+                data-version="Maintenance"
+                data-is-live="false"
+                data-is-maintenance="true"
+                data-promote-url=""
+                onclick="selectRelease(this)">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-bold text-amber-700">Maintenance</span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>currently serving
+                    </span>
+                </div>
+                <div class="flex items-center gap-3" onclick="event.stopPropagation()">
+                    <span class="text-xs text-gray-400">Coming soon page</span>
+                    @if($hasDomain)
+                        <a href="{{ $liveUrl }}" target="_blank"
+                           class="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition">Visit site ↗</a>
+                    @endif
+                </div>
+            </div>
+        @endif
         @foreach($sortedReleases as $release)
             @php $isLive = $release->version === $site->live_release; @endphp
             <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
@@ -213,46 +240,49 @@
 var siteMetaLiveUrl = "{{ addslashes($liveUrl) }}";
 var siteMetaDefaultSrc = "{{ addslashes($defaultPreviewSrc) }}";
 var siteMetaLiveVersion = {{ $site->live_release ?? 'null' }};
+var siteMaintenanceActive = {{ $site->maintenance_mode ? 'true' : 'false' }};
 
-function updatePreviewIndicator(isLive) {
+function updatePreviewIndicator(isLive, isMaintenance) {
     var header = document.getElementById('preview-header');
     var badge = document.getElementById('preview-state-badge');
-    if (isLive) {
+    var warning = document.getElementById('preview-maintenance-warning');
+    if (isMaintenance) {
+        header.style.backgroundColor = 'rgba(254,243,199,0.35)';
+        badge.className = 'bg-amber-100 text-amber-700 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
+        badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>maintenance';
+        if (warning) warning.classList.add('hidden');
+    } else if (isLive) {
         header.style.backgroundColor = 'rgba(209,250,229,0.35)';
         badge.className = 'bg-emerald-100 text-emerald-700 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
         badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live';
+        if (warning) warning.classList.toggle('hidden', !siteMaintenanceActive);
     } else {
         header.style.backgroundColor = 'rgba(254,243,199,0.35)';
         badge.className = 'bg-amber-100 text-amber-700 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
         badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>candidate';
+        if (warning) warning.classList.add('hidden');
     }
 }
 function selectRelease(row) {
-    document.querySelectorAll('.release-row').forEach(function(r) {
-        if (r.dataset.isLive !== 'true') r.classList.remove('bg-brand-50');
-    });
-    if (row.dataset.isLive !== 'true') row.classList.add('bg-brand-50');
+    var isMaintenance = row.dataset.isMaintenance === 'true';
     var isLive = row.dataset.isLive === 'true';
-    document.getElementById('preview-iframe').src = isLive ? siteMetaDefaultSrc : row.dataset.previewUrl;
-    document.getElementById('preview-open-link').href = isLive ? siteMetaLiveUrl : row.dataset.previewUrl;
+    document.querySelectorAll('.release-row').forEach(function(r) {
+        if (r.dataset.isLive !== 'true' && r.dataset.isMaintenance !== 'true') r.classList.remove('bg-brand-50');
+    });
+    if (!isLive && !isMaintenance) row.classList.add('bg-brand-50');
+    document.getElementById('preview-iframe').src = row.dataset.previewUrl;
+    document.getElementById('preview-open-link').href = isMaintenance ? siteMetaLiveUrl : row.dataset.previewUrl;
     document.getElementById('preview-label').textContent = row.dataset.version;
-    updatePreviewIndicator(isLive);
+    updatePreviewIndicator(isLive, isMaintenance);
 }
 function resetPreview() {
-    // Deselect all rows and return to live site view
     document.querySelectorAll('.release-row').forEach(function(r) {
-        if (r.dataset.isLive !== 'true') r.classList.remove('bg-brand-50');
+        if (r.dataset.isLive !== 'true' && r.dataset.isMaintenance !== 'true') r.classList.remove('bg-brand-50');
     });
-    var f = document.getElementById('preview-iframe');
-    f.src = siteMetaDefaultSrc;
+    document.getElementById('preview-iframe').src = siteMetaDefaultSrc;
     document.getElementById('preview-open-link').href = siteMetaLiveUrl;
     document.getElementById('preview-label').textContent = 'Live site';
-    // Restore default badge state from page-load values
-    var header = document.getElementById('preview-header');
-    var badge = document.getElementById('preview-state-badge');
-    header.style.backgroundColor = '{{ $defaultHeaderBg }}';
-    badge.className = '{{ $defaultBadgeClass }} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
-    badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full {{ $defaultDotClass }}"></span>{{ $defaultBadgeText }}';
+    updatePreviewIndicator(false, siteMaintenanceActive);
 }
 function goLive(btn) {
     btn.disabled = true;
@@ -299,9 +329,16 @@ function goLive(btn) {
                 }
             }
         });
-        // Update header badge and domain section
-        var headerBadge = document.getElementById('live-status-badge');
-        if (headerBadge) headerBadge.textContent = 'Release ' + newVersion + ' live';
+        // Remove maintenance row and turn off maintenance flag
+        var maintenanceRow = document.getElementById('maintenance-row');
+        if (maintenanceRow) maintenanceRow.remove();
+        siteMaintenanceActive = false;
+        // Update page header badge
+        var siteBadge = document.getElementById('site-header-badge');
+        if (siteBadge) {
+            siteBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700';
+            siteBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span><span id="live-status-badge">Release ' + newVersion + ' live</span>';
+        }
         var serving = document.getElementById('currently-serving');
         if (serving) serving.textContent = 'Release ' + newVersion;
         // Select the newly promoted row so the preview updates to it
