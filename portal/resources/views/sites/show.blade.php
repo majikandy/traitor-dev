@@ -110,8 +110,26 @@
 @php
     $sortedReleases = $site->releases->sortByDesc('version');
     $firstRelease = $sortedReleases->first();
-    $liveUrl = ($site->domain && $site->domain_status === 'active') ? 'https://' . $site->domain : $site->previewUrl();
-    $firstIsLive = $firstRelease->version === $site->live_release;
+    $hasDomain = $site->domain && $site->domain_status === 'active';
+    $liveUrl = $hasDomain ? 'https://' . $site->domain : $site->previewUrl();
+    // Default preview = portal preview of the live/ symlink (always current, no release-specific)
+    $defaultPreviewSrc = $site->previewUrl();
+    if ($site->maintenance_mode) {
+        $defaultBadgeClass = 'bg-amber-100 text-amber-700';
+        $defaultDotClass   = 'bg-amber-500';
+        $defaultBadgeText  = 'maintenance';
+        $defaultHeaderBg   = 'rgba(254,243,199,0.35)';
+    } elseif ($site->live_release) {
+        $defaultBadgeClass = 'bg-emerald-100 text-emerald-700';
+        $defaultDotClass   = 'bg-emerald-500';
+        $defaultBadgeText  = 'live';
+        $defaultHeaderBg   = 'rgba(209,250,229,0.35)';
+    } else {
+        $defaultBadgeClass = 'bg-gray-100 text-gray-500';
+        $defaultDotClass   = 'bg-gray-400';
+        $defaultBadgeText  = 'coming soon';
+        $defaultHeaderBg   = 'rgba(243,244,246,0.6)';
+    }
 @endphp
 <div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6">
     {{-- Section header --}}
@@ -122,25 +140,25 @@
     {{-- Preview panel --}}
     <div>
         <div id="preview-header" class="px-6 py-3 border-b border-gray-100 flex items-center justify-between transition-colors"
-             style="background-color: {{ $firstIsLive ? 'rgba(209,250,229,0.35)' : 'rgba(254,243,199,0.35)' }}">
+             style="background-color: {{ $defaultHeaderBg }}">
             <div class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500">Previewing</span>
-                <span id="preview-label" class="text-xs font-semibold text-gray-900">v{{ $firstRelease->version }}</span>
-                <span id="preview-state-badge" class="{{ $firstIsLive ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold">
-                    <span class="h-1.5 w-1.5 rounded-full {{ $firstIsLive ? 'bg-emerald-500' : 'bg-amber-400' }}"></span>
-                    {{ $firstIsLive ? 'live' : 'candidate' }}
+                <span id="preview-label" class="text-xs font-semibold text-gray-900">Live site</span>
+                <span id="preview-state-badge" class="{{ $defaultBadgeClass }} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold">
+                    <span class="h-1.5 w-1.5 rounded-full {{ $defaultDotClass }}"></span>
+                    {{ $defaultBadgeText }}
                 </span>
-                <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1">↺</button>
+                <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1" title="Back to live site">↺</button>
             </div>
             <div class="flex items-center gap-3">
                 <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
-                <a id="preview-open-link" href="{{ $firstRelease->previewUrl() }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
+                <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
             </div>
         </div>
         <div id="preview-container" class="relative w-full bg-gray-100 overflow-hidden transition-all duration-300" style="height: 360px;">
             <iframe
                 id="preview-iframe"
-                src="{{ $firstRelease->previewUrl() }}"
+                src="{{ $defaultPreviewSrc }}"
                 class="absolute border-0"
                 style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left; left: calc(50% - 288px); top: 0;"
                 loading="lazy"
@@ -173,15 +191,17 @@
                 <div class="flex items-center gap-3" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400">{{ $release->created_at->diffForHumans() }}</span>
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
-                    @if($isLive)
+                    @if($isLive && $hasDomain)
                         <a href="{{ $liveUrl }}" target="_blank"
                            class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
-                    @else
+                    @elseif(!$isLive && $hasDomain)
                         <button type="button"
                             class="go-live-btn rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition"
                             data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
                             data-version="{{ $release->version }}"
                             onclick="event.stopPropagation(); goLive(this)">Go Live</button>
+                    @elseif(!$hasDomain && $loop->first)
+                        <a href="{{ route('sites.show', $site) }}#domain" class="text-xs text-brand-600 hover:underline" onclick="event.stopPropagation()">Add a domain to go live ↓</a>
                     @endif
                 </div>
             </div>
@@ -191,6 +211,7 @@
 
 <script>
 var siteMetaLiveUrl = "{{ addslashes($liveUrl) }}";
+var siteMetaDefaultSrc = "{{ addslashes($defaultPreviewSrc) }}";
 var siteMetaLiveVersion = {{ $site->live_release ?? 'null' }};
 
 function updatePreviewIndicator(isLive) {
@@ -217,8 +238,20 @@ function selectRelease(row) {
     updatePreviewIndicator(row.dataset.isLive === 'true');
 }
 function resetPreview() {
+    // Deselect all rows and return to live site view
+    document.querySelectorAll('.release-row').forEach(function(r) {
+        if (r.dataset.isLive !== 'true') r.classList.remove('bg-brand-50');
+    });
     var f = document.getElementById('preview-iframe');
-    f.src = f.src;
+    f.src = siteMetaDefaultSrc;
+    document.getElementById('preview-open-link').href = siteMetaLiveUrl;
+    document.getElementById('preview-label').textContent = 'Live site';
+    // Restore default badge state from page-load values
+    var header = document.getElementById('preview-header');
+    var badge = document.getElementById('preview-state-badge');
+    header.style.backgroundColor = '{{ $defaultHeaderBg }}';
+    badge.className = '{{ $defaultBadgeClass }} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
+    badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full {{ $defaultDotClass }}"></span>{{ $defaultBadgeText }}';
 }
 function goLive(btn) {
     btn.disabled = true;
@@ -270,11 +303,12 @@ function goLive(btn) {
         if (headerBadge) headerBadge.textContent = 'Release ' + newVersion + ' live';
         var serving = document.getElementById('currently-serving');
         if (serving) serving.textContent = 'Release ' + newVersion;
-        // Update preview indicator for current preview
-        var previewLabel = document.getElementById('preview-label');
-        if (previewLabel) {
-            updatePreviewIndicator(parseInt(previewLabel.textContent.replace('v', '')) === newVersion);
-        }
+        // Select the newly promoted row so the preview updates to it
+        var promotedRow = null;
+        document.querySelectorAll('.release-row').forEach(function(row) {
+            if (parseInt(row.dataset.version.replace('v', '')) === newVersion) promotedRow = row;
+        });
+        if (promotedRow) selectRelease(promotedRow);
     })
     .catch(function() {
         btn.disabled = false;
