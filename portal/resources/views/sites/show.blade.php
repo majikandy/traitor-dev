@@ -163,9 +163,9 @@
     $sortedReleases = $site->releases->sortByDesc('version');
     $firstRelease = $sortedReleases->first();
     $hasDomain = $site->domain && $site->domain_status === 'active';
-    $liveUrl = $hasDomain ? 'https://' . $site->domain : $site->previewUrl();
     // Default preview: live symlink when something is published, otherwise latest release
     $defaultPreviewSrc = $site->live_release ? $site->previewUrl() : $firstRelease->previewUrl();
+    $liveUrl = $hasDomain ? 'https://' . $site->domain : $defaultPreviewSrc;
     $defaultLabel = $site->live_release ? 'Live site' : ('v' . $firstRelease->version . ' (not live)');
     if ($site->maintenance_mode) {
         $defaultBadgeClass = 'bg-amber-100 text-amber-700';
