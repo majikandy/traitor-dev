@@ -250,6 +250,7 @@ class SiteService
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="refresh" content="30">
             <title>{$name} — Coming Soon</title>
             <style>
                 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

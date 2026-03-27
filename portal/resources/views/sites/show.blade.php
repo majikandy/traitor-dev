@@ -158,14 +158,44 @@
                 <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
             </div>
         </div>
-        <div id="preview-container" class="relative w-full bg-gray-100 overflow-hidden transition-all duration-300" style="height: 360px;">
-            <iframe
-                id="preview-iframe"
-                src="{{ $defaultPreviewSrc }}"
-                class="absolute border-0"
-                style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left; left: calc(50% - 288px); top: 0;"
-                loading="lazy"
-            ></iframe>
+        <div id="preview-container" class="flex w-full overflow-hidden transition-all duration-300" style="height: 360px; background: #e5e7eb;">
+            {{-- iPhone 17 preview --}}
+            <div id="phone-panel" class="flex-shrink-0 flex items-start justify-center overflow-hidden border-r border-gray-300 bg-gray-200/60 transition-all duration-300" style="width: 180px;">
+                <div id="phone-frame" style="width: 414px; transform: scale(0.38); transform-origin: top center; position: relative; flex-shrink: 0;">
+                    {{-- Device body --}}
+                    <div style="background:#1c1c1e;border-radius:50px;padding:44px 12px 32px;box-shadow:0 0 0 1px #3a3a3c,inset 0 0 0 1px #444,0 30px 70px rgba(0,0,0,0.6);position:relative;">
+                        {{-- Volume up --}}
+                        <div style="position:absolute;left:-3px;top:160px;width:3px;height:32px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
+                        {{-- Volume down --}}
+                        <div style="position:absolute;left:-3px;top:210px;width:3px;height:64px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
+                        {{-- Action button --}}
+                        <div style="position:absolute;left:-3px;top:110px;width:3px;height:36px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
+                        {{-- Power --}}
+                        <div style="position:absolute;right:-3px;top:200px;width:3px;height:80px;background:#3a3a3c;border-radius:0 2px 2px 0;"></div>
+                        {{-- Screen --}}
+                        <div style="width:390px;height:844px;background:#000;border-radius:44px;overflow:hidden;position:relative;">
+                            {{-- Dynamic Island --}}
+                            <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:34px;background:#000;border-radius:20px;z-index:10;box-shadow:0 0 0 3px #111;pointer-events:none;"></div>
+                            <iframe
+                                id="preview-mobile-iframe"
+                                src="{{ $defaultPreviewSrc }}"
+                                style="width:390px;height:844px;border:none;display:block;"
+                                loading="lazy"
+                            ></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- Desktop preview --}}
+            <div class="flex-1 relative overflow-hidden">
+                <iframe
+                    id="preview-iframe"
+                    src="{{ $defaultPreviewSrc }}"
+                    class="absolute border-0"
+                    style="width: 1280px; height: 800px; transform: scale(0.45); transform-origin: top left; left: calc(50% - 288px); top: 0;"
+                    loading="lazy"
+                ></iframe>
+            </div>
         </div>
     </div>
 
@@ -270,8 +300,10 @@ function selectRelease(row) {
         if (r.dataset.isLive !== 'true' && r.dataset.isMaintenance !== 'true') r.classList.remove('bg-brand-50');
     });
     if (!isLive && !isMaintenance) row.classList.add('bg-brand-50');
-    document.getElementById('preview-iframe').src = row.dataset.previewUrl;
-    document.getElementById('preview-open-link').href = isMaintenance ? siteMetaLiveUrl : row.dataset.previewUrl;
+    var previewSrc = row.dataset.previewUrl;
+    document.getElementById('preview-iframe').src = previewSrc;
+    document.getElementById('preview-mobile-iframe').src = previewSrc;
+    document.getElementById('preview-open-link').href = isMaintenance ? siteMetaLiveUrl : previewSrc;
     document.getElementById('preview-label').textContent = row.dataset.version;
     updatePreviewIndicator(isLive, isMaintenance);
 }
@@ -280,6 +312,7 @@ function resetPreview() {
         if (r.dataset.isLive !== 'true' && r.dataset.isMaintenance !== 'true') r.classList.remove('bg-brand-50');
     });
     document.getElementById('preview-iframe').src = siteMetaDefaultSrc;
+    document.getElementById('preview-mobile-iframe').src = siteMetaDefaultSrc;
     document.getElementById('preview-open-link').href = siteMetaLiveUrl;
     document.getElementById('preview-label').textContent = 'Live site';
     updatePreviewIndicator(false, siteMaintenanceActive);
@@ -356,17 +389,24 @@ function goLive(btn) {
 function toggleExpand() {
     var c = document.getElementById('preview-container');
     var f = document.getElementById('preview-iframe');
+    var phonePanel = document.getElementById('phone-panel');
+    var phoneFrame = document.getElementById('phone-frame');
     var btn = document.getElementById('expand-btn');
     if (c.style.height === '360px') {
         c.style.height = '700px';
         f.style.transform = 'scale(0.875)';
         f.style.left = 'calc(50% - 560px)';
         f.style.height = '800px';
+        phonePanel.style.width = '320px';
+        phoneFrame.style.transform = 'scale(0.72)';
         btn.textContent = '⤡ Collapse';
     } else {
         c.style.height = '360px';
         f.style.transform = 'scale(0.45)';
         f.style.left = 'calc(50% - 288px)';
+        f.style.height = '800px';
+        phonePanel.style.width = '180px';
+        phoneFrame.style.transform = 'scale(0.38)';
         btn.textContent = '⤢ Expand';
     }
 }
