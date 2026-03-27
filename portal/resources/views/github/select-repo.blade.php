@@ -51,15 +51,17 @@
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder <span class="text-gray-400 font-normal">(optional — if your site isn't at the repo root)</span></label>
-                    <input type="text" name="repo_path" id="repo-path" placeholder="e.g. sites/my-site" autocomplete="off"
-                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
-                    <p class="mt-1 text-xs text-gray-400" id="dirs-hint">Select a repository above to browse its folders.</p>
-
-                    {{-- Hierarchical folder picker --}}
-                    <div id="folder-picker" class="hidden mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                        <div id="folder-breadcrumb" class="mb-2 flex flex-wrap items-center gap-0.5 text-xs text-gray-400 min-h-[1.25rem]"></div>
-                        <div id="folder-chips" class="flex flex-wrap gap-1.5"></div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder</label>
+                    <p class="text-sm text-gray-500" id="subfolder-default-label">Whole repo &mdash; <button type="button" id="subfolder-override" class="text-xs text-brand-600 hover:underline">Use a subfolder</button></p>
+                    <div id="subfolder-panel" class="hidden">
+                        <input type="text" name="repo_path" id="repo-path" placeholder="e.g. sites/my-site" autocomplete="off"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                        <p class="mt-1 text-xs text-gray-400" id="dirs-hint"></p>
+                        {{-- Hierarchical folder picker --}}
+                        <div id="folder-picker" class="hidden mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                            <div id="folder-breadcrumb" class="mb-2 flex flex-wrap items-center gap-0.5 text-xs text-gray-400 min-h-[1.25rem]"></div>
+                            <div id="folder-chips" class="flex flex-wrap gap-1.5"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="mb-6">
@@ -94,15 +96,24 @@
                 (function () {
                     var defaultBranches = @json($defaultBranches);
                     var repoSelect      = document.querySelector('select[name="repo"]');
-                    var branchesList    = document.getElementById('branches-list');
-                    var hint            = document.getElementById('dirs-hint');
-                    var branchLabel     = document.getElementById('branch-default-label');
-                    var branchInput     = document.getElementById('branch-input');
-                    var pathInput       = document.getElementById('repo-path');
-                    var picker          = document.getElementById('folder-picker');
-                    var chips           = document.getElementById('folder-chips');
-                    var dirsUrl         = '{{ route('github.repo-dirs', $site) }}';
-                    var branchesUrl     = '{{ route('github.repo-branches', $site) }}';
+                    var branchesList   = document.getElementById('branches-list');
+                    var hint           = document.getElementById('dirs-hint');
+                    var branchLabel    = document.getElementById('branch-default-label');
+                    var branchInput    = document.getElementById('branch-input');
+                    var pathInput      = document.getElementById('repo-path');
+                    var picker         = document.getElementById('folder-picker');
+                    var chips          = document.getElementById('folder-chips');
+                    var subfolderLabel = document.getElementById('subfolder-default-label');
+                    var subfolderPanel = document.getElementById('subfolder-panel');
+                    var dirsUrl        = '{{ route('github.repo-dirs', $site) }}';
+                    var branchesUrl    = '{{ route('github.repo-branches', $site) }}';
+
+                    document.getElementById('subfolder-override').addEventListener('click', function () {
+                        subfolderLabel.classList.add('hidden');
+                        subfolderPanel.classList.remove('hidden');
+                        pathInput.focus();
+                        if (allDirs.length) renderFolderPicker('');
+                    });
                     var allDirs         = [];
 
                     // ── Keyboard: ArrowDown from path input enters the chip list ──
@@ -149,6 +160,9 @@
                         branchesList.innerHTML = '';
                         allDirs = [];
                         picker.classList.add('hidden');
+                        subfolderPanel.classList.add('hidden');
+                        subfolderLabel.classList.remove('hidden');
+                        pathInput.value = '';
 
                         // Branch UI
                         if (repo && defaultBranches[repo]) {
@@ -192,7 +206,7 @@
                                 if (!dirs.length) { hint.textContent = 'No subfolders — leave blank to use the whole repo.'; return; }
                                 allDirs = dirs;
                                 hint.textContent = '';
-                                renderFolderPicker('');
+                                if (!subfolderPanel.classList.contains('hidden')) renderFolderPicker('');
                             })
                             .catch(function () { hint.textContent = 'Could not load folders — type the path manually.'; });
                     });
