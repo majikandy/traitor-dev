@@ -12,6 +12,13 @@ A second hook runs before `git push` as a safety net: if VERSION wasn't updated 
 
 ---
 
+## Cardinal Rules of Traitor.dev
+
+### The Preview Must Be Transparent
+The preview system must work for any PHP site without modifications to the site's files. Never require changes to a customer site to make it work in preview. If the preview breaks something, fix the preview — not the site.
+
+---
+
 ## Ground Rules
 
 ### No Fallbacks. Ever.
