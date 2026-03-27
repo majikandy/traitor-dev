@@ -110,6 +110,7 @@ class PasskeyController extends Controller
         ]);
 
         session()->forget('passkey_register_options');
+        Auth::user()->recordLogin();
 
         return response()->json(['ok' => true]);
     }

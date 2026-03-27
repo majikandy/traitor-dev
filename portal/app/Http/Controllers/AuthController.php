@@ -125,6 +125,20 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
+    public function acceptInvite(string $token)
+    {
+        $user = User::where('invite_token', $token)->first();
+
+        if (!$user) {
+            return redirect()->route('login')->withErrors(['email' => 'This invite link is invalid or has been cancelled.']);
+        }
+
+        Auth::login($user);
+        request()->session()->regenerate();
+
+        return redirect()->route('setup-auth');
+    }
+
     public function showSetupAuth()
     {
         return view('auth.setup-auth');

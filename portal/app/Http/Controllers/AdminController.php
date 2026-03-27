@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SentEmail;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 
@@ -57,5 +58,16 @@ class AdminController extends Controller
         }
 
         return view('admin.logs', ['entries' => array_reverse($entries)]);
+    }
+
+    public function emails(): \Illuminate\View\View
+    {
+        $emails = SentEmail::latest()->paginate(50);
+        return view('admin.emails', compact('emails'));
+    }
+
+    public function showEmail(SentEmail $email): \Illuminate\View\View
+    {
+        return view('admin.email-show', compact('email'));
     }
 }

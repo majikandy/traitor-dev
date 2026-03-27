@@ -3,22 +3,28 @@
 namespace App\Notifications;
 
 use App\Models\Setting;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
-class InviteUserNotification extends ResetPassword
+class InviteUserNotification extends Notification
 {
+    public function __construct(private readonly string $token) {}
+
+    public function via(mixed $notifiable): array
+    {
+        return ['mail'];
+    }
+
     public function toMail(mixed $notifiable): MailMessage
     {
-        $businessName = Setting::get('business_name', 'Traitor.dev');
-        $url = url(route('password.reset', ['token' => $this->token, 'email' => $notifiable->getEmailForPasswordReset()], false));
+        $businessName = Setting::get('business_name') ?? 'Traitor.dev';
+        $url = url(route('invite.accept', ['token' => $this->token], false));
 
         return (new MailMessage)
             ->subject("You've been invited to {$businessName}")
             ->greeting("Hello {$notifiable->name}!")
-            ->line("You've been invited to join {$businessName}.")
-            ->action('Set up your account', $url)
-            ->line('This link will expire in 60 minutes.')
-            ->line('If you did not expect this invitation, you can ignore this email.');
+            ->line("You've been invited to join the {$businessName} organisation.")
+            ->action('Accept invitation', $url)
+            ->line('This link will remain valid until your invite is cancelled.');
     }
 }

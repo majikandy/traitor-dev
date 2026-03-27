@@ -24,6 +24,7 @@ Route::get('/register', [AuthController::class, 'showRegister'])->name('register
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/register/passkey-start', [AuthController::class, 'registerPasskeyStart'])->name('register.passkey-start');
 Route::post('/register/passkey-cleanup', [AuthController::class, 'registerPasskeyCleanup'])->name('register.passkey-cleanup');
+Route::get('/invite/{token}', [AuthController::class, 'acceptInvite'])->name('invite.accept');
 
 // Password reset
 Route::get('/forgot-password', fn() => view('auth.forgot-password'))->name('password.request');
@@ -86,12 +87,15 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::post('/sites/{site}/maintenance', [SiteController::class, 'toggleMaintenance'])->name('sites.maintenance.toggle');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
-    Route::get('/users', [UsersController::class, 'index'])->name('users.index');
-    Route::post('/users', [UsersController::class, 'store'])->name('users.store');
-    Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
+    Route::get('/team', [UsersController::class, 'index'])->name('team.index');
+    Route::post('/team', [UsersController::class, 'store'])->name('team.store');
+    Route::post('/team/{user}/resend-invite', [UsersController::class, 'resendInvite'])->name('team.resend-invite');
+    Route::delete('/team/{user}', [UsersController::class, 'destroy'])->name('team.destroy');
 
     Route::middleware(AdminMiddleware::class)->group(function () {
         Route::get('/admin/logs', [AdminController::class, 'logs'])->name('admin.logs');
+        Route::get('/admin/emails', [AdminController::class, 'emails'])->name('admin.emails');
+        Route::get('/admin/emails/{email}', [AdminController::class, 'showEmail'])->name('admin.emails.show');
         Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
         Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
     });
