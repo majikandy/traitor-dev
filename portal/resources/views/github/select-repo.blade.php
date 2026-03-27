@@ -59,9 +59,10 @@
                     <p class="mt-1 text-xs text-gray-400" id="dirs-hint">Select a repository above to browse its folders.</p>
                 </div>
                 <div class="mb-6">
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Branch <span class="text-gray-400 font-normal">(optional — defaults to repo default branch)</span></label>
-                    <input type="text" name="branch" placeholder="e.g. production"
-                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Branch</label>
+                    <p class="text-sm text-gray-500" id="branch-default-label">Select a repository to see its default branch.</p>
+                    <input type="text" name="branch" id="branch-input" placeholder="e.g. production"
+                        class="hidden w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                 </div>
                 <div class="flex items-center gap-3">
                     <button type="submit" id="submit-btn" class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed">
@@ -85,14 +86,39 @@
                 });
 
                 (function () {
-                    var repoSelect = document.querySelector('select[name="repo"]');
-                    var datalist   = document.getElementById('dirs-list');
-                    var hint       = document.getElementById('dirs-hint');
-                    var dirsUrl    = '{{ route('github.repo-dirs', $site) }}';
+                    var defaultBranches = @json($defaultBranches);
+                    var repoSelect      = document.querySelector('select[name="repo"]');
+                    var datalist        = document.getElementById('dirs-list');
+                    var hint            = document.getElementById('dirs-hint');
+                    var branchLabel     = document.getElementById('branch-default-label');
+                    var branchInput     = document.getElementById('branch-input');
+                    var dirsUrl         = '{{ route('github.repo-dirs', $site) }}';
 
                     repoSelect.addEventListener('change', function () {
                         var repo = this.value;
                         datalist.innerHTML = '';
+
+                        // Branch UI
+                        if (repo && defaultBranches[repo]) {
+                            var def = defaultBranches[repo];
+                            branchInput.classList.add('hidden');
+                            branchInput.value = '';
+                            branchLabel.innerHTML = '<span class="font-medium text-gray-700">' + def + '</span>'
+                                + ' &mdash; <button type="button" id="branch-override" class="text-xs text-brand-600 hover:underline">Use a different branch</button>';
+                            document.getElementById('branch-override').addEventListener('click', function () {
+                                branchLabel.classList.add('hidden');
+                                branchInput.classList.remove('hidden');
+                                branchInput.placeholder = def;
+                                branchInput.focus();
+                            });
+                        } else {
+                            branchLabel.textContent = 'Select a repository to see its default branch.';
+                            branchLabel.classList.remove('hidden');
+                            branchInput.classList.add('hidden');
+                            branchInput.value = '';
+                        }
+
+                        // Folder picker
                         if (!repo) {
                             hint.textContent = 'Select a repository above to browse its folders.';
                             return;

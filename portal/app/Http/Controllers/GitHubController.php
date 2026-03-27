@@ -66,9 +66,11 @@ class GitHubController extends Controller
 
         abort_unless($org->hasGitHub(), 400, 'No GitHub installation for this organisation.');
 
-        $repos = $this->github->listRepos($org->github_installation_id);
+        $repoData      = $this->github->listRepos($org->github_installation_id);
+        $repos         = array_column($repoData, 'full_name');
+        $defaultBranches = array_column($repoData, 'default_branch', 'full_name');
 
-        return view('github.select-repo', compact('site', 'repos'));
+        return view('github.select-repo', compact('site', 'repos', 'defaultBranches'));
     }
 
     /**

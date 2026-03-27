@@ -39,7 +39,7 @@ class GitHubService
         }
 
         return collect($response->json('repositories'))
-            ->pluck('full_name')
+            ->map(fn($r) => ['full_name' => $r['full_name'], 'default_branch' => $r['default_branch'] ?? 'main'])
             ->all();
     }
 
