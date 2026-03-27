@@ -36,20 +36,20 @@ class PreviewController extends Controller
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
         if ($ext === 'php') {
-            // Spoof SCRIPT_NAME so depth-based $root calculations in included PHP files
-            // always produce './' — the link rewriter below then makes them correct.
-            $origScriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-            $_SERVER['SCRIPT_NAME'] = '/' . basename($filePath);
+            // chdir to the file's directory so relative require/include paths inside the
+            // site's PHP files resolve correctly (PHP uses CWD, not the included file's dir).
+            $origDir = getcwd();
+            chdir(dirname($filePath));
             ob_start();
             include $filePath;
             $html = ob_get_clean();
-            $_SERVER['SCRIPT_NAME'] = $origScriptName;
-            return response($this->injectPreview($html, $token, $label))->header('Content-Type', 'text/html');
+            chdir($origDir);
+            return response($this->injectPreview($html, $token, $label, $path))->header('Content-Type', 'text/html');
         }
 
         if ($ext === 'html' || $ext === 'htm') {
             $html = file_get_contents($filePath);
-            return response($this->injectPreview($html, $token, $label))->header('Content-Type', 'text/html');
+            return response($this->injectPreview($html, $token, $label, $path))->header('Content-Type', 'text/html');
         }
 
         $response = new BinaryFileResponse($filePath);
@@ -58,9 +58,16 @@ class PreviewController extends Controller
         return $response;
     }
 
-    private function injectPreview(string $html, string $token, string $label): string
+    private function injectPreview(string $html, string $token, string $label, string $path = 'index.php'): string
     {
         $previewBase = '/preview/' . $token . '/';
+
+        // Base for resolving relative links — includes the page's subdirectory if any.
+        // e.g. path="sightings/index.php" → dirBase="/preview/{token}/sightings/"
+        $dir = dirname($path);
+        $dirBase = ($dir === '.' || $dir === '')
+            ? $previewBase
+            : $previewBase . trim($dir, '/') . '/';
 
         // Rewrite root-relative URLs: href="/foo" → href="/preview/{token}/foo"
         $html = preg_replace_callback(
@@ -69,15 +76,23 @@ class PreviewController extends Controller
             $html
         );
 
-        // Rewrite relative URLs: href="shop.html" → href="/preview/{token}/shop.html"
-        // Skips anchors (#), scheme URIs (mailto:, tel:, https:, javascript:, etc.)
+        // Rewrite relative URLs using directory context.
+        // Skips: anchors (#), scheme URIs (mailto:, https:, etc.), query-only (?foo), root-relative (/).
+        // ./foo links use previewBase (they are site-root-relative from the $root PHP variable).
+        // Plain relative links (submit.php) use dirBase so they stay in their subdirectory.
         $html = preg_replace_callback(
             '/((?:href|src|action)=["\'])([^"\'#\/][^"\']*?)(["\'])/i',
-            function ($m) use ($previewBase) {
+            function ($m) use ($previewBase, $dirBase) {
+                if ($m[2][0] === '?') {
+                    return $m[0]; // query-string-only: browser resolves relative to current URL
+                }
                 if (preg_match('/^[a-z][a-z0-9+\-.]*:/i', $m[2])) {
                     return $m[0]; // leave mailto:, tel:, https:, javascript:, data: alone
                 }
-                return $m[1] . $previewBase . $m[2] . $m[3];
+                if (str_starts_with($m[2], './') || $m[2] === '.') {
+                    return $m[1] . $previewBase . $m[2] . $m[3]; // ./foo: site-root-relative
+                }
+                return $m[1] . $dirBase . $m[2] . $m[3]; // plain relative: directory-relative
             },
             $html
         );
