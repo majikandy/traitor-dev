@@ -29,7 +29,7 @@ class GitHubController extends Controller
         $installationId = $request->integer('installation_id');
         $action        = $request->input('setup_action');
 
-        abort_unless($siteId && $installationId && $action === 'install', 400, 'Invalid GitHub callback.');
+        abort_unless($siteId && $installationId && in_array($action, ['install', 'update']), 400, 'Invalid GitHub callback.');
 
         $site = Site::findOrFail($siteId);
         $site->update(['github_installation_id' => $installationId, 'github_repo' => null]);
