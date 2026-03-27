@@ -51,7 +51,7 @@
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder <span class="text-gray-400 font-normal">(optional — for monorepos)</span></label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder <span class="text-gray-400 font-normal">(optional — if your site isn't at the repo root)</span></label>
                     <input type="text" name="repo_path" id="repo-path" placeholder="e.g. sites/my-site" autocomplete="off"
                         list="dirs-list"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
