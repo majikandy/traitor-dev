@@ -39,7 +39,7 @@
                 <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">HTML</span>
                 <button onclick="toggleRaw()" class="text-xs text-brand-600 hover:text-brand-700 font-medium transition" id="raw-toggle">View source</button>
             </div>
-            <iframe id="email-frame" srcdoc="{{ htmlspecialchars($email->body_html) }}"
+            <iframe id="email-frame" srcdoc="{{ $email->body_html }}"
                 class="w-full border-0 bg-white"
                 style="min-height:500px;"
                 onload="this.style.height = this.contentDocument.body.scrollHeight + 'px'">
