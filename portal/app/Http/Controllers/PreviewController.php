@@ -57,18 +57,23 @@ class PreviewController extends Controller
     {
         $previewBase = '/preview/' . $token . '/';
 
-        // Inject <base> so relative URLs (e.g. href="shop.html") resolve correctly.
-        // Without this, relative links strip the token segment and 404.
-        if (!str_contains($html, '<base ')) {
-            $html = preg_replace('/(<head[^>]*>)/i', '$1<base href="' . $previewBase . '">', $html, 1);
-        }
-
-        // Rewrite root-relative URLs (href="/...", src="/...") to go through the preview route.
-        // Handles both double and single quoted attributes.
-        // Skips protocol-relative (//), absolute (https://), anchors (#), and data: URIs.
+        // Rewrite root-relative URLs: href="/foo" → href="/preview/{token}/foo"
         $html = preg_replace_callback(
             '/((?:href|src|action)=["\'])(\\/(?!\\/)[^"\']*?)(["\'])/i',
             fn($m) => $m[1] . $previewBase . ltrim($m[2], '/') . $m[3],
+            $html
+        );
+
+        // Rewrite relative URLs: href="shop.html" → href="/preview/{token}/shop.html"
+        // Skips anchors (#), scheme URIs (mailto:, tel:, https:, javascript:, etc.)
+        $html = preg_replace_callback(
+            '/((?:href|src|action)=["\'])([^"\'#\/][^"\']*?)(["\'])/i',
+            function ($m) use ($previewBase) {
+                if (preg_match('/^[a-z][a-z0-9+\-.]*:/i', $m[2])) {
+                    return $m[0]; // leave mailto:, tel:, https:, javascript:, data: alone
+                }
+                return $m[1] . $previewBase . $m[2] . $m[3];
+            },
             $html
         );
 
