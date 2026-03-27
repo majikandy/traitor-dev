@@ -92,20 +92,63 @@
                 });
 
                 (function () {
-                    var defaultBranches  = @json($defaultBranches);
-                    var repoSelect       = document.querySelector('select[name="repo"]');
-                    var datalist         = document.getElementById('dirs-list');
-                    var branchesList     = document.getElementById('branches-list');
-                    var hint             = document.getElementById('dirs-hint');
-                    var branchLabel      = document.getElementById('branch-default-label');
-                    var branchInput      = document.getElementById('branch-input');
-                    var dirsUrl          = '{{ route('github.repo-dirs', $site) }}';
-                    var branchesUrl      = '{{ route('github.repo-branches', $site) }}';
+                    var defaultBranches = @json($defaultBranches);
+                    var repoSelect      = document.querySelector('select[name="repo"]');
+                    var branchesList    = document.getElementById('branches-list');
+                    var hint            = document.getElementById('dirs-hint');
+                    var branchLabel     = document.getElementById('branch-default-label');
+                    var branchInput     = document.getElementById('branch-input');
+                    var pathInput       = document.getElementById('repo-path');
+                    var picker          = document.getElementById('folder-picker');
+                    var chips           = document.getElementById('folder-chips');
+                    var dirsUrl         = '{{ route('github.repo-dirs', $site) }}';
+                    var branchesUrl     = '{{ route('github.repo-branches', $site) }}';
+                    var allDirs         = [];
+
+                    // ── Keyboard: ArrowDown from path input enters the chip list ──
+                    pathInput.addEventListener('keydown', function (e) {
+                        if (e.key === 'ArrowDown' && !picker.classList.contains('hidden')) {
+                            e.preventDefault();
+                            var first = chips.querySelector('button');
+                            if (first) first.focus();
+                        }
+                        if (e.key === 'Escape') {
+                            picker.classList.add('hidden');
+                        }
+                    });
+
+                    // ── Keyboard: navigate chips with arrows, Escape closes, Backspace goes up ──
+                    chips.addEventListener('keydown', function (e) {
+                        var btns = Array.from(chips.querySelectorAll('button'));
+                        var idx  = btns.indexOf(document.activeElement);
+                        if (idx === -1) return;
+
+                        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            if (btns[idx + 1]) btns[idx + 1].focus();
+                        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            if (idx === 0) pathInput.focus();
+                            else btns[idx - 1].focus();
+                        } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            picker.classList.add('hidden');
+                            pathInput.focus();
+                        } else if (e.key === 'Backspace') {
+                            e.preventDefault();
+                            var cur    = pathInput.value;
+                            var parent = cur.includes('/') ? cur.slice(0, cur.lastIndexOf('/')) : '';
+                            pathInput.value = parent;
+                            renderFolderPicker(parent);
+                            pathInput.focus();
+                        }
+                    });
 
                     repoSelect.addEventListener('change', function () {
                         var repo = this.value;
-                        datalist.innerHTML = '';
                         branchesList.innerHTML = '';
+                        allDirs = [];
+                        picker.classList.add('hidden');
 
                         // Branch UI
                         if (repo && defaultBranches[repo]) {
@@ -121,19 +164,15 @@
                                 branchInput.placeholder = def;
                                 branchInput.focus();
                             });
-
-                            // Fetch branches in the background so the picker is ready if they click override
-                            fetch(branchesUrl + '?repo=' + encodeURIComponent(repo), {
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                            })
-                            .then(function (r) { return r.json(); })
-                            .then(function (branches) {
-                                branches.forEach(function (b) {
-                                    var opt = document.createElement('option');
-                                    opt.value = b;
-                                    branchesList.appendChild(opt);
+                            fetch(branchesUrl + '?repo=' + encodeURIComponent(repo), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                .then(function (r) { return r.json(); })
+                                .then(function (branches) {
+                                    branches.forEach(function (b) {
+                                        var opt = document.createElement('option');
+                                        opt.value = b;
+                                        branchesList.appendChild(opt);
+                                    });
                                 });
-                            });
                         } else {
                             branchLabel.textContent = 'Select a repository to see its default branch.';
                             branchLabel.classList.remove('hidden');
@@ -142,37 +181,25 @@
                         }
 
                         // Folder picker
-                        var picker = document.getElementById('folder-picker');
-                        picker.classList.add('hidden');
                         if (!repo) {
                             hint.textContent = 'Select a repository above to browse its folders.';
                             return;
                         }
                         hint.textContent = 'Loading folders…';
-                        fetch(dirsUrl + '?repo=' + encodeURIComponent(repo), {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                        .then(function (r) { return r.json(); })
-                        .then(function (dirs) {
-                            if (!dirs.length) {
-                                hint.textContent = 'No subfolders — leave blank to use the whole repo.';
-                                return;
-                            }
-                            hint.textContent = '';
-                            renderFolderPicker(dirs, '');
-                        })
-                        .catch(function () {
-                            hint.textContent = 'Could not load folders — type the path manually.';
-                        });
+                        fetch(dirsUrl + '?repo=' + encodeURIComponent(repo), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                            .then(function (r) { return r.json(); })
+                            .then(function (dirs) {
+                                if (!dirs.length) { hint.textContent = 'No subfolders — leave blank to use the whole repo.'; return; }
+                                allDirs = dirs;
+                                hint.textContent = '';
+                                renderFolderPicker('');
+                            })
+                            .catch(function () { hint.textContent = 'Could not load folders — type the path manually.'; });
                     });
 
-                    function renderFolderPicker(allDirs, prefix) {
-                        var picker     = document.getElementById('folder-picker');
-                        var chips      = document.getElementById('folder-chips');
+                    function renderFolderPicker(prefix) {
                         var breadcrumb = document.getElementById('folder-breadcrumb');
-                        var pathInput  = document.getElementById('repo-path');
 
-                        // Direct children only: one more segment beyond prefix
                         var children = allDirs.filter(function (d) {
                             if (prefix === '') return d.indexOf('/') === -1;
                             return d.indexOf(prefix + '/') === 0 && d.slice(prefix.length + 1).indexOf('/') === -1;
@@ -181,10 +208,9 @@
                         // Breadcrumb
                         breadcrumb.innerHTML = '';
                         var rootBtn = document.createElement('button');
-                        rootBtn.type = 'button';
-                        rootBtn.textContent = 'root';
+                        rootBtn.type = 'button'; rootBtn.textContent = 'root';
                         rootBtn.className = 'hover:text-brand-600 transition';
-                        rootBtn.addEventListener('click', function () { pathInput.value = ''; renderFolderPicker(allDirs, ''); });
+                        rootBtn.addEventListener('click', function () { pathInput.value = ''; renderFolderPicker(''); });
                         breadcrumb.appendChild(rootBtn);
 
                         if (prefix) {
@@ -194,12 +220,11 @@
                                 breadcrumb.appendChild(sep);
                                 var crumbPath = parts.slice(0, i + 1).join('/');
                                 var crumb = document.createElement('button');
-                                crumb.type = 'button';
-                                crumb.textContent = part;
-                                crumb.className = (i === parts.length - 1)
+                                crumb.type = 'button'; crumb.textContent = part;
+                                crumb.className = i === parts.length - 1
                                     ? 'font-medium text-gray-900'
                                     : 'hover:text-brand-600 transition text-gray-500';
-                                crumb.addEventListener('click', function () { pathInput.value = crumbPath; renderFolderPicker(allDirs, crumbPath); });
+                                crumb.addEventListener('click', function () { pathInput.value = crumbPath; renderFolderPicker(crumbPath); });
                                 breadcrumb.appendChild(crumb);
                             });
                         }
@@ -217,13 +242,13 @@
                                 var hasChildren = allDirs.some(function (d) { return d.indexOf(dir + '/') === 0; });
                                 var btn         = document.createElement('button');
                                 btn.type        = 'button';
-                                btn.className   = 'inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 transition cursor-pointer';
+                                btn.className   = 'inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400';
                                 btn.innerHTML   = '<svg class="h-3 w-3 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg>'
                                     + '<span>' + name + '</span>'
                                     + (hasChildren ? '<span class="text-gray-300 text-sm leading-none">›</span>' : '');
                                 btn.addEventListener('click', function () {
                                     pathInput.value = dir;
-                                    renderFolderPicker(allDirs, dir);
+                                    renderFolderPicker(dir);
                                 });
                                 chips.appendChild(btn);
                             });
