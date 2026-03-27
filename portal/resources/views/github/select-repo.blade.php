@@ -52,8 +52,10 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder <span class="text-gray-400 font-normal">(optional — if your site isn't at the repo root)</span></label>
-                    <input type="text" name="repo_path" id="repo-path" placeholder="e.g. sites/my-site" autocomplete="off"
+                    <input type="text" name="repo_path" id="repo-path" placeholder="e.g. sites/my-site"
+                        list="dirs-list" autocomplete="off"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    <datalist id="dirs-list"></datalist>
                     <p class="mt-1 text-xs text-gray-400" id="dirs-hint">Select a repository above to browse its folders.</p>
 
                     {{-- Hierarchical folder picker --}}
@@ -95,6 +97,7 @@
                     var defaultBranches = @json($defaultBranches);
                     var repoSelect      = document.querySelector('select[name="repo"]');
                     var branchesList    = document.getElementById('branches-list');
+                    var dirsList        = document.getElementById('dirs-list');
                     var hint            = document.getElementById('dirs-hint');
                     var branchLabel     = document.getElementById('branch-default-label');
                     var branchInput     = document.getElementById('branch-input');
@@ -147,6 +150,7 @@
                     repoSelect.addEventListener('change', function () {
                         var repo = this.value;
                         branchesList.innerHTML = '';
+                        dirsList.innerHTML = '';
                         allDirs = [];
                         picker.classList.add('hidden');
 
@@ -191,6 +195,11 @@
                             .then(function (dirs) {
                                 if (!dirs.length) { hint.textContent = 'No subfolders — leave blank to use the whole repo.'; return; }
                                 allDirs = dirs;
+                                dirs.forEach(function (d) {
+                                    var opt = document.createElement('option');
+                                    opt.value = d;
+                                    dirsList.appendChild(opt);
+                                });
                                 hint.textContent = '';
                                 renderFolderPicker('');
                             })
