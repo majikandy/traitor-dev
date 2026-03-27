@@ -59,7 +59,7 @@ class SiteService
             if (!is_dir($subDir)) {
                 throw new \RuntimeException("Subfolder '{$subPath}' not found in repository.");
             }
-            $tmp = sys_get_temp_dir() . '/traitor_sub_' . uniqid();
+            $tmp = dirname($draftsPath) . '/.tmp_sub_' . uniqid();
             rename($subDir, $tmp);
             File::deleteDirectory($draftsPath);
             rename($tmp, $draftsPath);
