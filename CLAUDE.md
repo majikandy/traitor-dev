@@ -2,6 +2,16 @@
 
 > "Traitor to WordPress" - Simple, fast websites managed by AI.
 
+## Versioning
+
+A `portal/VERSION` file tracks the current build version (format: `YYYYMMDD.HHMM`).
+
+The `scripts/hooks/pre-commit` hook automatically updates it on every commit. After any `git commit`, **always tell the user the version that was set** — it appears in the commit output as `Version set to: YYYYMMDD.HHMM`.
+
+If you ever push without having committed (e.g., the version file is stale), update it manually, commit, then push.
+
+---
+
 ## Ground Rules
 
 ### No Fallbacks. Ever.

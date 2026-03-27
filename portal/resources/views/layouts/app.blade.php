@@ -137,5 +137,7 @@
     </div>
 
     <script src="/js/portal.js"></script>
+    @php $version = file_exists(base_path('VERSION')) ? trim(file_get_contents(base_path('VERSION'))) : 'dev'; @endphp
+    <div class="fixed bottom-2 right-3 text-xs text-gray-300 select-none pointer-events-none">v{{ $version }}</div>
 </body>
 </html>

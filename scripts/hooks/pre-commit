@@ -1,0 +1,5 @@
+#!/bin/bash
+VERSION=$(date +"%Y%m%d.%H%M")
+printf "%s" "$VERSION" > portal/VERSION
+git add portal/VERSION
+echo "Version set to: $VERSION"
