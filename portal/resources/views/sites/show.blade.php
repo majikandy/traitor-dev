@@ -232,10 +232,11 @@ function selectRelease(row) {
         if (r.dataset.isLive !== 'true') r.classList.remove('bg-brand-50');
     });
     if (row.dataset.isLive !== 'true') row.classList.add('bg-brand-50');
-    document.getElementById('preview-iframe').src = row.dataset.previewUrl;
-    document.getElementById('preview-open-link').href = row.dataset.previewUrl;
+    var isLive = row.dataset.isLive === 'true';
+    document.getElementById('preview-iframe').src = isLive ? siteMetaDefaultSrc : row.dataset.previewUrl;
+    document.getElementById('preview-open-link').href = isLive ? siteMetaLiveUrl : row.dataset.previewUrl;
     document.getElementById('preview-label').textContent = row.dataset.version;
-    updatePreviewIndicator(row.dataset.isLive === 'true');
+    updatePreviewIndicator(isLive);
 }
 function resetPreview() {
     // Deselect all rows and return to live site view
