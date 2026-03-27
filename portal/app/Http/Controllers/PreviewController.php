@@ -36,9 +36,14 @@ class PreviewController extends Controller
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
         if ($ext === 'php') {
+            // Spoof SCRIPT_NAME so depth-based $root calculations in included PHP files
+            // always produce './' — the link rewriter below then makes them correct.
+            $origScriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+            $_SERVER['SCRIPT_NAME'] = '/' . basename($filePath);
             ob_start();
             include $filePath;
             $html = ob_get_clean();
+            $_SERVER['SCRIPT_NAME'] = $origScriptName;
             return response($this->injectPreview($html, $token, $label))->header('Content-Type', 'text/html');
         }
 
