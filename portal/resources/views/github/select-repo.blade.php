@@ -53,10 +53,14 @@
                 <div class="mb-4">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder <span class="text-gray-400 font-normal">(optional — if your site isn't at the repo root)</span></label>
                     <input type="text" name="repo_path" id="repo-path" placeholder="e.g. sites/my-site" autocomplete="off"
-                        list="dirs-list"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
-                    <datalist id="dirs-list"></datalist>
                     <p class="mt-1 text-xs text-gray-400" id="dirs-hint">Select a repository above to browse its folders.</p>
+
+                    {{-- Hierarchical folder picker --}}
+                    <div id="folder-picker" class="hidden mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <div id="folder-breadcrumb" class="mb-2 flex flex-wrap items-center gap-0.5 text-xs text-gray-400 min-h-[1.25rem]"></div>
+                        <div id="folder-chips" class="flex flex-wrap gap-1.5"></div>
+                    </div>
                 </div>
                 <div class="mb-6">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Branch</label>
@@ -138,6 +142,8 @@
                         }
 
                         // Folder picker
+                        var picker = document.getElementById('folder-picker');
+                        picker.classList.add('hidden');
                         if (!repo) {
                             hint.textContent = 'Select a repository above to browse its folders.';
                             return;
@@ -148,19 +154,83 @@
                         })
                         .then(function (r) { return r.json(); })
                         .then(function (dirs) {
-                            dirs.forEach(function (d) {
-                                var opt = document.createElement('option');
-                                opt.value = d;
-                                datalist.appendChild(opt);
-                            });
-                            hint.textContent = dirs.length
-                                ? dirs.length + ' folders found — type to filter.'
-                                : 'No subfolders found. Leave blank to use the whole repo.';
+                            if (!dirs.length) {
+                                hint.textContent = 'No subfolders — leave blank to use the whole repo.';
+                                return;
+                            }
+                            hint.textContent = '';
+                            renderFolderPicker(dirs, '');
                         })
                         .catch(function () {
                             hint.textContent = 'Could not load folders — type the path manually.';
                         });
                     });
+
+                    function renderFolderPicker(allDirs, prefix) {
+                        var picker     = document.getElementById('folder-picker');
+                        var chips      = document.getElementById('folder-chips');
+                        var breadcrumb = document.getElementById('folder-breadcrumb');
+                        var pathInput  = document.getElementById('repo-path');
+
+                        // Direct children only: one more segment beyond prefix
+                        var children = allDirs.filter(function (d) {
+                            if (prefix === '') return d.indexOf('/') === -1;
+                            return d.indexOf(prefix + '/') === 0 && d.slice(prefix.length + 1).indexOf('/') === -1;
+                        });
+
+                        // Breadcrumb
+                        breadcrumb.innerHTML = '';
+                        var rootBtn = document.createElement('button');
+                        rootBtn.type = 'button';
+                        rootBtn.textContent = 'root';
+                        rootBtn.className = 'hover:text-brand-600 transition';
+                        rootBtn.addEventListener('click', function () { pathInput.value = ''; renderFolderPicker(allDirs, ''); });
+                        breadcrumb.appendChild(rootBtn);
+
+                        if (prefix) {
+                            prefix.split('/').forEach(function (part, i, parts) {
+                                var sep = document.createElement('span');
+                                sep.textContent = ' / ';
+                                breadcrumb.appendChild(sep);
+                                var crumbPath = parts.slice(0, i + 1).join('/');
+                                var crumb = document.createElement('button');
+                                crumb.type = 'button';
+                                crumb.textContent = part;
+                                crumb.className = (i === parts.length - 1)
+                                    ? 'font-medium text-gray-900'
+                                    : 'hover:text-brand-600 transition text-gray-500';
+                                crumb.addEventListener('click', function () { pathInput.value = crumbPath; renderFolderPicker(allDirs, crumbPath); });
+                                breadcrumb.appendChild(crumb);
+                            });
+                        }
+
+                        // Chips
+                        chips.innerHTML = '';
+                        if (children.length === 0) {
+                            var msg = document.createElement('span');
+                            msg.className = 'text-xs text-gray-400';
+                            msg.textContent = prefix ? 'No deeper subfolders' : 'No subfolders in this repo';
+                            chips.appendChild(msg);
+                        } else {
+                            children.forEach(function (dir) {
+                                var name        = dir.split('/').pop();
+                                var hasChildren = allDirs.some(function (d) { return d.indexOf(dir + '/') === 0; });
+                                var btn         = document.createElement('button');
+                                btn.type        = 'button';
+                                btn.className   = 'inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 transition cursor-pointer';
+                                btn.innerHTML   = '<svg class="h-3 w-3 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg>'
+                                    + '<span>' + name + '</span>'
+                                    + (hasChildren ? '<span class="text-gray-300 text-sm leading-none">›</span>' : '');
+                                btn.addEventListener('click', function () {
+                                    pathInput.value = dir;
+                                    renderFolderPicker(allDirs, dir);
+                                });
+                                chips.appendChild(btn);
+                            });
+                        }
+
+                        picker.classList.remove('hidden');
+                    }
                 })();
             </script>
         @endif
