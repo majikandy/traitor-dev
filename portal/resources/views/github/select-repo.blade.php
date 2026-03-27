@@ -62,7 +62,9 @@
                     <label class="block text-xs font-medium text-gray-700 mb-1">Branch</label>
                     <p class="text-sm text-gray-500" id="branch-default-label">Select a repository to see its default branch.</p>
                     <input type="text" name="branch" id="branch-input" placeholder="e.g. production"
+                        list="branches-list" autocomplete="off"
                         class="hidden w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    <datalist id="branches-list"></datalist>
                 </div>
                 <div class="flex items-center gap-3">
                     <button type="submit" id="submit-btn" class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed">
@@ -86,23 +88,27 @@
                 });
 
                 (function () {
-                    var defaultBranches = @json($defaultBranches);
-                    var repoSelect      = document.querySelector('select[name="repo"]');
-                    var datalist        = document.getElementById('dirs-list');
-                    var hint            = document.getElementById('dirs-hint');
-                    var branchLabel     = document.getElementById('branch-default-label');
-                    var branchInput     = document.getElementById('branch-input');
-                    var dirsUrl         = '{{ route('github.repo-dirs', $site) }}';
+                    var defaultBranches  = @json($defaultBranches);
+                    var repoSelect       = document.querySelector('select[name="repo"]');
+                    var datalist         = document.getElementById('dirs-list');
+                    var branchesList     = document.getElementById('branches-list');
+                    var hint             = document.getElementById('dirs-hint');
+                    var branchLabel      = document.getElementById('branch-default-label');
+                    var branchInput      = document.getElementById('branch-input');
+                    var dirsUrl          = '{{ route('github.repo-dirs', $site) }}';
+                    var branchesUrl      = '{{ route('github.repo-branches', $site) }}';
 
                     repoSelect.addEventListener('change', function () {
                         var repo = this.value;
                         datalist.innerHTML = '';
+                        branchesList.innerHTML = '';
 
                         // Branch UI
                         if (repo && defaultBranches[repo]) {
                             var def = defaultBranches[repo];
                             branchInput.classList.add('hidden');
                             branchInput.value = '';
+                            branchLabel.classList.remove('hidden');
                             branchLabel.innerHTML = '<span class="font-medium text-gray-700">' + def + '</span>'
                                 + ' &mdash; <button type="button" id="branch-override" class="text-xs text-brand-600 hover:underline">Use a different branch</button>';
                             document.getElementById('branch-override').addEventListener('click', function () {
@@ -110,6 +116,19 @@
                                 branchInput.classList.remove('hidden');
                                 branchInput.placeholder = def;
                                 branchInput.focus();
+                            });
+
+                            // Fetch branches in the background so the picker is ready if they click override
+                            fetch(branchesUrl + '?repo=' + encodeURIComponent(repo), {
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            })
+                            .then(function (r) { return r.json(); })
+                            .then(function (branches) {
+                                branches.forEach(function (b) {
+                                    var opt = document.createElement('option');
+                                    opt.value = b;
+                                    branchesList.appendChild(opt);
+                                });
                             });
                         } else {
                             branchLabel.textContent = 'Select a repository to see its default branch.';

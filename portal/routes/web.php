@@ -125,6 +125,7 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::get('/github/callback', [GitHubController::class, 'callback'])->name('github.callback');
     Route::get('/github/{site}/repo', [GitHubController::class, 'selectRepoForm'])->name('github.select-repo-form');
     Route::get('/github/{site}/repo/dirs', [GitHubController::class, 'repoDirs'])->name('github.repo-dirs');
+    Route::get('/github/{site}/repo/branches', [GitHubController::class, 'repoBranches'])->name('github.repo-branches');
     Route::post('/github/{site}/repo', [GitHubController::class, 'selectRepo'])->name('github.select-repo');
     Route::post('/github/{site}/auto-deploy', [GitHubController::class, 'toggleAutoDeploy'])->name('github.auto-deploy');
     Route::delete('/github/{site}', [GitHubController::class, 'disconnect'])->name('github.disconnect');

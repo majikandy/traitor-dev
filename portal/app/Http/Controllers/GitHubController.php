@@ -73,6 +73,17 @@ class GitHubController extends Controller
         return view('github.select-repo', compact('site', 'repos', 'defaultBranches'));
     }
 
+    public function repoBranches(Request $request, Site $site): JsonResponse
+    {
+        $repo = $request->string('repo')->toString();
+        abort_unless(preg_match('/^[\w.\-]+\/[\w.\-]+$/', $repo), 422, 'Invalid repo.');
+
+        $org = $site->organisation;
+        abort_unless($org->hasGitHub(), 400, 'No GitHub installation for this organisation.');
+
+        return response()->json($this->github->listBranches($org->github_installation_id, $repo));
+    }
+
     /**
      * Return a JSON list of directories in a repo — used by the subfolder picker.
      */

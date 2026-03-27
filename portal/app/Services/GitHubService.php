@@ -43,6 +43,25 @@ class GitHubService
             ->all();
     }
 
+    public function listBranches(int $installationId, string $repo): array
+    {
+        $token = $this->getInstallationToken($installationId);
+
+        $response = Http::withToken($token)
+            ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28'])
+            ->get("https://api.github.com/repos/{$repo}/branches", ['per_page' => 100]);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException("GitHub branches API error for {$repo}: " . $response->body());
+        }
+
+        return collect($response->json())
+            ->pluck('name')
+            ->sort()
+            ->values()
+            ->all();
+    }
+
     /**
      * Returns all directory paths in the repo (type=tree), sorted.
      * Uses the recursive tree API so it's one request regardless of depth.
