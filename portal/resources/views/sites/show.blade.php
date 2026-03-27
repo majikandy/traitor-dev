@@ -83,9 +83,9 @@
         </div>
         <h2 class="text-base font-semibold text-gray-900">Create Release</h2>
     </div>
-    <p class="text-sm text-gray-500 mb-4 ml-12">Upload a .zip to create a new versioned release with a shareable preview link.</p>
+    <p class="text-sm text-gray-500 mb-4 sm:ml-12">Upload a .zip to create a new versioned release with a shareable preview link.</p>
 
-    <form action="{{ route('sites.release', $site) }}" method="POST" enctype="multipart/form-data" class="ml-12">
+    <form action="{{ route('sites.release', $site) }}" method="POST" enctype="multipart/form-data" class="sm:ml-12">
         @csrf
         <div id="dropzone" class="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50/50 transition mb-4">
             <input type="file" name="zip" accept=".zip" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
@@ -93,14 +93,14 @@
             <p class="dropzone-text text-sm text-gray-500">Drop a .zip or <span class="font-semibold text-brand-600">browse</span></p>
             <p class="dropzone-filename mt-1 text-sm font-semibold text-brand-600" id="filename"></p>
         </div>
-        <div class="flex gap-3">
+        <div class="flex flex-col sm:flex-row gap-3">
             <input
                 type="text"
                 name="notes"
                 placeholder="Release notes (optional)"
                 class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition"
             >
-            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 transition">Create Release</button>
+            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 transition sm:whitespace-nowrap">Create Release</button>
         </div>
     </form>
 </div>
@@ -139,28 +139,31 @@
 
     {{-- Preview panel --}}
     <div>
-        <div id="preview-header" class="px-6 py-3 border-b border-gray-100 flex items-center justify-between transition-colors"
+        <div id="preview-header" class="px-4 py-2 border-b border-gray-100 transition-colors"
              style="background-color: {{ $defaultHeaderBg }}">
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-medium text-gray-500">Previewing</span>
-                <span id="preview-label" class="text-xs font-semibold text-gray-900">Live site</span>
-                <span id="preview-state-badge" class="{{ $defaultBadgeClass }} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold">
-                    <span class="h-1.5 w-1.5 rounded-full {{ $defaultDotClass }}"></span>
-                    {{ $defaultBadgeText }}
-                </span>
-                <span id="preview-maintenance-warning" class="hidden inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>maintenance active
-                </span>
-                <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1" title="Back to live site">↺</button>
-            </div>
-            <div class="flex items-center gap-3">
-                {{-- Mobile / Desktop toggle --}}
-                <div class="flex items-center gap-0.5 rounded-lg bg-gray-200 p-0.5">
-                    <button id="view-desktop-btn" onclick="setView('desktop')" class="rounded-md px-2.5 py-1 text-xs font-medium bg-white text-gray-900 shadow-sm transition">Desktop</button>
-                    <button id="view-mobile-btn" onclick="setView('mobile')" class="rounded-md px-2.5 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition">Mobile</button>
+            {{-- Row 1: preview state + open link --}}
+            <div class="flex items-center justify-between gap-2 min-w-0">
+                <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
+                    <span class="text-xs font-medium text-gray-400 hidden sm:inline">Previewing</span>
+                    <span id="preview-label" class="text-xs font-semibold text-gray-900 truncate hidden sm:inline">Live site</span>
+                    <span id="preview-state-badge" class="{{ $defaultBadgeClass }} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold flex-shrink-0">
+                        <span class="h-1.5 w-1.5 rounded-full {{ $defaultDotClass }}"></span>
+                        {{ $defaultBadgeText }}
+                    </span>
+                    <span id="preview-maintenance-warning" class="hidden inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 flex-shrink-0">
+                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>maintenance
+                    </span>
+                    <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition flex-shrink-0" title="Back to live site">↺</button>
                 </div>
-                <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
-                <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">Open ↗</a>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    {{-- Desktop / Mobile toggle --}}
+                    <div class="flex items-center gap-0.5 rounded-lg bg-gray-200 p-0.5">
+                        <button id="view-desktop-btn" onclick="setView('desktop')" class="rounded-md px-2 py-1 text-xs font-medium bg-white text-gray-900 shadow-sm transition">Desktop</button>
+                        <button id="view-mobile-btn" onclick="setView('mobile')" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition">Mobile</button>
+                    </div>
+                    <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢</button>
+                    <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline flex-shrink-0">↗</a>
+                </div>
             </div>
         </div>
         <div id="preview-container" class="relative w-full overflow-hidden transition-all duration-300" style="height: 360px; background: #e5e7eb;">
@@ -203,11 +206,11 @@
                         <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>currently serving
                     </span>
                 </div>
-                <div class="flex items-center gap-3" onclick="event.stopPropagation()">
-                    <span class="text-xs text-gray-400">Coming soon page</span>
+                <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                    <span class="text-xs text-gray-400 hidden sm:inline">Coming soon page</span>
                     @if($hasDomain)
                         <a href="{{ $liveUrl }}" target="_blank"
-                           class="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition">Visit site ↗</a>
+                           class="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition">Visit ↗</a>
                     @endif
                 </div>
             </div>
@@ -232,9 +235,9 @@
                         <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes }}</span>
                     @endif
                 </div>
-                <div class="flex items-center gap-3" data-actions onclick="event.stopPropagation()">
-                    <span class="text-xs text-gray-400">{{ $release->created_at->diffForHumans() }}</span>
-                    <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
+                <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
+                    <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
+                    <a href="{{ route('sites.download.release', [$site, $release]) }}" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
                     @if($isLive && $hasDomain)
                         <a href="{{ $liveUrl }}" target="_blank"
                            class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
@@ -245,7 +248,7 @@
                             data-version="{{ $release->version }}"
                             onclick="event.stopPropagation(); goLive(this)">Go Live</button>
                     @elseif(!$hasDomain && $loop->first)
-                        <a href="{{ route('sites.show', $site) }}#domain" class="text-xs text-brand-600 hover:underline" onclick="event.stopPropagation()">Add a domain to go live ↓</a>
+                        <a href="{{ route('sites.show', $site) }}#domain" class="text-xs text-brand-600 hover:underline" onclick="event.stopPropagation()">Add domain ↓</a>
                     @endif
                 </div>
             </div>
@@ -471,7 +474,7 @@ if (window.innerWidth < 768) { setView('mobile'); }
 
     @if(!$site->domain)
         {{-- No domain: attach form --}}
-        <form method="POST" action="{{ route('sites.domain.attach', $site) }}" class="flex gap-3" id="attach-domain-form" onsubmit="startAttaching(this)">
+        <form method="POST" action="{{ route('sites.domain.attach', $site) }}" class="flex flex-col sm:flex-row gap-3" id="attach-domain-form" onsubmit="startAttaching(this)">
             @csrf
             <input type="text" name="domain" id="domain-input" placeholder="yoursite.com"
                 value="{{ old('domain') }}"
