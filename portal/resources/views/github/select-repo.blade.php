@@ -50,9 +50,17 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="mb-4">
+                <div class="mb-4 hidden" id="branch-section">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Branch</label>
+                    <p class="text-sm text-gray-500" id="branch-default-label"></p>
+                    <input type="text" name="branch" id="branch-input" placeholder="e.g. production"
+                        list="branches-list" autocomplete="off"
+                        class="hidden w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    <datalist id="branches-list"></datalist>
+                </div>
+                <div class="mb-6 hidden" id="subfolder-section">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder</label>
-                    <p class="text-sm text-gray-500" id="subfolder-default-label">Whole repo &mdash; <button type="button" id="subfolder-override" class="text-xs text-brand-600 hover:underline">Use a subfolder</button></p>
+                    <p class="text-sm text-gray-500" id="subfolder-default-label">/ &mdash; <button type="button" id="subfolder-override" class="text-xs text-brand-600 hover:underline">Use a subfolder</button></p>
                     <div id="subfolder-panel" class="hidden">
                         <input type="text" name="repo_path" id="repo-path" placeholder="e.g. sites/my-site" autocomplete="off"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
@@ -63,14 +71,6 @@
                             <div id="folder-chips" class="flex flex-wrap gap-1.5"></div>
                         </div>
                     </div>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Branch</label>
-                    <p class="text-sm text-gray-500" id="branch-default-label">Select a repository to see its default branch.</p>
-                    <input type="text" name="branch" id="branch-input" placeholder="e.g. production"
-                        list="branches-list" autocomplete="off"
-                        class="hidden w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
-                    <datalist id="branches-list"></datalist>
                 </div>
                 <div class="flex items-center gap-3">
                     <button type="submit" id="submit-btn" class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed">
@@ -103,8 +103,10 @@
                     var pathInput      = document.getElementById('repo-path');
                     var picker         = document.getElementById('folder-picker');
                     var chips          = document.getElementById('folder-chips');
-                    var subfolderLabel = document.getElementById('subfolder-default-label');
-                    var subfolderPanel = document.getElementById('subfolder-panel');
+                    var subfolderSection = document.getElementById('subfolder-section');
+                    var subfolderLabel   = document.getElementById('subfolder-default-label');
+                    var subfolderPanel   = document.getElementById('subfolder-panel');
+                    var branchSection    = document.getElementById('branch-section');
                     var dirsUrl        = '{{ route('github.repo-dirs', $site) }}';
                     var branchesUrl    = '{{ route('github.repo-branches', $site) }}';
 
@@ -160,13 +162,19 @@
                         branchesList.innerHTML = '';
                         allDirs = [];
                         picker.classList.add('hidden');
+                        subfolderSection.classList.add('hidden');
                         subfolderPanel.classList.add('hidden');
                         subfolderLabel.classList.remove('hidden');
+                        branchSection.classList.add('hidden');
                         pathInput.value = '';
+
+                        if (!repo) return;
 
                         // Branch UI
                         if (repo && defaultBranches[repo]) {
                             var def = defaultBranches[repo];
+                            branchSection.classList.remove('hidden');
+                            subfolderSection.classList.remove('hidden');
                             branchInput.classList.add('hidden');
                             branchInput.value = '';
                             branchLabel.classList.remove('hidden');
