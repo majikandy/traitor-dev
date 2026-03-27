@@ -30,6 +30,9 @@ class SiteService
         // "Coming soon" page served on the real domain until first Go Live
         File::put($sitePath . '/coming-soon/public/index.html', $this->comingSoon($name));
 
+        // Live symlink starts pointing at coming-soon so the preview shows something immediately
+        symlink($sitePath . '/coming-soon', $sitePath . '/live');
+
         return $site;
     }
 
@@ -145,6 +148,18 @@ class SiteService
         $this->swapLiveSymlink($site, $releasePath);
 
         $site->update(['live_release' => $version, 'maintenance_mode' => false]);
+    }
+
+    public function revertToComingSoon(Site $site): void
+    {
+        $comingSoon = $site->sitesPath() . '/coming-soon';
+        if (!is_dir($comingSoon . '/public')) {
+            File::ensureDirectoryExists($comingSoon . '/public');
+            File::put($comingSoon . '/public/index.html', $this->comingSoon($site->name));
+        }
+
+        $this->swapLiveSymlink($site, $comingSoon);
+        $site->update(['live_release' => null, 'maintenance_mode' => false]);
     }
 
     public function enableMaintenance(Site $site): void

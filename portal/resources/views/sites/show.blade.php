@@ -296,6 +296,12 @@
                             <a href="{{ $liveUrl }}" target="_blank"
                                class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
                         @endif
+                        @if($sortedReleases->count() === 1)
+                            <form method="POST" action="{{ route('sites.revert-to-coming-soon', $site) }}" onsubmit="return confirm('Revert to coming soon page?')">
+                                @csrf
+                                <button type="submit" class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">↩ Revert to coming soon</button>
+                            </form>
+                        @endif
                     @else
                         @php $isRollback = $site->live_release && $release->version < $site->live_release; @endphp
                         <button type="button"

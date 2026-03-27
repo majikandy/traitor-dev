@@ -144,6 +144,17 @@ class SiteController extends Controller
         return back()->with('success', "v{$release->version} is now live.");
     }
 
+    public function revertToComingSoon(Site $site)
+    {
+        $this->siteService->revertToComingSoon($site);
+
+        if (request()->expectsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
+        return back()->with('success', 'Reverted to coming soon page.');
+    }
+
     public function update(Request $request, Site $site)
     {
         $request->validate(['name' => 'required|string|max:255']);
