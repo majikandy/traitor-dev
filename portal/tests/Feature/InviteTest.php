@@ -56,11 +56,11 @@ class InviteTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    public function test_invalid_invite_token_redirects_to_login_with_error(): void
+    public function test_invalid_invite_token_shows_error_page(): void
     {
         $this->get('/invite/badtoken')
-            ->assertRedirect('/login')
-            ->assertSessionHasErrors();
+            ->assertStatus(410)
+            ->assertSee('invite is no longer valid');
     }
 
     public function test_resend_invite_generates_new_token_and_sends_notification(): void

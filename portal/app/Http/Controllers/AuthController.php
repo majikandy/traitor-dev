@@ -130,7 +130,7 @@ class AuthController extends Controller
         $user = User::where('invite_token', $token)->first();
 
         if (!$user) {
-            return redirect()->route('login')->withErrors(['email' => 'This invite link is invalid or has been cancelled.']);
+            return response(view('auth.invite-invalid'), 410);
         }
 
         Auth::login($user);
