@@ -42,4 +42,11 @@ return [
         'root_domain' => env('CPANEL_ROOT_DOMAIN'),
     ],
 
+    'github' => [
+        'app_id'          => env('GITHUB_APP_ID'),
+        'app_slug'        => env('GITHUB_APP_SLUG'),
+        'private_key_b64' => env('GITHUB_APP_PRIVATE_KEY_BASE64'),
+        'webhook_secret'  => env('GITHUB_WEBHOOK_SECRET'),
+    ],
+
 ];

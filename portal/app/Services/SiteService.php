@@ -35,16 +35,19 @@ class SiteService
 
     public function upload(Site $site, UploadedFile $file): void
     {
-        $zip = new ZipArchive();
-        $tempPath = $file->getPathname();
+        $this->uploadFromPath($site, $file->getPathname());
+    }
 
-        if ($zip->open($tempPath) !== true) {
+    public function uploadFromPath(Site $site, string $zipPath): void
+    {
+        $zip = new ZipArchive();
+
+        if ($zip->open($zipPath) !== true) {
             throw new \RuntimeException('Could not open zip file.');
         }
 
         $draftsPath = $site->draftsPath();
 
-        // Clear existing drafts/public and extract fresh
         File::cleanDirectory($draftsPath);
         $zip->extractTo($draftsPath);
         $zip->close();

@@ -15,9 +15,22 @@
 <body class="h-full bg-gray-50 flex items-center justify-center">
     <div class="w-full max-w-sm">
         <div class="text-center mb-8">
-            <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 mb-4">
-                <svg class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" /></svg>
-            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="h-12 w-12 rounded-xl mb-4 mx-auto">
+                <defs>
+                    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0f172a"/>
+                        <stop offset="100%" style="stop-color:#1e293b"/>
+                    </linearGradient>
+                    <linearGradient id="slash" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#818cf8"/>
+                        <stop offset="100%" style="stop-color:#6366f1"/>
+                    </linearGradient>
+                </defs>
+                <rect width="200" height="200" rx="40" fill="url(#bg)"/>
+                <polyline points="62,68 38,100 62,132" fill="none" stroke="white" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="138,68 162,100 138,132" fill="none" stroke="white" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="118" y1="60" x2="82" y2="140" stroke="url(#slash)" stroke-width="13" stroke-linecap="round"/>
+            </svg>
             <h1 class="text-2xl font-bold text-gray-900">traitor<span class="text-blue-600">.dev</span></h1>
         </div>
 

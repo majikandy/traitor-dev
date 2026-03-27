@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GitHubController;
 use App\Models\Organisation;
 use App\Http\Controllers\PasskeyController;
 use App\Http\Controllers\PreviewController;
@@ -114,3 +115,14 @@ Route::post('/passkeys/authenticate', [PasskeyController::class, 'authenticate']
 Route::post('/passkeys/invite-options', [PasskeyController::class, 'invitePasskeyOptions'])->name('passkeys.invite-options');
 
 Route::get('/preview/{token}/{path?}', PreviewController::class)->where('path', '.*')->name('preview');
+
+// GitHub App — webhook is public (CSRF exempt via bootstrap/app.php)
+Route::post('/github/webhook', [GitHubController::class, 'webhook'])->name('github.webhook');
+
+Route::middleware(['auth', 'auth.method'])->group(function () {
+    Route::get('/github/install/{site}', [GitHubController::class, 'install'])->name('github.install');
+    Route::get('/github/callback', [GitHubController::class, 'callback'])->name('github.callback');
+    Route::post('/github/{site}/repo', [GitHubController::class, 'selectRepo'])->name('github.select-repo');
+    Route::post('/github/{site}/auto-deploy', [GitHubController::class, 'toggleAutoDeploy'])->name('github.auto-deploy');
+    Route::delete('/github/{site}', [GitHubController::class, 'disconnect'])->name('github.disconnect');
+});

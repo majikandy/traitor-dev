@@ -12,9 +12,9 @@ use Illuminate\Support\Str;
 class Site extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'slug', 'organisation_id', 'preview_token', 'domain', 'domain_status', 'maintenance_mode', 'status', 'current_release', 'live_release'];
+    protected $fillable = ['name', 'slug', 'organisation_id', 'preview_token', 'domain', 'domain_status', 'maintenance_mode', 'status', 'current_release', 'live_release', 'github_installation_id', 'github_repo', 'github_auto_deploy'];
 
-    protected $casts = ['maintenance_mode' => 'boolean'];
+    protected $casts = ['maintenance_mode' => 'boolean', 'github_auto_deploy' => 'boolean'];
 
     protected static function booted(): void
     {

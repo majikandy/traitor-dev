@@ -5,6 +5,7 @@
 ## In progress / next up
 
 - **LLM site builder** — describe changes in a text box, AI edits draft files directly and creates a release. The whole premise of the product.
+- **Deploy from GitHub** — connect a repo as an alternative to zip uploads; auto-create a release on push to main.
 
 ## Backlog
 
@@ -26,7 +27,7 @@
 - **Activity log per site** — who uploaded, who promoted, when — full audit trail
 
 ### Technical
-- **Deploy from GitHub** — connect a repo, auto-create a release on push to main
+- ~~**Deploy from GitHub**~~ — moved to next up
 - **Custom 404 / error pages** — per-site, uploaded or edited in the portal
 
 ## Done

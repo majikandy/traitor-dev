@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\Http;
+
+class GitHubService
+{
+    private string $appId;
+    private string $privateKey;
+    private string $webhookSecret;
+    private string $appSlug;
+
+    public function __construct()
+    {
+        $this->appId          = config('services.github.app_id') ?? throw new \RuntimeException('GITHUB_APP_ID not configured.');
+        $this->appSlug        = config('services.github.app_slug') ?? throw new \RuntimeException('GITHUB_APP_SLUG not configured.');
+        $this->webhookSecret  = config('services.github.webhook_secret') ?? throw new \RuntimeException('GITHUB_WEBHOOK_SECRET not configured.');
+
+        $b64 = config('services.github.private_key_b64') ?? throw new \RuntimeException('GITHUB_APP_PRIVATE_KEY_BASE64 not configured.');
+        $this->privateKey = base64_decode($b64);
+    }
+
+    public function installUrl(): string
+    {
+        return "https://github.com/apps/{$this->appSlug}/installations/new";
+    }
+
+    public function listRepos(int $installationId): array
+    {
+        $token = $this->getInstallationToken($installationId);
+
+        $response = Http::withToken($token)
+            ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28'])
+            ->get('https://api.github.com/installation/repositories', ['per_page' => 100]);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('GitHub API error listing repos: ' . $response->body());
+        }
+
+        return collect($response->json('repositories'))
+            ->pluck('full_name')
+            ->all();
+    }
+
+    public function downloadZipball(int $installationId, string $repo, string $ref = 'HEAD'): string
+    {
+        $token = $this->getInstallationToken($installationId);
+
+        $response = Http::withToken($token)
+            ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28'])
+            ->withOptions(['allow_redirects' => true])
+            ->get("https://api.github.com/repos/{$repo}/zipball/{$ref}");
+
+        if (!$response->successful()) {
+            throw new \RuntimeException("GitHub zipball download failed for {$repo}@{$ref}: " . $response->body());
+        }
+
+        $tmpPath = sys_get_temp_dir() . '/github_' . uniqid() . '.zip';
+        file_put_contents($tmpPath, $response->body());
+
+        return $tmpPath;
+    }
+
+    public function verifyWebhookSignature(string $payload, string $signature): bool
+    {
+        $expected = 'sha256=' . hash_hmac('sha256', $payload, $this->webhookSecret);
+        return hash_equals($expected, $signature);
+    }
+
+    private function getInstallationToken(int $installationId): string
+    {
+        $jwt = $this->generateJwt();
+
+        $response = Http::withToken($jwt, 'Bearer')
+            ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28'])
+            ->post("https://api.github.com/app/installations/{$installationId}/access_tokens");
+
+        if (!$response->successful()) {
+            throw new \RuntimeException("GitHub installation token error: " . $response->body());
+        }
+
+        return $response->json('token');
+    }
+
+    private function generateJwt(): string
+    {
+        $header  = $this->base64urlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+        $now     = time();
+        $payload = $this->base64urlEncode(json_encode([
+            'iat' => $now - 60,
+            'exp' => $now + 600,
+            'iss' => (int) $this->appId,
+        ]));
+
+        $data = $header . '.' . $payload;
+        openssl_sign($data, $signature, $this->privateKey, OPENSSL_ALGO_SHA256);
+
+        return $data . '.' . $this->base64urlEncode($signature);
+    }
+
+    private function base64urlEncode(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+}
