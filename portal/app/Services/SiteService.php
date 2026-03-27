@@ -11,11 +11,12 @@ use ZipArchive;
 
 class SiteService
 {
-    public function create(string $name, string $slug): Site
+    public function create(string $name, string $slug, int $organisationId): Site
     {
         $site = Site::create([
-            'name' => $name,
-            'slug' => $slug,
+            'name'            => $name,
+            'slug'            => $slug,
+            'organisation_id' => $organisationId,
         ]);
 
         $sitePath = $site->sitesPath();

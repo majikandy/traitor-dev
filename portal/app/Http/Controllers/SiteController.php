@@ -7,6 +7,7 @@ use App\Models\Site;
 use App\Services\CpanelService;
 use App\Services\SiteService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipArchive;
@@ -39,7 +40,7 @@ class SiteController extends Controller
             return back()->withInput()->with('error', 'A site with that name already exists.');
         }
 
-        $site = $this->siteService->create($request->name, $slug);
+        $site = $this->siteService->create($request->name, $slug, Auth::user()->organisation_id);
 
         return redirect()->route('sites.show', $site)->with('success', 'Site created! Upload a zip to create your first release.');
     }

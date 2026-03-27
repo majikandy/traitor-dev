@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Site extends Model
 {
-    protected $fillable = ['name', 'slug', 'preview_token', 'domain', 'domain_status', 'maintenance_mode', 'status', 'current_release', 'live_release'];
+    protected $fillable = ['name', 'slug', 'organisation_id', 'preview_token', 'domain', 'domain_status', 'maintenance_mode', 'status', 'current_release', 'live_release'];
 
     protected $casts = ['maintenance_mode' => 'boolean'];
 
@@ -17,6 +19,19 @@ class Site extends Model
         static::creating(function (Site $site) {
             $site->preview_token = Str::uuid()->toString();
         });
+
+        // Scope all queries to the authenticated user's organisation.
+        // Skipped when unauthenticated (e.g. preview controller uses token-based access).
+        static::addGlobalScope('organisation', function (Builder $builder) {
+            if (auth()->check()) {
+                $builder->where('sites.organisation_id', auth()->user()->organisation_id);
+            }
+        });
+    }
+
+    public function organisation(): BelongsTo
+    {
+        return $this->belongsTo(Organisation::class);
     }
 
     public function releases(): HasMany

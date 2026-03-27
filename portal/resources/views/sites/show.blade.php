@@ -395,6 +395,14 @@ function setView(view) {
     }
 }
 function toggleExpand() {
+    // On mobile: open fullscreen overlay instead of resizing the container
+    if (window.innerWidth < 768) {
+        var src = currentView === 'mobile'
+            ? document.getElementById('preview-mobile-iframe').src
+            : document.getElementById('preview-iframe').src;
+        openFullscreenPreview(src);
+        return;
+    }
     var c = document.getElementById('preview-container');
     var btn = document.getElementById('expand-btn');
     var expanded = c.style.height === '700px';
@@ -421,6 +429,25 @@ function toggleExpand() {
     }
     btn.textContent = expanded ? '⤢ Expand' : '⤡ Collapse';
 }
+function openFullscreenPreview(src) {
+    var overlay = document.getElementById('fs-overlay');
+    var iframe  = document.getElementById('fs-iframe');
+    var urlBar  = document.getElementById('fs-url-bar');
+    iframe.src = src;
+    urlBar.textContent = src.replace(/^https?:\/\//, '');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+function closeFullscreenPreview() {
+    var overlay = document.getElementById('fs-overlay');
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+    document.getElementById('fs-iframe').src = '';
+    document.body.style.overflow = '';
+}
+// Auto-switch to mobile view on small screens
+if (window.innerWidth < 768) { setView('mobile'); }
 </script>
 @else
 <div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6">
@@ -563,5 +590,21 @@ function cancelRename() {
         @method('DELETE')
         <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition">Delete Site</button>
     </form>
+</div>
+
+{{-- Fullscreen preview overlay (mobile expand) --}}
+<div id="fs-overlay" class="fixed inset-0 z-50 hidden flex-col bg-white" style="flex-direction:column;">
+    <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-200 bg-gray-50 flex-shrink-0" style="min-height:52px;">
+        <button onclick="closeFullscreenPreview()" class="flex-shrink-0 rounded-full p-2 text-gray-500 active:bg-gray-100" aria-label="Close">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+        <div id="fs-url-bar" class="flex-1 rounded-full bg-gray-100 px-3 py-1.5 text-sm text-gray-600 truncate"></div>
+        @if($site->domain)
+        <a id="fs-open-link" href="https://{{ $site->domain }}" target="_blank" class="flex-shrink-0 rounded-full p-2 text-brand-600" aria-label="Open in browser">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+        </a>
+        @endif
+    </div>
+    <iframe id="fs-iframe" src="" class="border-0 w-full" style="display:block;flex:1;min-height:0;"></iframe>
 </div>
 @endsection

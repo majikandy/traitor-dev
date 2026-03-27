@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Notifications\InviteUserNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -13,7 +14,7 @@ class UsersController extends Controller
 {
     public function index()
     {
-        $users = User::latest()->get();
+        $users = User::where('organisation_id', Auth::user()->organisation_id)->latest()->get();
 
         return view('users.index', compact('users'));
     }
@@ -26,10 +27,11 @@ class UsersController extends Controller
         ]);
 
         $user = User::create([
-            'name'         => $request->name,
-            'email'        => $request->email,
-            'password'     => Hash::make(Str::random(32)),
-            'has_password' => false,
+            'name'            => $request->name,
+            'email'           => $request->email,
+            'password'        => Hash::make(Str::random(32)),
+            'has_password'    => false,
+            'organisation_id' => Auth::user()->organisation_id,
         ]);
 
         $token = Password::createToken($user);

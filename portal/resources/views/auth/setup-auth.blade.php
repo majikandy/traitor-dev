@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login — Traitor.dev</title>
+    <title>Secure your account — Traitor.dev</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,68 +12,67 @@
         }
     </script>
 </head>
-<body class="h-full bg-gray-50 flex items-center justify-center">
+<body class="h-full bg-gray-50 flex items-center justify-center py-10">
     <div class="w-full max-w-sm">
         <div class="text-center mb-8">
             <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 mb-4">
-                <svg class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" /></svg>
+                <svg class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
             </div>
-            <h1 class="text-2xl font-bold text-gray-900">traitor<span class="text-blue-600">.dev</span></h1>
+            <h1 class="text-2xl font-bold text-gray-900">Secure your account</h1>
+            <p class="mt-1 text-sm text-gray-500">Add a passkey or password to continue.</p>
         </div>
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-            @if($errors->any())
+            @if(session('error') || $errors->any())
                 <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                    {{ $errors->first() }}
-                </div>
-            @endif
-            @if(session('status'))
-                <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700">
-                    {{ session('status') }}
+                    {{ session('error') ?: $errors->first() }}
                 </div>
             @endif
 
-            {{-- Passkey view (default) --}}
+            <div id="error-box" class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 hidden"></div>
+
+            {{-- Passkey (default) --}}
             <div id="passkey-view">
-                <p class="text-sm text-gray-500 text-center mb-6">Sign in securely with your device.</p>
+                <p class="text-sm text-gray-500 text-center mb-6">
+                    Passkeys are the most secure option — no password to forget or lose.
+                </p>
 
-                <button onclick="loginWithPasskey()" id="passkey-btn"
+                <button type="button" onclick="setupPasskey()" id="passkey-btn"
                     class="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 21.75 8.25Z" />
                     </svg>
-                    Sign in with passkey
+                    Set up passkey
                 </button>
-                <p id="passkey-error" class="mt-2 text-xs text-red-600 text-center hidden"></p>
 
                 <div class="relative my-5">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
                     <div class="relative flex justify-center"><span class="bg-white px-3 text-xs text-gray-400">or</span></div>
                 </div>
 
-                <button onclick="showPasswordView()"
+                <button type="button" onclick="showPasswordView()"
                     class="w-full text-sm text-gray-500 hover:text-gray-700 transition text-center">
-                    Sign in with password
+                    Set a password instead
                 </button>
             </div>
 
-            {{-- Password view (hidden by default) --}}
+            {{-- Password option --}}
             <div id="password-view" class="hidden">
-                <form method="POST" action="{{ route('login') }}">
+                <form method="POST" action="{{ route('setup-auth.save') }}">
                     @csrf
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                        <input type="email" name="email" id="email" value="{{ old('email') }}" autofocus required
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                        <input type="password" name="password" required autofocus minlength="8"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                        <input type="password" name="password" required
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Confirm password</label>
+                        <input type="password" name="password_confirmation" required
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
                     <button type="submit"
                         class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
-                        Sign in
+                        Set password
                     </button>
                 </form>
 
@@ -82,22 +81,21 @@
                     <div class="relative flex justify-center"><span class="bg-white px-3 text-xs text-gray-400">or</span></div>
                 </div>
 
-                <button onclick="showPasskeyView()"
+                <button type="button" onclick="showPasskeyView()"
                     class="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
                     <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 21.75 8.25Z" />
                     </svg>
                     Use passkey instead
                 </button>
-
-                <p class="mt-4 text-center text-xs text-gray-400">
-                    <a href="{{ route('password.request') }}" class="hover:text-gray-600 underline">Forgot password?</a>
-                </p>
             </div>
         </div>
 
         <p class="mt-6 text-center text-xs text-gray-400">
-            New to traitor.dev? <a href="{{ route('register') }}" class="text-blue-600 hover:underline font-medium">Create an account</a>
+            <form method="POST" action="{{ route('logout') }}" class="inline">
+                @csrf
+                <button type="submit" class="hover:text-gray-600 underline">Sign out</button>
+            </form>
         </p>
     </div>
 
@@ -105,7 +103,6 @@
 function showPasswordView() {
     document.getElementById('passkey-view').classList.add('hidden');
     document.getElementById('password-view').classList.remove('hidden');
-    document.getElementById('email').focus();
 }
 
 function showPasskeyView() {
@@ -113,67 +110,63 @@ function showPasskeyView() {
     document.getElementById('passkey-view').classList.remove('hidden');
 }
 
-// If there were validation errors, show the password form
-@if($errors->any() || old('email'))
-    showPasswordView();
-@endif
+function showError(msg) {
+    var box = document.getElementById('error-box');
+    box.textContent = msg;
+    box.classList.remove('hidden');
+}
 
-async function loginWithPasskey() {
-    const btn = document.getElementById('passkey-btn');
-    const err = document.getElementById('passkey-error');
-    const origHTML = btn.innerHTML;
+async function setupPasskey() {
+    var btn = document.getElementById('passkey-btn');
+    var origHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Waiting…';
-    err.className = 'mt-2 text-xs text-red-600 text-center hidden';
+
+    var csrf = document.querySelector('meta[name="csrf-token"]').content;
 
     try {
-        const optRes = await fetch('{{ route('passkeys.auth-options') }}');
-        const options = await optRes.json();
+        var optRes = await fetch('{{ route('passkeys.register-options') }}');
+        var options = await optRes.json();
 
         options.challenge = base64urlToBuffer(options.challenge);
-        if (options.allowCredentials) {
-            options.allowCredentials = options.allowCredentials.map(c => ({ ...c, id: base64urlToBuffer(c.id) }));
+        options.user.id   = base64urlToBuffer(options.user.id);
+        if (options.excludeCredentials) {
+            options.excludeCredentials = options.excludeCredentials.map(c => ({ ...c, id: base64urlToBuffer(c.id) }));
         }
 
-        const credential = await navigator.credentials.get({ publicKey: options });
+        var credential = await navigator.credentials.create({ publicKey: options });
 
-        const body = {
-            id: credential.id,
-            rawId: bufferToBase64url(credential.rawId),
-            type: credential.type,
-            response: {
-                authenticatorData: bufferToBase64url(credential.response.authenticatorData),
-                clientDataJSON: bufferToBase64url(credential.response.clientDataJSON),
-                signature: bufferToBase64url(credential.response.signature),
-                userHandle: credential.response.userHandle ? bufferToBase64url(credential.response.userHandle) : null,
-            }
-        };
-
-        const res = await fetch('{{ route('passkeys.authenticate') }}', {
+        var saveRes = await fetch('{{ route('passkeys.register') }}', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            },
-            body: JSON.stringify(body),
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: JSON.stringify({
+                id:       credential.id,
+                rawId:    bufferToBase64url(credential.rawId),
+                type:     credential.type,
+                response: {
+                    attestationObject: bufferToBase64url(credential.response.attestationObject),
+                    clientDataJSON:    bufferToBase64url(credential.response.clientDataJSON),
+                },
+            }),
         });
 
-        if (!res.ok) throw new Error('Authentication failed. Try signing in with your password.');
+        if (!saveRes.ok) throw new Error('Passkey could not be saved. Please try again.');
 
         window.location.href = '/';
+
     } catch (e) {
         if (e.name === 'NotAllowedError') {
-            err.textContent = 'Passkey sign-in was cancelled.';
+            showError('Passkey setup was cancelled. Try again or set a password instead.');
         } else {
-            err.textContent = e.message || 'Passkey sign-in failed.';
+            showError(e.message || 'Something went wrong. Please try again.');
         }
-        err.className = 'mt-2 text-xs text-red-600 text-center';
         btn.disabled = false;
         btn.innerHTML = origHTML;
     }
 }
 
 function base64urlToBuffer(base64url) {
+    if (base64url instanceof ArrayBuffer) return base64url;
     const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
     const binary = atob(base64);
     const buf = new Uint8Array(binary.length);

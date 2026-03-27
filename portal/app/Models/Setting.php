@@ -6,18 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
-    protected $primaryKey = 'key';
-    protected $keyType = 'string';
-    public $incrementing = false;
-    protected $fillable = ['key', 'value'];
+    protected $fillable = ['key', 'value', 'organisation_id'];
 
     public static function get(string $key, ?string $default = null): ?string
     {
-        return static::find($key)?->value ?? $default;
+        $orgId = auth()->user()?->organisation_id;
+
+        return static::where('key', $key)->where('organisation_id', $orgId)->first()?->value ?? $default;
     }
 
     public static function set(string $key, ?string $value): void
     {
-        static::updateOrCreate(['key' => $key], ['value' => $value]);
+        $orgId = auth()->user()?->organisation_id;
+
+        static::updateOrCreate(
+            ['key' => $key, 'organisation_id' => $orgId],
+            ['value' => $value]
+        );
     }
 }

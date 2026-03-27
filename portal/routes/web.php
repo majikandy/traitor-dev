@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Models\Organisation;
 use App\Http\Controllers\PasskeyController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SiteController;
@@ -19,6 +20,10 @@ use Illuminate\Support\Str;
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register/passkey-start', [AuthController::class, 'registerPasskeyStart'])->name('register.passkey-start');
+Route::post('/register/passkey-cleanup', [AuthController::class, 'registerPasskeyCleanup'])->name('register.passkey-cleanup');
 
 // Password reset
 Route::get('/forgot-password', fn() => view('auth.forgot-password'))->name('password.request');
@@ -50,8 +55,15 @@ Route::post('/reset-password', function (Request $request) {
         : back()->withErrors(['email' => __($status)]);
 })->name('password.update');
 
-// Protected routes
+// Setup auth method (passkey or password) — for accounts with neither yet.
+// Inside auth but NOT inside auth.method to avoid redirect loops.
 Route::middleware('auth')->group(function () {
+    Route::get('/setup', [AuthController::class, 'showSetupAuth'])->name('setup-auth');
+    Route::post('/setup/password', [AuthController::class, 'saveSetupPassword'])->name('setup-auth.save');
+});
+
+// Protected routes
+Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::get('/', function () {
         return view('welcome', [
             'businessName' => \App\Models\Setting::get('business_name'),
