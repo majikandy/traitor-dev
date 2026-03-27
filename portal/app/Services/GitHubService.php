@@ -79,6 +79,19 @@ class GitHubService
         }
     }
 
+    public function deleteInstallation(int $installationId): void
+    {
+        $jwt = $this->generateJwt();
+
+        $response = Http::withToken($jwt, 'Bearer')
+            ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28'])
+            ->delete("https://api.github.com/app/installations/{$installationId}");
+
+        if (!$response->successful()) {
+            throw new \RuntimeException("GitHub delete installation failed: " . $response->body());
+        }
+    }
+
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
         $expected = 'sha256=' . hash_hmac('sha256', $payload, $this->webhookSecret);

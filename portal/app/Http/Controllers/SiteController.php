@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Release;
 use App\Models\Site;
 use App\Services\CpanelService;
+use App\Services\GitHubService;
 use App\Services\SiteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -174,10 +175,10 @@ class SiteController extends Controller
         return back()->with('success', 'Maintenance mode enabled — visitors now see the coming soon page.');
     }
 
-    public function destroy(Site $site)
+    public function destroy(Site $site, GitHubService $github)
     {
         $name = $site->name;
-        $this->siteService->delete($site);
+        $this->siteService->delete($site, $github);
 
         return redirect()->route('sites.index')->with('success', "Deleted {$name}.");
     }

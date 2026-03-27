@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Release;
 use App\Models\Site;
+use App\Services\GitHubService;
 use App\Services\CpanelService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
@@ -192,8 +193,19 @@ class SiteService
         rename($tmpPath, $livePath);
     }
 
-    public function delete(Site $site): void
+    public function delete(Site $site, GitHubService $github): void
     {
+        if ($site->github_installation_id) {
+            $otherSites = Site::withoutGlobalScopes()
+                ->where('github_installation_id', $site->github_installation_id)
+                ->where('id', '!=', $site->id)
+                ->exists();
+
+            if (!$otherSites) {
+                $github->deleteInstallation($site->github_installation_id);
+            }
+        }
+
         File::deleteDirectory($site->sitesPath());
         $site->delete();
     }
