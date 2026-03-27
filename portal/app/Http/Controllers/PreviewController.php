@@ -57,10 +57,17 @@ class PreviewController extends Controller
     {
         $previewBase = '/preview/' . $token . '/';
 
+        // Inject <base> so relative URLs (e.g. href="shop.html") resolve correctly.
+        // Without this, relative links strip the token segment and 404.
+        if (!str_contains($html, '<base ')) {
+            $html = preg_replace('/(<head[^>]*>)/i', '$1<base href="' . $previewBase . '">', $html, 1);
+        }
+
         // Rewrite root-relative URLs (href="/...", src="/...") to go through the preview route.
+        // Handles both double and single quoted attributes.
         // Skips protocol-relative (//), absolute (https://), anchors (#), and data: URIs.
         $html = preg_replace_callback(
-            '/((?:href|src|action)=")(\\/(?!\\/)[^"]*?)(")/i',
+            '/((?:href|src|action)=["\'])(\\/(?!\\/)[^"\']*?)(["\'])/i',
             fn($m) => $m[1] . $previewBase . ltrim($m[2], '/') . $m[3],
             $html
         );
