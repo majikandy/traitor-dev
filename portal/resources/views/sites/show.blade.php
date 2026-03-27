@@ -586,8 +586,14 @@ if (window.innerWidth < 768) { setView('mobile'); }
                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Connected
                 </span>
                 <span class="text-sm font-medium text-gray-900">{{ $site->github_repo }}</span>
+                @if($site->github_repo_path)
+                    <span class="text-sm text-gray-400">/ {{ $site->github_repo_path }}</span>
+                @endif
             </div>
-            <p class="text-sm text-gray-500">Pushes to the default branch create a new release automatically.</p>
+            <p class="text-sm text-gray-500">
+                Pushes to <span class="font-medium text-gray-700">{{ $site->github_branch ?? 'default branch' }}</span> create a new release automatically.
+                @if($site->github_repo_path) Only changes inside <code class="text-xs bg-gray-100 px-1 rounded">{{ $site->github_repo_path }}</code> trigger a release. @endif
+            </p>
 
             {{-- Auto-deploy toggle --}}
             <form method="POST" action="{{ route('github.auto-deploy', $site) }}" class="flex items-center gap-3">

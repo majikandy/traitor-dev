@@ -37,6 +37,7 @@
             <form method="POST" action="{{ route('github.select-repo', $site) }}">
                 @csrf
                 <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Repository</label>
                     <select name="repo" required
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                         <option value="">— choose a repository —</option>
@@ -44,6 +45,17 @@
                             <option value="{{ $repo }}">{{ $repo }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder <span class="text-gray-400 font-normal">(optional — for monorepos)</span></label>
+                    <input type="text" name="repo_path" placeholder="e.g. sites/my-site"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    <p class="mt-1 text-xs text-gray-400">Leave blank to use the entire repository.</p>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Branch <span class="text-gray-400 font-normal">(optional — defaults to repo default branch)</span></label>
+                    <input type="text" name="branch" placeholder="e.g. production"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                 </div>
                 <div class="flex items-center gap-3">
                     <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition">

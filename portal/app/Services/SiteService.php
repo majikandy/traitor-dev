@@ -38,7 +38,7 @@ class SiteService
         $this->uploadFromPath($site, $file->getPathname());
     }
 
-    public function uploadFromPath(Site $site, string $zipPath): void
+    public function uploadFromPath(Site $site, string $zipPath, ?string $subPath = null): void
     {
         $zip = new ZipArchive();
 
@@ -53,6 +53,17 @@ class SiteService
         $zip->close();
 
         $this->hoistIfWrappedInSingleFolder($draftsPath);
+
+        if ($subPath !== null) {
+            $subDir = $draftsPath . '/' . trim($subPath, '/');
+            if (!is_dir($subDir)) {
+                throw new \RuntimeException("Subfolder '{$subPath}' not found in repository.");
+            }
+            $tmp = sys_get_temp_dir() . '/traitor_sub_' . uniqid();
+            rename($subDir, $tmp);
+            File::deleteDirectory($draftsPath);
+            rename($tmp, $draftsPath);
+        }
     }
 
     public function createRelease(Site $site, ?string $notes = null): Release

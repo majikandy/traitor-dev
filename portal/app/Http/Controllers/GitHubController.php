@@ -43,9 +43,17 @@ class GitHubController extends Controller
 
     public function selectRepo(Request $request, Site $site): RedirectResponse
     {
-        $request->validate(['repo' => ['required', 'string', 'regex:/^[\w.\-]+\/[\w.\-]+$/']]);
+        $request->validate([
+            'repo'      => ['required', 'string', 'regex:/^[\w.\-]+\/[\w.\-]+$/'],
+            'repo_path' => ['nullable', 'string', 'max:255'],
+            'branch'    => ['nullable', 'string', 'max:255'],
+        ]);
 
-        $site->update(['github_repo' => $request->input('repo')]);
+        $site->update([
+            'github_repo'      => $request->input('repo'),
+            'github_repo_path' => $request->filled('repo_path') ? trim($request->input('repo_path'), '/') : null,
+            'github_branch'    => $request->filled('branch') ? $request->input('branch') : null,
+        ]);
 
         return redirect()->route('sites.show', $site)->with('success', 'GitHub repository connected.');
     }
@@ -62,6 +70,8 @@ class GitHubController extends Controller
         $site->update([
             'github_installation_id' => null,
             'github_repo'            => null,
+            'github_repo_path'       => null,
+            'github_branch'          => null,
             'github_auto_deploy'     => false,
         ]);
 
@@ -81,14 +91,9 @@ class GitHubController extends Controller
             return response()->json(['message' => 'ignored']);
         }
 
-        $data          = json_decode($payload, true);
-        $ref           = $data['ref'] ?? '';
-        $defaultBranch = $data['repository']['default_branch'] ?? 'main';
-
-        if ($ref !== "refs/heads/{$defaultBranch}") {
-            return response()->json(['message' => 'not default branch, ignored']);
-        }
-
+        $data           = json_decode($payload, true);
+        $ref            = $data['ref'] ?? '';
+        $defaultBranch  = $data['repository']['default_branch'] ?? 'main';
         $installationId = $data['installation']['id'] ?? null;
         $repoFullName   = $data['repository']['full_name'] ?? null;
 
@@ -99,10 +104,29 @@ class GitHubController extends Controller
             ->where('github_repo', $repoFullName)
             ->firstOrFail();
 
+        $watchBranch = $site->github_branch ?? $defaultBranch;
+
+        if ($ref !== "refs/heads/{$watchBranch}") {
+            return response()->json(['message' => 'not watched branch, ignored']);
+        }
+
+        if ($site->github_repo_path !== null) {
+            $changedFiles = collect($data['commits'] ?? [])
+                ->flatMap(fn($c) => array_merge($c['added'] ?? [], $c['modified'] ?? [], $c['removed'] ?? []))
+                ->all();
+
+            $prefix = rtrim($site->github_repo_path, '/') . '/';
+            $relevant = array_filter($changedFiles, fn($f) => str_starts_with($f, $prefix));
+
+            if (empty($relevant)) {
+                return response()->json(['message' => 'no changes in repo path, ignored']);
+            }
+        }
+
         $zipPath = $this->github->downloadZipball($installationId, $repoFullName, $data['after']);
 
         try {
-            $this->siteService->uploadFromPath($site, $zipPath);
+            $this->siteService->uploadFromPath($site, $zipPath, $site->github_repo_path);
             $release = $this->siteService->createRelease(
                 $site,
                 'Auto-deployed from GitHub (' . substr($data['after'], 0, 7) . ')'
