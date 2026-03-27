@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Redirect /page.php → /page (permanent, so search engines don't index both)
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+)\.php$ /$1 [R=301,L]
+
+# Serve /page from page.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([^.]+)$ $1.php [L]

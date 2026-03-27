@@ -8,7 +8,7 @@ return [
     'phone' => '',
     'nav' => [
         '/' => 'Home',
-        '/about.php' => 'About',
-        '/contact.php' => 'Contact',
+        '/about' => 'About',
+        '/contact' => 'Contact',
     ],
 ];
