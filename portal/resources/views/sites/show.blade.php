@@ -180,7 +180,7 @@
     } else {
         $defaultBadgeClass = 'bg-gray-100 text-gray-500';
         $defaultDotClass   = 'bg-gray-400';
-        $defaultBadgeText  = 'coming soon';
+        $defaultBadgeText  = $firstRelease ? 'not live' : 'coming soon';
         $defaultHeaderBg   = 'rgba(243,244,246,0.6)';
     }
 @endphp
@@ -335,9 +335,9 @@ function updatePreviewIndicator(isLive, isMaintenance) {
         badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live';
         if (warning) warning.classList.toggle('hidden', !siteMaintenanceActive);
     } else {
-        header.style.backgroundColor = 'rgba(254,243,199,0.35)';
-        badge.className = 'bg-amber-100 text-amber-700 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
-        badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>candidate';
+        header.style.backgroundColor = 'rgba(243,244,246,0.6)';
+        badge.className = 'bg-gray-100 text-gray-500 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
+        badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>not live';
         if (warning) warning.classList.add('hidden');
     }
 }
