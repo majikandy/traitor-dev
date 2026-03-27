@@ -242,11 +242,14 @@
                         <a href="{{ $liveUrl }}" target="_blank"
                            class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
                     @elseif(!$isLive && $hasDomain)
+                        @php $isRollback = $site->live_release && $release->version < $site->live_release; @endphp
                         <button type="button"
-                            class="go-live-btn rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition"
+                            class="go-live-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition
+                                {{ $isRollback ? 'bg-gray-500 hover:bg-gray-600' : 'bg-emerald-600 hover:bg-emerald-700' }}"
                             data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
                             data-version="{{ $release->version }}"
-                            onclick="event.stopPropagation(); goLive(this)">Go Live</button>
+                            data-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
+                            onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '↩ Rollback' : 'Go Live' }}</button>
                     @elseif(!$hasDomain && $loop->first)
                         <a href="{{ route('sites.show', $site) }}#domain" class="text-xs text-brand-600 hover:underline" onclick="event.stopPropagation()">Add domain ↓</a>
                     @endif
@@ -308,6 +311,7 @@ function resetPreview() {
     updatePreviewIndicator(false, siteMaintenanceActive);
 }
 function goLive(btn) {
+    if (btn.dataset.confirm && !confirm(btn.dataset.confirm)) return;
     btn.disabled = true;
     btn.textContent = 'Going live…';
     fetch(btn.dataset.url, {
