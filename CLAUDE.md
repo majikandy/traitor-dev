@@ -6,9 +6,9 @@
 
 A `portal/VERSION` file tracks the current build version (format: `YYYYMMDD.HHMM`).
 
-The `scripts/hooks/pre-commit` hook automatically updates it on every commit. After any `git commit`, **always tell the user the version that was set** — it appears in the commit output as `Version set to: YYYYMMDD.HHMM`.
+A Claude Code hook in `.claude/settings.json` automatically updates it before every `git commit`. After any `git commit`, **always tell the user the version that was set** — it appears in the hook output as `Version set to: YYYYMMDD.HHMM`.
 
-If you ever push without having committed (e.g., the version file is stale), update it manually, commit, then push.
+A second hook runs before `git push` as a safety net: if VERSION wasn't updated today, it bumps it and commits automatically.
 
 ---
 
