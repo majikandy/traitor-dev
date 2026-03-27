@@ -131,7 +131,7 @@
         $defaultHeaderBg   = 'rgba(243,244,246,0.6)';
     }
 @endphp
-<div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6">
+<div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6 overflow-hidden">
     {{-- Section header --}}
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="text-base font-semibold text-gray-900">Releases</h2>
@@ -168,8 +168,8 @@
         </div>
         <div id="preview-container" class="relative w-full overflow-hidden transition-all duration-300" style="height: 360px; background: #e5e7eb;">
             {{-- Mobile / iPhone 17 view (hidden by default) --}}
-            <div id="phone-view" class="absolute inset-0 hidden" style="background:#e5e7eb;">
-                <div id="phone-frame" style="position:absolute;top:16px;left:calc(50% - 207px);width:414px;transform:scale(0.38);transform-origin:top center;">
+            <div id="phone-view" class="absolute inset-0 hidden overflow-hidden" style="background:#e5e7eb;">
+                <div id="phone-frame" style="position:absolute;top:16px;left:50%;margin-left:-207px;width:414px;transform:scale(0.38);transform-origin:top center;">
                     <div style="background:#1c1c1e;border-radius:50px;padding:10px 12px 10px;box-shadow:0 0 0 1px #3a3a3c,inset 0 0 0 1px #444,0 30px 70px rgba(0,0,0,0.6);position:relative;">
                         <div style="position:absolute;left:-3px;top:110px;width:3px;height:36px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
                         <div style="position:absolute;left:-3px;top:160px;width:3px;height:32px;background:#3a3a3c;border-radius:2px 0 0 2px;"></div>
