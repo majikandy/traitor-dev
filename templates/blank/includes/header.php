@@ -9,6 +9,7 @@ if ($currentPage === 'index.php') $currentPage = '/';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?= htmlspecialchars($config['meta_description']) ?>">
     <title><?= htmlspecialchars($config['site_name']) ?></title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
