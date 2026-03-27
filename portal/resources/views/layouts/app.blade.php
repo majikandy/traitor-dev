@@ -56,7 +56,10 @@
 
                 @foreach(\App\Models\Site::orderBy('name')->get() as $navSite)
                     <a href="/sites/{{ $navSite->id }}" class="flex items-center gap-3 pl-11 pr-3 py-1.5 rounded-lg text-sm {{ request()->is('sites/' . $navSite->id) ? 'text-white bg-sidebar-active' : 'text-sidebar-muted hover:text-sidebar-text hover:bg-sidebar-hover' }} transition truncate">
-                        {{ $navSite->name }}
+                        <span class="truncate flex-1">{{ $navSite->name }}</span>
+                        @if($navSite->maintenance_mode)
+                            <span class="h-1.5 w-1.5 rounded-full bg-amber-400 flex-shrink-0" title="Maintenance mode"></span>
+                        @endif
                     </a>
                 @endforeach
 

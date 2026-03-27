@@ -17,7 +17,7 @@
 {{-- Header --}}
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
             {{-- Inline name editor --}}
             <form id="rename-form" method="POST" action="{{ route('sites.update', $site) }}" class="hidden items-center gap-2">
                 @csrf
@@ -32,7 +32,12 @@
                 {{ $site->name }}
                 <svg class="h-4 w-4 text-gray-300 group-hover:text-brand-400 transition" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
             </h1>
-            @if($site->live_release)
+            @if($site->maintenance_mode)
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                    Maintenance
+                </span>
+            @elseif($site->live_release)
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                     <span id="live-status-badge">Release {{ $site->live_release }} live</span>
@@ -57,6 +62,17 @@
             @endif
         </p>
     </div>
+    @if($site->domain_status === 'active')
+    <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}" class="flex-shrink-0">
+        @csrf
+        <button type="submit" class="rounded-lg border px-4 py-2 text-sm font-semibold transition
+            {{ $site->maintenance_mode
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
+            {{ $site->maintenance_mode ? 'Bring back online' : 'Enable maintenance mode' }}
+        </button>
+    </form>
+    @endif
 </div>
 
 {{-- Create Release --}}
@@ -91,30 +107,29 @@
 
 {{-- Releases + Preview --}}
 @if($site->releases->isNotEmpty())
-@php $sortedReleases = $site->releases->sortByDesc('version'); $firstRelease = $sortedReleases->first(); @endphp
+@php
+    $sortedReleases = $site->releases->sortByDesc('version');
+    $firstRelease = $sortedReleases->first();
+    $liveUrl = ($site->domain && $site->domain_status === 'active') ? 'https://' . $site->domain : $site->previewUrl();
+    $firstIsLive = $firstRelease->version === $site->live_release;
+@endphp
 <div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6">
     {{-- Section header --}}
-    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+    <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="text-base font-semibold text-gray-900">Releases</h2>
-        @if($site->domain_status === 'active')
-            <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}">
-                @csrf
-                <button type="submit" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition
-                    {{ $site->maintenance_mode
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                        : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
-                    {{ $site->maintenance_mode ? 'Bring back online' : 'Maintenance mode' }}
-                </button>
-            </form>
-        @endif
     </div>
 
     {{-- Preview panel --}}
     <div>
-        <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+        <div id="preview-header" class="px-6 py-3 border-b border-gray-100 flex items-center justify-between transition-colors"
+             style="background-color: {{ $firstIsLive ? 'rgba(209,250,229,0.35)' : 'rgba(254,243,199,0.35)' }}">
             <div class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500">Previewing</span>
                 <span id="preview-label" class="text-xs font-semibold text-gray-900">v{{ $firstRelease->version }}</span>
+                <span id="preview-state-badge" class="{{ $firstIsLive ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold">
+                    <span class="h-1.5 w-1.5 rounded-full {{ $firstIsLive ? 'bg-emerald-500' : 'bg-amber-400' }}"></span>
+                    {{ $firstIsLive ? 'live' : 'candidate' }}
+                </span>
                 <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition ml-1">↺</button>
             </div>
             <div class="flex items-center gap-3">
@@ -141,6 +156,8 @@
                     {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
                 data-preview-url="{{ $release->previewUrl() }}"
                 data-version="v{{ $release->version }}"
+                data-is-live="{{ $isLive ? 'true' : 'false' }}"
+                data-promote-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
                 onclick="selectRelease(this)">
                 <div class="flex items-center gap-3" data-badges>
                     <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
@@ -153,10 +170,13 @@
                         <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes }}</span>
                     @endif
                 </div>
-                <div class="flex items-center gap-3" onclick="event.stopPropagation()">
+                <div class="flex items-center gap-3" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400">{{ $release->created_at->diffForHumans() }}</span>
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
-                    @if(!$isLive)
+                    @if($isLive)
+                        <a href="{{ $liveUrl }}" target="_blank"
+                           class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
+                    @else
                         <button type="button"
                             class="go-live-btn rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition"
                             data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
@@ -170,14 +190,31 @@
 </div>
 
 <script>
+var siteMetaLiveUrl = "{{ addslashes($liveUrl) }}";
+var siteMetaLiveVersion = {{ $site->live_release ?? 'null' }};
+
+function updatePreviewIndicator(isLive) {
+    var header = document.getElementById('preview-header');
+    var badge = document.getElementById('preview-state-badge');
+    if (isLive) {
+        header.style.backgroundColor = 'rgba(209,250,229,0.35)';
+        badge.className = 'bg-emerald-100 text-emerald-700 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
+        badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live';
+    } else {
+        header.style.backgroundColor = 'rgba(254,243,199,0.35)';
+        badge.className = 'bg-amber-100 text-amber-700 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold';
+        badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>candidate';
+    }
+}
 function selectRelease(row) {
     document.querySelectorAll('.release-row').forEach(function(r) {
-        if (!r.classList.contains('bg-emerald-50/50')) r.classList.remove('bg-brand-50');
+        if (r.dataset.isLive !== 'true') r.classList.remove('bg-brand-50');
     });
-    if (!row.classList.contains('bg-emerald-50/50')) row.classList.add('bg-brand-50');
+    if (row.dataset.isLive !== 'true') row.classList.add('bg-brand-50');
     document.getElementById('preview-iframe').src = row.dataset.previewUrl;
     document.getElementById('preview-open-link').href = row.dataset.previewUrl;
     document.getElementById('preview-label').textContent = row.dataset.version;
+    updatePreviewIndicator(row.dataset.isLive === 'true');
 }
 function resetPreview() {
     var f = document.getElementById('preview-iframe');
@@ -196,31 +233,48 @@ function goLive(btn) {
     .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function(data) {
         var newVersion = data.version;
+        siteMetaLiveVersion = newVersion;
         document.querySelectorAll('.release-row').forEach(function(row) {
             var v = parseInt(row.dataset.version.replace('v', ''));
             var badge = row.querySelector('.live-badge');
             var goLiveBtn = row.querySelector('.go-live-btn');
+            var visitLink = row.querySelector('.visit-live-link');
+            var actionsDiv = row.querySelector('[data-actions]');
             if (v === newVersion) {
                 row.classList.add('bg-emerald-50/50');
                 row.classList.remove('bg-brand-50', 'hover:bg-gray-50');
+                row.dataset.isLive = 'true';
                 if (!badge) {
                     row.querySelector('[data-badges]').insertAdjacentHTML('beforeend',
                         '<span class="live-badge inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live</span>');
                 }
                 if (goLiveBtn) goLiveBtn.remove();
-            } else {
-                if (badge) {
-                    badge.remove();
-                    row.classList.remove('bg-emerald-50/50');
-                    row.classList.add('hover:bg-gray-50');
+                if (!visitLink && actionsDiv) {
+                    actionsDiv.insertAdjacentHTML('beforeend',
+                        '<a href="' + siteMetaLiveUrl + '" target="_blank" class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live \u2197</a>');
+                }
+            } else if (badge) {
+                badge.remove();
+                row.classList.remove('bg-emerald-50/50');
+                row.classList.add('hover:bg-gray-50');
+                row.dataset.isLive = 'false';
+                if (visitLink) visitLink.remove();
+                if (actionsDiv && !row.querySelector('.go-live-btn')) {
+                    actionsDiv.insertAdjacentHTML('beforeend',
+                        '<button type="button" class="go-live-btn rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition" data-url="' + row.dataset.promoteUrl + '" data-version="' + v + '" onclick="event.stopPropagation(); goLive(this)">Go Live</button>');
                 }
             }
         });
-        // Update header badge and domain "currently serving"
+        // Update header badge and domain section
         var headerBadge = document.getElementById('live-status-badge');
         if (headerBadge) headerBadge.textContent = 'Release ' + newVersion + ' live';
         var serving = document.getElementById('currently-serving');
         if (serving) serving.textContent = 'Release ' + newVersion;
+        // Update preview indicator for current preview
+        var previewLabel = document.getElementById('preview-label');
+        if (previewLabel) {
+            updatePreviewIndicator(parseInt(previewLabel.textContent.replace('v', '')) === newVersion);
+        }
     })
     .catch(function() {
         btn.disabled = false;

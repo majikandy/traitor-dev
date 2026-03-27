@@ -54,9 +54,8 @@ Route::post('/reset-password', function (Request $request) {
 Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return view('welcome', [
-            'total' => Site::count(),
-            'withDomain' => Site::whereNotNull('domain')->count(),
-            'withReleases' => Site::where('current_release', '>', 0)->count(),
+            'businessName' => \App\Models\Setting::get('business_name'),
+            'sites' => Site::orderBy('name')->get(),
         ]);
     });
 
