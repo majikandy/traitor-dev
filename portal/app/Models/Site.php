@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,7 @@ use Illuminate\Support\Str;
 
 class Site extends Model
 {
+    use HasFactory;
     protected $fillable = ['name', 'slug', 'organisation_id', 'preview_token', 'domain', 'domain_status', 'maintenance_mode', 'status', 'current_release', 'live_release'];
 
     protected $casts = ['maintenance_mode' => 'boolean'];
