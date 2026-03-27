@@ -137,7 +137,7 @@
                 <button type="submit" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 {{ $site->github_auto_deploy ? 'bg-brand-600' : 'bg-gray-200' }}">
                     <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 {{ $site->github_auto_deploy ? 'translate-x-4' : 'translate-x-0' }}"></span>
                 </button>
-                <span class="text-sm text-gray-700">Auto go-live <span class="text-gray-400">(promote straight to live on push)</span></span>
+                <span class="text-sm text-gray-700">Auto make current <span class="text-gray-400">(promote straight to current on push)</span></span>
             </form>
 
             <form method="POST" action="{{ route('github.disconnect', $site) }}" class="pt-1">
@@ -304,7 +304,7 @@
                             data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
                             data-version="{{ $release->version }}"
                             data-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
-                            onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '↩ Rollback' : 'Go Live' }}</button>
+                            onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '↩ Rollback' : 'Make Current' }}</button>
                     @endif
                 </div>
             </div>
@@ -368,7 +368,7 @@ function resetPreview() {
 function goLive(btn) {
     if (btn.dataset.confirm && !confirm(btn.dataset.confirm)) return;
     btn.disabled = true;
-    btn.textContent = 'Going live…';
+    btn.textContent = 'Making current…';
     fetch(btn.dataset.url, {
         method: 'POST',
         headers: {
@@ -407,7 +407,7 @@ function goLive(btn) {
                 if (visitLink) visitLink.remove();
                 if (actionsDiv && !row.querySelector('.go-live-btn')) {
                     actionsDiv.insertAdjacentHTML('beforeend',
-                        '<button type="button" class="go-live-btn rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition" data-url="' + row.dataset.promoteUrl + '" data-version="' + v + '" onclick="event.stopPropagation(); goLive(this)">Go Live</button>');
+                        '<button type="button" class="go-live-btn rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition" data-url="' + row.dataset.promoteUrl + '" data-version="' + v + '" onclick="event.stopPropagation(); goLive(this)">Make Current</button>');
                 }
             }
         });
@@ -432,7 +432,7 @@ function goLive(btn) {
     })
     .catch(function() {
         btn.disabled = false;
-        btn.textContent = 'Go Live';
+        btn.textContent = 'Make Current';
     });
 }
 var currentView = 'desktop';
@@ -608,7 +608,7 @@ if (window.innerWidth < 768) { setView('mobile'); }
             @elseif($site->live_release)
                 <span id="currently-serving" class="text-emerald-700 font-medium">Release {{ $site->live_release }}</span>
             @else
-                <span class="text-gray-500 font-medium">Coming Soon page — press Go Live on a release to publish</span>
+                <span class="text-gray-500 font-medium">Coming Soon page — press Make Current on a release to publish</span>
             @endif
         </p>
         <div class="flex justify-end">
