@@ -13,11 +13,11 @@ class SiteFactory extends Factory
 
     public function definition(): array
     {
-        $name = fake()->unique()->company();
+        $name = fake()->company();
 
         return [
             'name'            => $name,
-            'slug'            => Str::slug($name) . '-' . fake()->unique()->numberBetween(1000, 9999),
+            'slug'            => Str::slug($name),
             'organisation_id' => Organisation::factory(),
             'status'          => 'active',
         ];

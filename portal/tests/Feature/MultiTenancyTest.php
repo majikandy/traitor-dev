@@ -44,6 +44,17 @@ class MultiTenancyTest extends TestCase
         $this->actingAs($user1)->get("/sites/{$site2->id}")->assertNotFound();
     }
 
+    public function test_two_orgs_can_have_sites_with_the_same_slug(): void
+    {
+        $org1 = Organisation::factory()->create();
+        $org2 = Organisation::factory()->create();
+
+        Site::factory()->create(['organisation_id' => $org1->id, 'slug' => 'my-site']);
+        Site::factory()->create(['organisation_id' => $org2->id, 'slug' => 'my-site']);
+
+        $this->assertDatabaseCount('sites', 2);
+    }
+
     public function test_dashboard_only_lists_own_sites(): void
     {
         $org1  = Organisation::factory()->create();
