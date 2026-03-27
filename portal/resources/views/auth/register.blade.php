@@ -31,7 +31,8 @@
                 <div id="error-box" class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 hidden"></div>
             @endif
 
-            {{-- Shared fields: always visible --}}
+            {{-- Passkey form: shared fields + passkey button. Enter submits passkey flow. --}}
+            <form id="passkey-form" onsubmit="event.preventDefault(); registerWithPasskey();">
             <div class="space-y-4 mb-5">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Organisation / business name</label>
@@ -53,7 +54,7 @@
 
             {{-- Passkey option (default) --}}
             <div id="passkey-view">
-                <button type="button" onclick="registerWithPasskey()" id="passkey-btn"
+                <button type="submit" id="passkey-btn"
                     class="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 21.75 8.25Z" />
@@ -71,6 +72,7 @@
                     Set a password instead
                 </button>
             </div>
+            </form>
 
             {{-- Password option (hidden by default) --}}
             <div id="password-view" class="hidden">

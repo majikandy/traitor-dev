@@ -67,6 +67,7 @@ class PasskeyController extends Controller
         $user = User::where('email', $request->email)->firstOrFail();
         Auth::login($user);
         $request->session()->regenerate();
+        $user->recordLogin();
 
         return $this->buildCreationOptions($user);
     }
@@ -157,9 +158,11 @@ class PasskeyController extends Controller
 
         $passkey->update(['credential_source' => json_encode($updatedSource)]);
 
-        Auth::login(User::findOrFail($passkey->user_id));
+        $user = User::findOrFail($passkey->user_id);
+        Auth::login($user);
         $request->session()->regenerate();
         session()->forget('passkey_auth_options');
+        $user->recordLogin();
 
         return response()->json(['ok' => true]);
     }

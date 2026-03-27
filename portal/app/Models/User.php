@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'is_admin', 'has_password', 'organisation_id'])]
+#[Fillable(['name', 'email', 'password', 'is_admin', 'has_password', 'organisation_id', 'signed_up_at', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -30,7 +30,17 @@ class User extends Authenticatable
             'password'          => 'hashed',
             'is_admin'          => 'boolean',
             'has_password'      => 'boolean',
+            'signed_up_at'      => 'datetime',
+            'last_login_at'     => 'datetime',
         ];
+    }
+
+    public function recordLogin(): void
+    {
+        $this->update([
+            'signed_up_at'  => $this->signed_up_at ?? now(),
+            'last_login_at' => now(),
+        ]);
     }
 
     public function organisation(): BelongsTo

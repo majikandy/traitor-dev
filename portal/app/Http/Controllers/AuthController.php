@@ -43,6 +43,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $user->recordLogin();
 
         return redirect('/');
     }
@@ -110,6 +111,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        Auth::user()->recordLogin();
 
         return redirect()->intended('/');
     }
@@ -134,7 +136,9 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        Auth::user()->update(['password' => Hash::make($request->password), 'has_password' => true]);
+        $user = Auth::user();
+        $user->update(['password' => Hash::make($request->password), 'has_password' => true]);
+        $user->recordLogin();
 
         return redirect('/')->with('success', 'Password set. You are all set!');
     }

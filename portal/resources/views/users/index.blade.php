@@ -38,19 +38,50 @@
 <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
     <div class="divide-y divide-gray-100">
         @foreach($users as $user)
-            <div class="flex items-center justify-between px-6 py-4">
-                <div>
-                    <p class="text-sm font-semibold text-gray-900">{{ $user->name }}</p>
-                    <p class="text-xs text-gray-400">{{ $user->email }}</p>
+            <div class="flex items-center justify-between px-6 py-4 gap-4">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <p class="text-sm font-semibold text-gray-900">{{ $user->name }}</p>
+                        @if(!$user->signed_up_at)
+                            <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">Invite pending</span>
+                        @endif
+                        @if($user->id === auth()->id())
+                            <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">You</span>
+                        @endif
+                    </div>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $user->email }}</p>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-xs text-gray-400">{{ $user->created_at->diffForHumans() }}</span>
+
+                <div class="flex items-center gap-6 flex-shrink-0 text-right">
+                    <div class="hidden sm:block">
+                        <p class="text-xs font-medium text-gray-500">Invited</p>
+                        <p class="text-xs text-gray-400" title="{{ $user->created_at->format('d M Y H:i') }}">{{ $user->created_at->diffForHumans() }}</p>
+                    </div>
+                    <div class="hidden sm:block">
+                        <p class="text-xs font-medium text-gray-500">Signed up</p>
+                        @if($user->signed_up_at)
+                            <p class="text-xs text-gray-400" title="{{ $user->signed_up_at->format('d M Y H:i') }}">{{ $user->signed_up_at->diffForHumans() }}</p>
+                        @else
+                            <p class="text-xs text-gray-300">—</p>
+                        @endif
+                    </div>
+                    <div class="hidden sm:block">
+                        <p class="text-xs font-medium text-gray-500">Last seen</p>
+                        @if($user->last_login_at)
+                            <p class="text-xs text-gray-400" title="{{ $user->last_login_at->format('d M Y H:i') }}">{{ $user->last_login_at->diffForHumans() }}</p>
+                        @else
+                            <p class="text-xs text-gray-300">—</p>
+                        @endif
+                    </div>
+
                     @if($user->id !== auth()->id())
                         <form action="{{ route('users.destroy', $user) }}" method="POST"
                             onsubmit="return confirm('Remove {{ $user->name }}?')">
                             @csrf @method('DELETE')
                             <button class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition">Remove</button>
                         </form>
+                    @else
+                        <div class="w-[68px]"></div>
                     @endif
                 </div>
             </div>
