@@ -143,6 +143,29 @@ class SiteService
         symlink($target, $livePath);
     }
 
+    public function takeDownPreview(Site $site): void
+    {
+        $previewPath = $site->previewSymlinkPath();
+        if (is_link($previewPath) || file_exists($previewPath)) {
+            unlink($previewPath);
+        }
+    }
+
+    public function restorePreview(Site $site): void
+    {
+        if (is_link($site->previewSymlinkPath()) || file_exists($site->previewSymlinkPath())) {
+            return;
+        }
+
+        $target = $site->preview_release
+            ? $site->sitesPath() . '/releases/' . $site->preview_release
+            : ($site->current_release
+                ? $site->sitesPath() . '/releases/' . $site->current_release
+                : $site->sitesPath() . '/coming-soon');
+
+        symlink($target, $site->previewSymlinkPath());
+    }
+
     public function setPreview(Site $site, int $version): void
     {
         $releasePath = $site->sitesPath() . '/releases/' . $version;

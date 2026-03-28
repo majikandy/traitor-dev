@@ -50,7 +50,23 @@ class SiteController extends Controller
     {
         $site->load('releases', 'organisation');
 
-        return view('sites.show', compact('site'));
+        $previewActive = is_link($site->previewSymlinkPath()) || file_exists($site->previewSymlinkPath());
+
+        return view('sites.show', compact('site', 'previewActive'));
+    }
+
+    public function takeDownPreview(Site $site)
+    {
+        $this->siteService->takeDownPreview($site);
+
+        return back()->with('success', 'Client preview taken down.');
+    }
+
+    public function restorePreview(Site $site)
+    {
+        $this->siteService->restorePreview($site);
+
+        return back()->with('success', 'Client preview restored.');
     }
 
     public function createRelease(Request $request, Site $site)

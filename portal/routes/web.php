@@ -81,6 +81,8 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::post('/sites/{site}/release', [SiteController::class, 'createRelease'])->name('sites.release');
     Route::post('/sites/{site}/releases/{version}/promote', [SiteController::class, 'promoteRelease'])->name('sites.releases.promote');
     Route::post('/sites/{site}/releases/{version}/set-preview', [SiteController::class, 'setPreview'])->name('sites.releases.set-preview');
+    Route::delete('/sites/{site}/preview', [SiteController::class, 'takeDownPreview'])->name('sites.preview.takedown');
+    Route::post('/sites/{site}/preview/restore', [SiteController::class, 'restorePreview'])->name('sites.preview.restore');
     Route::post('/sites/{site}/revert-to-coming-soon', [SiteController::class, 'revertToComingSoon'])->name('sites.revert-to-coming-soon');
     Route::post('/sites/{site}/domain', [SiteController::class, 'attachDomain'])->name('sites.domain.attach');
     Route::delete('/sites/{site}/domain', [SiteController::class, 'detachDomain'])->name('sites.domain.detach');

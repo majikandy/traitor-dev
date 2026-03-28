@@ -61,22 +61,32 @@
                 {{ $site->slug }}
             @endif
         </p>
-        <p class="mt-0.5 text-sm text-gray-400">
+        <p class="mt-0.5 text-sm text-gray-400 flex items-center gap-2 flex-wrap">
             Client preview:
-            <a href="{{ $site->clientPreviewUrl() }}" target="_blank" class="text-brand-500 hover:underline font-mono text-xs">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</a>
+            @if($previewActive)
+                <a href="{{ $site->clientPreviewUrl() }}" target="_blank" class="text-brand-500 hover:underline font-mono text-xs">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</a>
+                <form method="POST" action="{{ route('sites.preview.takedown', $site) }}" class="inline" onsubmit="return confirm('Take down the client preview URL?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition">Take down</button>
+                </form>
+            @else
+                <span class="text-gray-400 font-mono text-xs line-through">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</span>
+                <form method="POST" action="{{ route('sites.preview.restore', $site) }}" class="inline">
+                    @csrf
+                    <button type="submit" class="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Restore</button>
+                </form>
+            @endif
         </p>
     </div>
-    @if($site->domain_status === 'active')
     <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}" class="flex-shrink-0">
         @csrf
         <button type="submit" class="rounded-lg border px-4 py-2 text-sm font-semibold transition
             {{ $site->maintenance_mode
                 ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                 : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
-            {{ $site->maintenance_mode ? 'Bring back online' : 'Enable maintenance mode' }}
+            {{ $site->maintenance_mode ? 'Bring back online' : 'Maintenance mode' }}
         </button>
     </form>
-    @endif
 </div>
 
 {{-- Create Release from Zip --}}
