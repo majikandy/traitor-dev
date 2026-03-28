@@ -142,6 +142,9 @@
 
     <script src="/js/portal.js"></script>
     @php $version = file_exists(base_path('VERSION')) ? trim(file_get_contents(base_path('VERSION'))) : 'dev'; @endphp
-    <div class="fixed bottom-2 right-3 text-xs text-gray-300 select-none pointer-events-none">v{{ $version }}</div>
+    <div class="fixed bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 text-xs text-gray-300">
+        <span>v{{ $version }}</span>
+        <button onclick="navigator.clipboard.writeText('{{ $version }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉', 1000) })" title="Copy version" class="hover:text-gray-500 transition cursor-pointer">⧉</button>
+    </div>
 </body>
 </html>

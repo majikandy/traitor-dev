@@ -42,49 +42,6 @@ class CpanelService
         ]);
     }
 
-    public function createPreviewSubdomain(string $slug, string $docroot): void
-    {
-        $previewDomain = config('services.cpanel.preview_domain')
-            ?? throw new \RuntimeException('CPANEL_PREVIEW_DOMAIN is not set in .env');
-
-        // UAPI requires rootdomain to be the main cPanel domain (not an addon domain).
-        // We pass "{slug}.preview" as the domain to create {slug}.preview.{rootDomain}.
-        $previewSubdomain = rtrim(str_replace($this->rootDomain, '', $previewDomain), '.');
-
-        $result = $this->uapi('SubDomain', 'addsubdomain', [
-            'domain'     => $slug . '.' . $previewSubdomain,
-            'rootdomain' => $this->rootDomain,
-            'dir'        => $docroot,
-        ]);
-
-        if (($result['status'] ?? 0) !== 1) {
-            $reason = $result['errors'][0] ?? 'Unknown error';
-            if (str_contains((string) $reason, 'already exists')) {
-                // Delete and recreate so the docroot is always correct
-                $this->removePreviewSubdomain($slug);
-                $this->uapi('SubDomain', 'addsubdomain', [
-                    'domain'     => $slug . '.' . $previewSubdomain,
-                    'rootdomain' => $this->rootDomain,
-                    'dir'        => $docroot,
-                ]);
-            } else {
-                throw new \RuntimeException("cPanel failed to create preview subdomain: {$reason}");
-            }
-        }
-    }
-
-    public function removePreviewSubdomain(string $slug): void
-    {
-        $previewDomain = config('services.cpanel.preview_domain')
-            ?? throw new \RuntimeException('CPANEL_PREVIEW_DOMAIN is not set in .env');
-
-        $this->v2('SubDomain', 'delsubdomain', [
-            'domain' => $slug . '.' . $previewDomain . '.' . $this->rootDomain,
-        ]);
-    }
-
-
-
     public function triggerAutoSsl(): void
     {
         $this->uapi('SSL', 'start_autossl_check');

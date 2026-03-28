@@ -29,7 +29,7 @@ class SiteController extends Controller
         return view('sites.create');
     }
 
-    public function store(Request $request, CpanelService $cpanel)
+    public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -41,7 +41,7 @@ class SiteController extends Controller
             return back()->withInput()->with('error', 'You already have a site with that name.');
         }
 
-        $site = $this->siteService->create($request->name, $slug, Auth::user()->organisation_id, $cpanel);
+        $site = $this->siteService->create($request->name, $slug, Auth::user()->organisation_id);
 
         return redirect()->route('sites.show', $site)->with('success', 'Site created! Upload a zip to create your first release.');
     }
@@ -50,23 +50,7 @@ class SiteController extends Controller
     {
         $site->load('releases', 'organisation');
 
-        $previewProvisioned = is_link($site->previewSymlinkPath()) || file_exists($site->previewSymlinkPath());
-
-        return view('sites.show', compact('site', 'previewProvisioned'));
-    }
-
-    public function provisionPreview(Site $site, CpanelService $cpanel)
-    {
-        $this->siteService->provisionPreview($site, $cpanel);
-
-        return back()->with('success', "Client preview provisioned at {$site->clientPreviewUrl()}");
-    }
-
-    public function unprovisionPreview(Site $site, CpanelService $cpanel)
-    {
-        $this->siteService->unprovisionPreview($site, $cpanel);
-
-        return back()->with('success', 'Client preview subdomain removed.');
+        return view('sites.show', compact('site'));
     }
 
     public function createRelease(Request $request, Site $site)
@@ -203,10 +187,10 @@ class SiteController extends Controller
         return back()->with('success', "v{$version} set as client preview.");
     }
 
-    public function destroy(Site $site, GitHubService $github, CpanelService $cpanel)
+    public function destroy(Site $site, GitHubService $github)
     {
         $name = $site->name;
-        $this->siteService->delete($site, $github, $cpanel);
+        $this->siteService->delete($site, $github);
 
         return redirect()->route('sites.index')->with('success', "Deleted {$name}.");
     }

@@ -20,7 +20,7 @@ LOCAL_LOCK=$(md5sum portal/composer.lock | cut -d' ' -f1)
 
 $SSH "mkdir -p $DEPLOY_PATH/releases/$RELEASE"
 
-# Rsync marketing + portal in parallel
+# Rsync marketing + portal + preview dispatcher in parallel
 rsync -az --delete \
     -e "$RSYNC_SSH" \
     marketing/ \
@@ -34,6 +34,11 @@ rsync -az \
     --link-dest="$DEPLOY_PATH/live" \
     portal/ \
     $SSH_USER@$SSH_HOST:$DEPLOY_PATH/releases/$RELEASE/ &
+
+rsync -az --delete \
+    -e "$RSYNC_SSH" \
+    infrastructure/preview-dispatcher/ \
+    $SSH_USER@$SSH_HOST:/home/$SSH_USER/preview-dispatcher/ &
 
 wait
 

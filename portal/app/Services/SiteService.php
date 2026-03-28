@@ -5,14 +5,13 @@ namespace App\Services;
 use App\Models\Release;
 use App\Models\Site;
 use App\Services\GitHubService;
-use App\Services\CpanelService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
 
 class SiteService
 {
-    public function create(string $name, string $slug, int $organisationId, CpanelService $cpanel): Site
+    public function create(string $name, string $slug, int $organisationId): Site
     {
         $site = Site::create([
             'name'            => $name,
@@ -36,11 +35,6 @@ class SiteService
 
         // Preview symlink also starts at coming-soon; updated to latest release on each createRelease()
         symlink($sitePath . '/coming-soon', $site->previewSymlinkPath());
-
-        // Provision the client preview subdomain in cPanel
-        $homeDir = '/home/' . config('services.cpanel.user');
-        $docroot = ltrim(str_replace($homeDir . '/', '', $site->previewSymlinkPath() . '/public'), '/');
-        $cpanel->createPreviewSubdomain($slug, $docroot);
 
         return $site;
     }
@@ -149,35 +143,6 @@ class SiteService
         symlink($target, $livePath);
     }
 
-    public function provisionPreview(Site $site, CpanelService $cpanel): void
-    {
-        $sitePath = $site->sitesPath();
-
-        if (!is_link($site->previewSymlinkPath()) && !file_exists($site->previewSymlinkPath())) {
-            if ($site->current_release) {
-                $target = $sitePath . '/releases/' . $site->current_release;
-                $site->update(['preview_release' => $site->current_release]);
-            } else {
-                $target = $sitePath . '/coming-soon';
-            }
-            symlink($target, $site->previewSymlinkPath());
-        }
-
-        $homeDir = '/home/' . config('services.cpanel.user');
-        $docroot = ltrim(str_replace($homeDir . '/', '', $site->previewSymlinkPath() . '/public'), '/');
-        $cpanel->createPreviewSubdomain($site->slug, $docroot);
-    }
-
-    public function unprovisionPreview(Site $site, CpanelService $cpanel): void
-    {
-        $cpanel->removePreviewSubdomain($site->slug);
-
-        $previewPath = $site->previewSymlinkPath();
-        if (is_link($previewPath) || file_exists($previewPath)) {
-            unlink($previewPath);
-        }
-    }
-
     public function setPreview(Site $site, int $version): void
     {
         $releasePath = $site->sitesPath() . '/releases/' . $version;
@@ -253,7 +218,7 @@ class SiteService
         rename($tmpPath, $previewPath);
     }
 
-    public function delete(Site $site, GitHubService $github, CpanelService $cpanel): void
+    public function delete(Site $site, GitHubService $github): void
     {
         $org = $site->organisation;
 
@@ -268,8 +233,6 @@ class SiteService
                 $org->update(['github_installation_id' => null]);
             }
         }
-
-        $cpanel->removePreviewSubdomain($site->slug);
 
         File::deleteDirectory($site->sitesPath());
         $site->delete();
