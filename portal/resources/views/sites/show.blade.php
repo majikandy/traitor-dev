@@ -332,20 +332,26 @@
                 data-is-live="{{ $isLive ? 'true' : 'false' }}"
                 data-promote-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
                 onclick="selectRelease(this)">
-                <div class="flex items-center gap-3" data-badges>
-                    <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
-                    @if($isLive)
-                        <span class="live-badge inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live
-                        </span>
-                    @endif
-                    @if($isClientPreview)
-                        <span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
-                            <span class="h-1.5 w-1.5 rounded-full bg-violet-500"></span>client preview
-                        </span>
-                    @endif
-                    @if($release->notes)
-                        <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes }}</span>
+                <div class="flex flex-col gap-1" data-badges>
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
+                        @if($isLive)
+                            <span class="live-badge inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live
+                            </span>
+                        @endif
+                        @if($isClientPreview)
+                            <span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-violet-500"></span>client preview
+                            </span>
+                        @endif
+                        @if($release->notes)
+                            <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes }}</span>
+                        @endif
+                    </div>
+                    @if(isset($versionPreviewEnabled[$release->version]))
+                        @php $vUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . ($versionPreviewTokens[$release->version] ?? ''); @endphp
+                        <a href="{{ $vUrl }}" target="_blank" onclick="event.stopPropagation()" class="font-mono text-xs text-violet-500 hover:underline truncate max-w-xs">{{ $site->slug }}-v{{ $release->version }}.{{ config('services.cpanel.preview_domain') }}</a>
                     @endif
                 </div>
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
