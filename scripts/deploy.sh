@@ -40,6 +40,11 @@ rsync -az --delete \
     infrastructure/preview-dispatcher/ \
     $SSH_USER@$SSH_HOST:/home/$SSH_USER/preview-dispatcher/ &
 
+rsync -az --delete \
+    -e "$RSYNC_SSH" \
+    infrastructure/sites-dispatcher/ \
+    $SSH_USER@$SSH_HOST:/home/$SSH_USER/sites-dispatcher/ &
+
 wait
 
 # Single SSH connection for everything else

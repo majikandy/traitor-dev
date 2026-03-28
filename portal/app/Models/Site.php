@@ -75,4 +75,9 @@ class Site extends Model
     {
         return 'https://' . $this->slug . '.' . config('services.cpanel.preview_domain');
     }
+
+    public function stagingUrl(): string
+    {
+        return 'https://' . $this->slug . '.' . config('services.cpanel.staging_domain');
+    }
 }

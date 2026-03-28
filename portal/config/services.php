@@ -41,6 +41,7 @@ return [
         'token'          => env('CPANEL_TOKEN'),
         'root_domain'    => env('CPANEL_ROOT_DOMAIN'),
         'preview_domain' => env('CPANEL_PREVIEW_DOMAIN'),
+        'staging_domain' => env('CPANEL_STAGING_DOMAIN'),
     ],
 
     'github' => [

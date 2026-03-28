@@ -54,12 +54,12 @@
                 </span>
             @endif
         </div>
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 flex items-center gap-2">
             @if($site->domain)
                 <a href="https://{{ $site->domain }}" target="_blank" class="text-brand-600 hover:underline">{{ $site->domain }}</a>
-            @else
-                {{ $site->slug }}
+                <span class="text-gray-300">·</span>
             @endif
+            <a href="{{ $site->stagingUrl() }}" target="_blank" class="text-gray-400 hover:text-gray-600 font-mono text-xs hover:underline" title="Live staging URL — mirrors exactly what the real domain serves">{{ $site->slug }}.{{ config('services.cpanel.staging_domain') }}</a>
         </p>
         <p class="mt-0.5 text-sm text-gray-400 flex items-center gap-2 flex-wrap">
             Client preview:
