@@ -65,12 +65,13 @@
             Client preview:
             @if($previewProvisioned)
                 <a href="{{ $site->clientPreviewUrl() }}" target="_blank" class="text-brand-500 hover:underline font-mono text-xs">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</a>
-            @else
-                <form method="POST" action="{{ route('sites.provision-preview', $site) }}" class="inline">
-                    @csrf
-                    <button type="submit" class="rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">Provision preview subdomain</button>
-                </form>
             @endif
+            <form method="POST" action="{{ route('sites.provision-preview', $site) }}" class="inline">
+                @csrf
+                <button type="submit" class="rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">
+                    {{ $previewProvisioned ? '↺ Re-provision' : 'Provision preview subdomain' }}
+                </button>
+            </form>
         </p>
     </div>
     @if($site->domain_status === 'active')

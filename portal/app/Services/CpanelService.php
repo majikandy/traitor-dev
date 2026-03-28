@@ -55,7 +55,10 @@ class CpanelService
 
         if (($result['status'] ?? 0) !== 1) {
             $reason = $result['errors'][0] ?? 'Unknown error';
-            throw new \RuntimeException("cPanel failed to create preview subdomain: {$reason}");
+            // Treat "already exists" as success — idempotent re-provisioning
+            if (!str_contains((string) $reason, 'already exists')) {
+                throw new \RuntimeException("cPanel failed to create preview subdomain: {$reason}");
+            }
         }
     }
 
