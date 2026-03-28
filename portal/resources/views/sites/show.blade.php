@@ -351,8 +351,22 @@
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
-                    @php $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain'); @endphp
-                    <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ URL', 1000) })" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">⧉ URL</button>
+                    @php
+                        $vEnabled = isset($versionPreviewEnabled[$release->version]);
+                        $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain');
+                    @endphp
+                    @if($vEnabled)
+                        <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ v{{ $release->version }}', 1000) })" class="hidden sm:inline-flex rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">⧉ v{{ $release->version }}</button>
+                        <form method="POST" action="{{ route('sites.releases.version-preview.disable', [$site, $release->version]) }}" class="hidden sm:inline">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-400 hover:bg-gray-50 transition">Hide</button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('sites.releases.version-preview.enable', [$site, $release->version]) }}" class="hidden sm:inline">
+                            @csrf
+                            <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Share v{{ $release->version }}</button>
+                        </form>
+                    @endif
                     @if(!$isClientPreview)
                         <form method="POST" action="{{ route('sites.releases.set-preview', [$site, $release->version]) }}">
                             @csrf

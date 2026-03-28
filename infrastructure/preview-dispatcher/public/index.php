@@ -39,10 +39,22 @@ if (!preg_match('/^[a-z0-9][a-z0-9\-]*$/', $slug)) {
 
 // Detect versioned slug: awesome-jawsome-v3 → site=awesome-jawsome, release=3
 if (preg_match('/^(.+)-v(\d+)$/', $slug, $m)) {
-    $siteSlug = $m[1];
-    $docroot  = SITES_PATH . '/' . $siteSlug . '/releases/' . $m[2] . '/public';
+    $siteSlug    = $m[1];
+    $releaseDir  = SITES_PATH . '/' . $siteSlug . '/releases/' . $m[2];
+    $markerFile  = $releaseDir . '/.preview-enabled';
+
+    if (!file_exists($markerFile)) {
+        http_response_code(404);
+        header('Content-Type: text/html; charset=utf-8');
+        exit('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Not available</title>
+        <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f9fafb;color:#374151}
+        .box{text-align:center;max-width:420px;padding:2rem}h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}p{color:#6b7280}</style></head>
+        <body><div class="box"><h1>Not available</h1><p>This version isn\'t currently shared. Check back later or contact us for access.</p></div></body></html>');
+    }
+
+    $docroot = $releaseDir . '/public';
 } else {
-    $docroot  = SITES_PATH . '/' . $slug . '/preview/public';
+    $docroot = SITES_PATH . '/' . $slug . '/preview/public';
 }
 
 $realDocroot = realpath($docroot);

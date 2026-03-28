@@ -52,7 +52,26 @@ class SiteController extends Controller
 
         $previewActive = is_link($site->previewSymlinkPath()) || file_exists($site->previewSymlinkPath());
 
-        return view('sites.show', compact('site', 'previewActive'));
+        $versionPreviewEnabled = $site->releases->filter(
+            fn($r) => file_exists($site->sitesPath() . '/releases/' . $r->version . '/.preview-enabled')
+        )->pluck('version')->flip()->all();
+
+        return view('sites.show', compact('site', 'previewActive', 'versionPreviewEnabled'));
+    }
+
+    public function enableVersionPreview(Site $site, int $version)
+    {
+        $site->releases()->where('version', $version)->firstOrFail();
+        $this->siteService->enableVersionPreview($site, $version);
+
+        return back()->with('success', "v{$version} preview enabled.");
+    }
+
+    public function disableVersionPreview(Site $site, int $version)
+    {
+        $this->siteService->disableVersionPreview($site, $version);
+
+        return back()->with('success', "v{$version} preview disabled.");
     }
 
     public function takeDownPreview(Site $site)
