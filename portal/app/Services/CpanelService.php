@@ -59,7 +59,15 @@ class CpanelService
 
         if (($result['status'] ?? 0) !== 1) {
             $reason = $result['errors'][0] ?? 'Unknown error';
-            if (!str_contains((string) $reason, 'already exists')) {
+            if (str_contains((string) $reason, 'already exists')) {
+                // Delete and recreate so the docroot is always correct
+                $this->removePreviewSubdomain($slug);
+                $this->uapi('SubDomain', 'addsubdomain', [
+                    'domain'     => $slug . '.' . $previewSubdomain,
+                    'rootdomain' => $this->rootDomain,
+                    'dir'        => $docroot,
+                ]);
+            } else {
                 throw new \RuntimeException("cPanel failed to create preview subdomain: {$reason}");
             }
         }
@@ -70,10 +78,12 @@ class CpanelService
         $previewDomain = config('services.cpanel.preview_domain')
             ?? throw new \RuntimeException('CPANEL_PREVIEW_DOMAIN is not set in .env');
 
-        $this->uapi('SubDomain', 'delsubdomain', [
-            'domain' => $slug . '.' . $previewDomain,
+        $this->v2('SubDomain', 'delsubdomain', [
+            'domain' => $slug . '.' . $previewDomain . '.' . $this->rootDomain,
         ]);
     }
+
+
 
     public function triggerAutoSsl(): void
     {
