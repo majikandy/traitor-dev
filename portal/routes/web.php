@@ -119,6 +119,8 @@ Route::post('/passkeys/invite-options', [PasskeyController::class, 'invitePasske
 
 Route::any('/preview/{token}/{path?}', PreviewController::class)->where('path', '.*')->name('preview');
 
+Route::get('/version', fn() => response(trim(file_get_contents(base_path('VERSION'))), 200, ['Content-Type' => 'text/plain']));
+
 // GitHub App — webhook is public (CSRF exempt via bootstrap/app.php)
 Route::post('/github/webhook', [GitHubController::class, 'webhook'])->name('github.webhook');
 
