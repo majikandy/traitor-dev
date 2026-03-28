@@ -370,7 +370,7 @@
                         </form>
                         <form method="POST" action="{{ route('sites.releases.version-preview.disable', [$site, $release->version]) }}" class="hidden sm:inline">
                             @csrf @method('DELETE')
-                            <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-400 hover:bg-gray-50 transition">Hide</button>
+                            <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-400 hover:bg-gray-50 transition">Revoke</button>
                         </form>
                     @else
                         <form method="POST" action="{{ route('sites.releases.version-preview.enable', [$site, $release->version]) }}" class="hidden sm:inline">
