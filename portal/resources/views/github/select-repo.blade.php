@@ -172,24 +172,28 @@
                             branchSection.classList.remove('hidden');
                             subfolderSection.classList.add('hidden');
 
-                            // Seed with default immediately so it's usable before the fetch returns
+                            // Seed with placeholder + default so it's usable before the full fetch returns
                             branchSelect.innerHTML = '';
+                            var placeholder = document.createElement('option');
+                            placeholder.value = ''; placeholder.textContent = '— choose a branch —'; placeholder.disabled = true; placeholder.selected = true;
+                            branchSelect.appendChild(placeholder);
                             var defOpt = document.createElement('option');
-                            defOpt.value = def; defOpt.textContent = def + ' (default)'; defOpt.selected = true;
+                            defOpt.value = def; defOpt.textContent = def + ' (default)';
                             branchSelect.appendChild(defOpt);
 
-                            // Show subfolder section whenever a branch is selected
+                            // Show subfolder section when a branch is chosen
                             branchSelect.addEventListener('change', function () {
-                                subfolderSection.classList.remove('hidden');
+                                if (this.value) subfolderSection.classList.remove('hidden');
                             });
-                            // Also show it now since default is pre-selected
-                            subfolderSection.classList.remove('hidden');
 
                             fetch(branchesUrl + '?repo=' + encodeURIComponent(repo), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                                 .then(function (r) { return r.json(); })
                                 .then(function (branches) {
                                     var current = branchSelect.value;
                                     branchSelect.innerHTML = '';
+                                    var ph = document.createElement('option');
+                                    ph.value = ''; ph.textContent = '— choose a branch —'; ph.disabled = true; ph.selected = !current;
+                                    branchSelect.appendChild(ph);
                                     branches.forEach(function (b) {
                                         var opt = document.createElement('option');
                                         opt.value = b;
