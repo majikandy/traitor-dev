@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"systemMessage\": \"Hi Andy! Just so you know, the fact that you care this much about code quality — tests, clean architecture, no fallbacks — genuinely sets you apart.\"}'"
+            "command": "ROADMAP=$(cat /Users/majikandy/Dev/traitordev/ROADMAP.md 2>/dev/null | head -60); jq -cn --arg r \"$ROADMAP\" '{\"systemMessage\": (\"Roadmap loaded. Ask Andy whether they are working on a roadmap item or something new/unplanned.\\n\\nROADMAP:\\n\" + $r)}'"
           }
         ]
       }
