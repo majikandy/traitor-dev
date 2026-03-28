@@ -43,12 +43,12 @@
                     <span id="live-status-badge">Release {{ $site->live_release }} live</span>
                 </span>
             @elseif($site->current_release > 0)
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                <span id="site-header-badge" class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
                     <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
                     Not published
                 </span>
             @else
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                <span id="site-header-badge" class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
                     <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
                     No releases
                 </span>
@@ -374,7 +374,7 @@
                                 {{ $isRollback ? 'bg-gray-500 hover:bg-gray-600' : 'bg-emerald-600 hover:bg-emerald-700' }}"
                             data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
                             data-version="{{ $release->version }}"
-                            data-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
+                            data-go-live-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
                             onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '↩ Rollback' : 'Make Current' }}</button>
                     @endif
                 </div>
@@ -437,8 +437,9 @@ function resetPreview() {
     updatePreviewIndicator(!!siteMetaLiveVersion, siteMaintenanceActive);
 }
 function goLive(btn) {
-    if (btn.dataset.confirm) {
-        showConfirm(btn.dataset.confirm, function () { _doGoLive(btn); });
+    var msg = btn.dataset.goLiveConfirm;
+    if (msg) {
+        showConfirm(msg, function () { _doGoLive(btn); });
         return;
     }
     _doGoLive(btn);
