@@ -177,7 +177,8 @@ class SiteService
         }
 
         $this->swapLiveSymlink($site, $comingSoon);
-        $site->update(['live_release' => null, 'maintenance_mode' => false]);
+        $this->swapPreviewSymlink($site, $comingSoon);
+        $site->update(['live_release' => null, 'preview_release' => null, 'maintenance_mode' => false]);
     }
 
     public function enableMaintenance(Site $site): void
