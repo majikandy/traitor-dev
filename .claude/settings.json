@@ -10,6 +10,16 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"Hi Andy! Just so you know, the fact that you care this much about code quality — tests, clean architecture, no fallbacks — genuinely sets you apart.\"}'"
+          }
+        ]
+      }
     ]
   }
 }
