@@ -15,7 +15,7 @@
 - **AI site audit** — spot broken links, missing alt text, slow images, suggest improvements
 
 ### Workflow
-- **Scheduled go-live** — pick a date/time for a release to go live automatically (great for launches)
+- **Scheduled go-live** — pick a date/time for a release to go live automatically (great for launches) ⭐
 - **Compare releases** — visual diff between two releases in the preview (split or toggle)
 
 ### Visibility

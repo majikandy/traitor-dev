@@ -13,7 +13,28 @@
 </nav>
 @endsection
 
+@if($site->maintenance_mode)
+<style>
+/* Subtle hazard wash across the entire page content area */
+main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04) 0, rgba(245,158,11,0.04) 20px, transparent 20px, transparent 40px) !important; }
+</style>
+@endif
 @section('content')
+@if($site->maintenance_mode)
+{{-- Maintenance mode hazard banner --}}
+<div class="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 mb-8">
+    <div style="background:repeating-linear-gradient(-45deg,#f59e0b 0,#f59e0b 18px,#1c1917 18px,#1c1917 36px);height:12px;"></div>
+    <div style="background:#1c1917;" class="px-6 py-4 flex items-center gap-4">
+        <span class="text-3xl leading-none flex-shrink-0">🚧</span>
+        <div class="flex-1 min-w-0">
+            <p class="font-black uppercase tracking-widest text-sm" style="color:#fbbf24;">Maintenance mode active</p>
+            <p class="text-xs mt-0.5" style="color:rgba(253,230,138,0.55);">Visitors are seeing the coming soon page — use the toggle to bring the site back online</p>
+        </div>
+        <span class="text-3xl leading-none flex-shrink-0">🚧</span>
+    </div>
+    <div style="background:repeating-linear-gradient(-45deg,#f59e0b 0,#f59e0b 18px,#1c1917 18px,#1c1917 36px);height:12px;"></div>
+</div>
+@endif
 {{-- Header --}}
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
