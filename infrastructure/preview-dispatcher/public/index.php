@@ -37,7 +37,14 @@ if (!preg_match('/^[a-z0-9][a-z0-9\-]*$/', $slug)) {
     exit('Not found');
 }
 
-$docroot     = SITES_PATH . '/' . $slug . '/preview/public';
+// Detect versioned slug: awesome-jawsome-v3 → site=awesome-jawsome, release=3
+if (preg_match('/^(.+)-v(\d+)$/', $slug, $m)) {
+    $siteSlug = $m[1];
+    $docroot  = SITES_PATH . '/' . $siteSlug . '/releases/' . $m[2] . '/public';
+} else {
+    $docroot  = SITES_PATH . '/' . $slug . '/preview/public';
+}
+
 $realDocroot = realpath($docroot);
 
 if ($realDocroot === false || !is_dir($realDocroot)) {

@@ -351,6 +351,8 @@
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
+                    @php $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain'); @endphp
+                    <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ URL', 1000) })" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">⧉ URL</button>
                     @if(!$isClientPreview)
                         <form method="POST" action="{{ route('sites.releases.set-preview', [$site, $release->version]) }}">
                             @csrf
