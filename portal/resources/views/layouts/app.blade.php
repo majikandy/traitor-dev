@@ -140,6 +140,77 @@
         </div>
     </div>
 
+    {{-- Confirm modal --}}
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" id="confirm-backdrop"></div>
+        <div class="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6">
+            <h3 class="text-base font-semibold text-gray-900 mb-2" id="confirm-title">Are you sure?</h3>
+            <p class="text-sm text-gray-500 mb-6" id="confirm-message"></p>
+            <div class="flex justify-end gap-3">
+                <button id="confirm-cancel" class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+                <button id="confirm-ok" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var modal   = document.getElementById('confirm-modal');
+        var msgEl   = document.getElementById('confirm-message');
+        var okBtn   = document.getElementById('confirm-ok');
+        var cancelBtn = document.getElementById('confirm-cancel');
+        var backdrop  = document.getElementById('confirm-backdrop');
+        var pendingCallback = null;
+
+        window.showConfirm = function (message, onConfirm, title) {
+            msgEl.textContent = message;
+            document.getElementById('confirm-title').textContent = title || 'Are you sure?';
+            pendingCallback = onConfirm;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        function dismiss() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            pendingCallback = null;
+        }
+
+        okBtn.addEventListener('click', function () {
+            var cb = pendingCallback;
+            dismiss();
+            if (cb) cb();
+        });
+        cancelBtn.addEventListener('click', dismiss);
+        backdrop.addEventListener('click', dismiss);
+
+        // Intercept forms with data-confirm
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            var msg = form.dataset.confirm;
+            if (!msg) return;
+            e.preventDefault();
+            showConfirm(msg, function () { form.submit(); });
+        }, true);
+
+        // Intercept buttons/links with data-confirm that aren't inside a form
+        document.addEventListener('click', function (e) {
+            var el = e.target.closest('[data-confirm]');
+            if (!el || el.tagName === 'FORM') return;
+            var form = el.closest('form');
+            if (form && !el.dataset.confirm) return;
+            var msg = el.dataset.confirm;
+            if (!msg) return;
+            e.preventDefault();
+            e.stopPropagation();
+            showConfirm(msg, function () {
+                if (form) form.submit();
+                else if (el.href) window.location = el.href;
+            });
+        }, true);
+    })();
+    </script>
+
     <script src="/js/portal.js"></script>
     @php $version = file_exists(base_path('VERSION')) ? trim(file_get_contents(base_path('VERSION'))) : 'dev'; @endphp
     <div class="fixed bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 text-xs text-gray-300">

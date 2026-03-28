@@ -91,7 +91,7 @@
                                 </form>
                                 {{-- Cancel invite --}}
                                 <form action="{{ route('team.destroy', $user) }}" method="POST"
-                                    onsubmit="return confirm('Cancel invite for {{ $user->email }}? This will delete the pending account.')">
+                                    data-confirm="Cancel invite for {{ $user->email }}? This will delete the pending account.">
                                     @csrf @method('DELETE')
                                     <button class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition">
                                         Cancel invite
@@ -100,7 +100,7 @@
                             @else
                                 {{-- Remove active member --}}
                                 <form action="{{ route('team.destroy', $user) }}" method="POST"
-                                    onsubmit="return confirm('Remove {{ $user->name }} from the team?')">
+                                    data-confirm="Remove {{ $user->name }} from the team?">
                                     @csrf @method('DELETE')
                                     <button class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition">
                                         Remove

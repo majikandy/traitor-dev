@@ -65,7 +65,7 @@
             Client preview:
             @if($previewActive)
                 <a href="{{ $site->clientPreviewUrl() }}" target="_blank" class="text-brand-500 hover:underline font-mono text-xs">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</a>
-                <form method="POST" action="{{ route('sites.preview.takedown', $site) }}" class="inline" onsubmit="return confirm('Take down the client preview URL?')">
+                <form method="POST" action="{{ route('sites.preview.takedown', $site) }}" class="inline" data-confirm="Take down the client preview URL? Visitors will see a 404.">
                     @csrf @method('DELETE')
                     <button type="submit" class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition">Take down</button>
                 </form>
@@ -177,10 +177,10 @@
 
             <div class="flex items-center gap-4 pt-1">
                 <a href="{{ route('github.select-repo-form', $site) }}" class="text-xs text-gray-400 hover:text-gray-600 transition">Change repository</a>
-                <form method="POST" action="{{ route('github.disconnect', $site) }}">
+                <form method="POST" action="{{ route('github.disconnect', $site) }}" data-confirm="Disconnect {{ $site->github_repo }}? Auto-deploys will stop.">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition" onclick="return confirm('Disconnect {{ $site->github_repo }}?')">Disconnect</button>
+                    <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition">Disconnect</button>
                 </form>
             </div>
         </div>
@@ -364,7 +364,7 @@
                     @endphp
                     @if($vEnabled)
                         <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ v{{ $release->version }}', 1000) })" class="hidden sm:inline-flex rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">⧉ v{{ $release->version }}</button>
-                        <form method="POST" action="{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}" class="hidden sm:inline" title="Regenerate link — invalidates the old one" onsubmit="return confirm('Regenerate link? The old URL will stop working.')">
+                        <form method="POST" action="{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}" class="hidden sm:inline" data-confirm="Regenerate link? The old URL will stop working immediately.">
                             @csrf
                             <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-400 hover:bg-gray-50 transition">↻</button>
                         </form>
@@ -390,7 +390,7 @@
                                class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
                         @endif
                         @if($sortedReleases->count() === 1)
-                            <form method="POST" action="{{ route('sites.revert-to-coming-soon', $site) }}" onsubmit="return confirm('Revert to coming soon page?')">
+                            <form method="POST" action="{{ route('sites.revert-to-coming-soon', $site) }}" data-confirm="Revert to coming soon page? The live site will show the placeholder.">
                                 @csrf
                                 <button type="submit" class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">↩ Revert to coming soon</button>
                             </form>
@@ -465,7 +465,13 @@ function resetPreview() {
     updatePreviewIndicator(!!siteMetaLiveVersion, siteMaintenanceActive);
 }
 function goLive(btn) {
-    if (btn.dataset.confirm && !confirm(btn.dataset.confirm)) return;
+    if (btn.dataset.confirm) {
+        showConfirm(btn.dataset.confirm, function () { _doGoLive(btn); });
+        return;
+    }
+    _doGoLive(btn);
+}
+function _doGoLive(btn) {
     btn.disabled = true;
     btn.textContent = 'Making current…';
     fetch(btn.dataset.url, {
@@ -679,10 +685,10 @@ if (window.innerWidth < 768) { setView('mobile'); }
                 @csrf
                 <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition">Check DNS</button>
             </form>
-            <form method="POST" action="{{ route('sites.domain.detach', $site) }}">
+            <form method="POST" action="{{ route('sites.domain.detach', $site) }}" data-confirm="Remove {{ $site->domain }}? The domain will be detached from cPanel.">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition" onclick="return confirm('Remove {{ $site->domain }}?')">Remove domain</button>
+                <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition">Remove domain</button>
             </form>
         </div>
 
@@ -711,10 +717,10 @@ if (window.innerWidth < 768) { setView('mobile'); }
             @endif
         </p>
         <div class="flex justify-end">
-            <form method="POST" action="{{ route('sites.domain.detach', $site) }}">
+            <form method="POST" action="{{ route('sites.domain.detach', $site) }}" data-confirm="Remove {{ $site->domain }}? The domain will be detached from cPanel.">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition" onclick="return confirm('Remove {{ $site->domain }}?')">Remove domain</button>
+                <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition">Remove domain</button>
             </form>
         </div>
     @endif
@@ -746,7 +752,7 @@ function cancelRename() {
         <h2 class="text-base font-semibold text-gray-900">Danger Zone</h2>
     </div>
     <p class="text-sm text-gray-500 mb-4 ml-12">Permanently delete this site and all its releases.</p>
-    <form action="{{ route('sites.destroy', $site) }}" method="POST" class="ml-12" onsubmit="return confirm('Delete {{ $site->name }}? This cannot be undone.')">
+    <form action="{{ route('sites.destroy', $site) }}" method="POST" class="ml-12" data-confirm="Delete {{ $site->name }}? This cannot be undone — all releases will be permanently removed.">
         @csrf
         @method('DELETE')
         <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition">Delete Site</button>

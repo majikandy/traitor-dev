@@ -76,7 +76,7 @@
 
                     @if($user->id !== auth()->id())
                         <form action="{{ route('users.destroy', $user) }}" method="POST"
-                            onsubmit="return confirm('Remove {{ $user->name }}?')">
+                            data-confirm="Remove {{ $user->name }}?">
                             @csrf @method('DELETE')
                             <button class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition">Remove</button>
                         </form>

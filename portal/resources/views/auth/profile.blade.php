@@ -101,11 +101,10 @@
                                 <p class="text-xs text-gray-400">Added {{ $passkey->created_at->diffForHumans() }}</p>
                             </div>
                         </div>
-                        <form method="POST" action="{{ route('passkeys.destroy', $passkey) }}">
+                        <form method="POST" action="{{ route('passkeys.destroy', $passkey) }}" data-confirm="Remove this passkey?">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition"
-                                onclick="return confirm('Remove this passkey?')">Remove</button>
+                            <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition">Remove</button>
                         </form>
                     </li>
                 @endforeach
