@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.method' => \App\Http\Middleware\RequiresAuthMethod::class,
         ]);
-        $middleware->validateCsrfTokens(except: ['/github/webhook']);
+        $middleware->validateCsrfTokens(except: ['/github/webhook', '/preview/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
