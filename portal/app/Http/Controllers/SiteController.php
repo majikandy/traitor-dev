@@ -52,11 +52,16 @@ class SiteController extends Controller
 
         $previewActive = is_link($site->previewSymlinkPath()) || file_exists($site->previewSymlinkPath());
 
-        $versionPreviewEnabled = $site->releases->filter(
-            fn($r) => file_exists($site->sitesPath() . '/releases/' . $r->version . '/.preview-enabled')
-        )->pluck('version')->flip()->all();
+        $versionPreviewTokens = [];
+        foreach ($site->releases as $release) {
+            $markerFile = $site->sitesPath() . '/releases/' . $release->version . '/.preview-enabled';
+            if (file_exists($markerFile)) {
+                $versionPreviewTokens[$release->version] = trim(file_get_contents($markerFile));
+            }
+        }
+        $versionPreviewEnabled = array_flip(array_keys($versionPreviewTokens));
 
-        return view('sites.show', compact('site', 'previewActive', 'versionPreviewEnabled'));
+        return view('sites.show', compact('site', 'previewActive', 'versionPreviewEnabled', 'versionPreviewTokens'));
     }
 
     public function enableVersionPreview(Site $site, int $version)
@@ -65,6 +70,14 @@ class SiteController extends Controller
         $this->siteService->enableVersionPreview($site, $version);
 
         return back()->with('success', "v{$version} preview enabled.");
+    }
+
+    public function regenerateVersionPreviewToken(Site $site, int $version)
+    {
+        $site->releases()->where('version', $version)->firstOrFail();
+        $this->siteService->regenerateVersionPreviewToken($site, $version);
+
+        return back()->with('success', "v{$version} preview link regenerated — old links are now invalid.");
     }
 
     public function disableVersionPreview(Site $site, int $version)

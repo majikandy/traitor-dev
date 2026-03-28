@@ -82,6 +82,7 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::post('/sites/{site}/releases/{version}/promote', [SiteController::class, 'promoteRelease'])->name('sites.releases.promote');
     Route::post('/sites/{site}/releases/{version}/set-preview', [SiteController::class, 'setPreview'])->name('sites.releases.set-preview');
     Route::post('/sites/{site}/releases/{version}/version-preview', [SiteController::class, 'enableVersionPreview'])->name('sites.releases.version-preview.enable');
+    Route::post('/sites/{site}/releases/{version}/version-preview/regenerate', [SiteController::class, 'regenerateVersionPreviewToken'])->name('sites.releases.version-preview.regenerate');
     Route::delete('/sites/{site}/releases/{version}/version-preview', [SiteController::class, 'disableVersionPreview'])->name('sites.releases.version-preview.disable');
     Route::delete('/sites/{site}/preview', [SiteController::class, 'takeDownPreview'])->name('sites.preview.takedown');
     Route::post('/sites/{site}/preview/restore', [SiteController::class, 'restorePreview'])->name('sites.preview.restore');

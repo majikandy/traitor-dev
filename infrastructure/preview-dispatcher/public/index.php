@@ -43,13 +43,42 @@ if (preg_match('/^(.+)-v(\d+)$/', $slug, $m)) {
     $releaseDir  = SITES_PATH . '/' . $siteSlug . '/releases/' . $m[2];
     $markerFile  = $releaseDir . '/.preview-enabled';
 
-    if (!file_exists($markerFile)) {
+    $notAvailable = function() {
         http_response_code(404);
         header('Content-Type: text/html; charset=utf-8');
         exit('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Not available</title>
         <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f9fafb;color:#374151}
         .box{text-align:center;max-width:420px;padding:2rem}h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}p{color:#6b7280}</style></head>
         <body><div class="box"><h1>Not available</h1><p>This version isn\'t currently shared. Check back later or contact us for access.</p></div></body></html>');
+    };
+
+    if (!file_exists($markerFile)) {
+        $notAvailable();
+    }
+
+    $storedToken = trim(file_get_contents($markerFile));
+    $cookieName  = 'pt_' . md5($host);
+
+    // Token in URL — validate, set cookie, redirect to clean URL
+    if (isset($_GET['token'])) {
+        if (!hash_equals($storedToken, $_GET['token'])) {
+            $notAvailable();
+        }
+        setcookie($cookieName, $storedToken, [
+            'expires'  => time() + 60 * 60 * 24 * 30,
+            'path'     => '/',
+            'secure'   => true,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        $cleanUrl = strtok($_SERVER['REQUEST_URI'], '?') ?: '/';
+        header('Location: ' . $cleanUrl);
+        exit;
+    }
+
+    // Cookie present — validate
+    if (!isset($_COOKIE[$cookieName]) || !hash_equals($storedToken, $_COOKIE[$cookieName])) {
+        $notAvailable();
     }
 
     $docroot = $releaseDir . '/public';

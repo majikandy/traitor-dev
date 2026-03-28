@@ -143,12 +143,20 @@ class SiteService
         symlink($target, $livePath);
     }
 
-    public function enableVersionPreview(Site $site, int $version): void
+    public function enableVersionPreview(Site $site, int $version): string
     {
         $markerFile = $site->sitesPath() . '/releases/' . $version . '/.preview-enabled';
-        if (!file_exists($markerFile)) {
-            File::put($markerFile, '');
-        }
+        $token = \Illuminate\Support\Str::random(16);
+        File::put($markerFile, $token);
+        return $token;
+    }
+
+    public function regenerateVersionPreviewToken(Site $site, int $version): string
+    {
+        $markerFile = $site->sitesPath() . '/releases/' . $version . '/.preview-enabled';
+        $token = \Illuminate\Support\Str::random(16);
+        File::put($markerFile, $token);
+        return $token;
     }
 
     public function disableVersionPreview(Site $site, int $version): void

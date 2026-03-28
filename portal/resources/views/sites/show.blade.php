@@ -353,10 +353,15 @@
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
                     @php
                         $vEnabled = isset($versionPreviewEnabled[$release->version]);
-                        $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain');
+                        $vToken   = $versionPreviewTokens[$release->version] ?? null;
+                        $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . ($vToken ? '?token=' . $vToken : '');
                     @endphp
                     @if($vEnabled)
                         <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ v{{ $release->version }}', 1000) })" class="hidden sm:inline-flex rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">⧉ v{{ $release->version }}</button>
+                        <form method="POST" action="{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}" class="hidden sm:inline" title="Regenerate link — invalidates the old one" onsubmit="return confirm('Regenerate link? The old URL will stop working.')">
+                            @csrf
+                            <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-400 hover:bg-gray-50 transition">↻</button>
+                        </form>
                         <form method="POST" action="{{ route('sites.releases.version-preview.disable', [$site, $release->version]) }}" class="hidden sm:inline">
                             @csrf @method('DELETE')
                             <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-400 hover:bg-gray-50 transition">Hide</button>
