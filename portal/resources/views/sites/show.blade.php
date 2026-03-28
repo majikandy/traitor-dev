@@ -199,10 +199,10 @@
     $sortedReleases = $site->releases->sortByDesc('version');
     $firstRelease = $sortedReleases->first();
     $hasDomain = $site->domain && $site->domain_status === 'active';
-    // Default preview: live symlink when something is published, otherwise latest release
-    $defaultPreviewSrc = $site->live_release ? $site->previewUrl() : $firstRelease->previewUrl();
+    // Default preview: staging URL always mirrors the live symlink exactly (coming soon, live release, or maintenance)
+    $defaultPreviewSrc = $site->stagingUrl();
     $liveUrl = $hasDomain ? 'https://' . $site->domain : $defaultPreviewSrc;
-    $defaultLabel = $site->live_release ? 'Live site' : ('v' . $firstRelease->version . ' (not live)');
+    $defaultLabel = $site->live_release ? 'Live site' : 'Coming soon';
     if ($site->maintenance_mode) {
         $defaultBadgeClass = 'bg-amber-100 text-amber-700';
         $defaultDotClass   = 'bg-amber-500';
@@ -216,7 +216,7 @@
     } else {
         $defaultBadgeClass = 'bg-gray-100 text-gray-500';
         $defaultDotClass   = 'bg-gray-400';
-        $defaultBadgeText  = $firstRelease ? 'not live' : 'coming soon';
+        $defaultBadgeText  = 'coming soon';
         $defaultHeaderBg   = 'rgba(243,244,246,0.6)';
     }
 @endphp
