@@ -62,14 +62,25 @@
             <a href="{{ $site->stagingUrl() }}" target="_blank" class="text-gray-400 hover:text-gray-600 font-mono text-xs hover:underline" title="Live staging URL — mirrors exactly what the real domain serves">{{ $site->slug }}.{{ config('services.cpanel.staging_domain') }}</a>
         </p>
     </div>
-    <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}" class="flex-shrink-0">
+    <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}" class="flex-shrink-0" id="maintenance-toggle-form">
         @csrf
-        <button type="submit" class="rounded-lg border px-4 py-2 text-sm font-semibold transition
-            {{ $site->maintenance_mode
-                ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
-            {{ $site->maintenance_mode ? 'Bring back online' : 'Maintenance mode' }}
-        </button>
+        <label class="flex items-center gap-2 cursor-pointer select-none group" title="{{ $site->maintenance_mode ? 'Bring site back online' : 'Enable maintenance mode' }}">
+            <span class="text-xs font-medium text-gray-400 group-hover:text-gray-600 transition">Maintenance</span>
+            <div class="relative">
+                <input type="checkbox" class="sr-only" {{ $site->maintenance_mode ? 'checked' : '' }}
+                    onchange="
+                        var form = document.getElementById('maintenance-toggle-form');
+                        if (this.checked) {
+                            window.showConfirm('Enable maintenance mode? Visitors will see the coming soon page.', function(){ form.submit(); }, 'Enable maintenance?');
+                            this.checked = false;
+                        } else {
+                            form.submit();
+                        }
+                    ">
+                <div class="w-10 h-6 rounded-full transition-colors duration-200 {{ $site->maintenance_mode ? 'bg-amber-400' : 'bg-gray-200' }}"></div>
+                <div class="absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 {{ $site->maintenance_mode ? 'translate-x-4' : '' }}"></div>
+            </div>
+        </label>
     </form>
 </div>
 
