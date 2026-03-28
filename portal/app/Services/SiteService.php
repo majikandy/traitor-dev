@@ -149,6 +149,25 @@ class SiteService
         symlink($target, $livePath);
     }
 
+    public function provisionPreview(Site $site, CpanelService $cpanel): void
+    {
+        $sitePath = $site->sitesPath();
+
+        if (!is_link($site->previewSymlinkPath()) && !file_exists($site->previewSymlinkPath())) {
+            if ($site->current_release) {
+                $target = $sitePath . '/releases/' . $site->current_release;
+                $site->update(['preview_release' => $site->current_release]);
+            } else {
+                $target = $sitePath . '/coming-soon';
+            }
+            symlink($target, $site->previewSymlinkPath());
+        }
+
+        $homeDir = '/home/' . config('services.cpanel.user');
+        $docroot = ltrim(str_replace($homeDir . '/', '', $site->previewSymlinkPath() . '/public'), '/');
+        $cpanel->createPreviewSubdomain($site->slug, $docroot);
+    }
+
     public function setPreview(Site $site, int $version): void
     {
         $releasePath = $site->sitesPath() . '/releases/' . $version;

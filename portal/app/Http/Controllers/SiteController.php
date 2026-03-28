@@ -50,7 +50,16 @@ class SiteController extends Controller
     {
         $site->load('releases', 'organisation');
 
-        return view('sites.show', compact('site'));
+        $previewProvisioned = is_link($site->previewSymlinkPath()) || file_exists($site->previewSymlinkPath());
+
+        return view('sites.show', compact('site', 'previewProvisioned'));
+    }
+
+    public function provisionPreview(Site $site, CpanelService $cpanel)
+    {
+        $this->siteService->provisionPreview($site, $cpanel);
+
+        return back()->with('success', "Client preview provisioned at {$site->clientPreviewUrl()}");
     }
 
     public function createRelease(Request $request, Site $site)
