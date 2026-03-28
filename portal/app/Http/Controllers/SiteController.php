@@ -50,8 +50,6 @@ class SiteController extends Controller
     {
         $site->load('releases', 'organisation');
 
-        $previewActive = is_link($site->previewSymlinkPath()) || file_exists($site->previewSymlinkPath());
-
         $versionPreviewTokens = [];
         foreach ($site->releases as $release) {
             $markerFile = $site->sitesPath() . '/releases/' . $release->version . '/.preview-enabled';
@@ -61,7 +59,7 @@ class SiteController extends Controller
         }
         $versionPreviewEnabled = array_flip(array_keys($versionPreviewTokens));
 
-        return view('sites.show', compact('site', 'previewActive', 'versionPreviewEnabled', 'versionPreviewTokens'));
+        return view('sites.show', compact('site', 'versionPreviewEnabled', 'versionPreviewTokens'));
     }
 
     public function enableVersionPreview(Site $site, int $version)
@@ -85,20 +83,6 @@ class SiteController extends Controller
         $this->siteService->disableVersionPreview($site, $version);
 
         return back()->with('success', "v{$version} preview disabled.");
-    }
-
-    public function takeDownPreview(Site $site)
-    {
-        $this->siteService->takeDownPreview($site);
-
-        return back()->with('success', 'Client preview taken down.');
-    }
-
-    public function restorePreview(Site $site)
-    {
-        $this->siteService->restorePreview($site);
-
-        return back()->with('success', 'Client preview restored.');
     }
 
     public function createRelease(Request $request, Site $site)
@@ -221,18 +205,6 @@ class SiteController extends Controller
 
         $this->siteService->enableMaintenance($site);
         return back()->with('success', 'Maintenance mode enabled — visitors now see the coming soon page.');
-    }
-
-    public function setPreview(Site $site, int $version)
-    {
-        $site->releases()->where('version', $version)->firstOrFail();
-        $this->siteService->setPreview($site, $version);
-
-        if (request()->expectsJson()) {
-            return response()->json(['version' => $version]);
-        }
-
-        return back()->with('success', "v{$version} set as client preview.");
     }
 
     public function destroy(Site $site, GitHubService $github)

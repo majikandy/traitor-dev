@@ -61,22 +61,6 @@
             @endif
             <a href="{{ $site->stagingUrl() }}" target="_blank" class="text-gray-400 hover:text-gray-600 font-mono text-xs hover:underline" title="Live staging URL — mirrors exactly what the real domain serves">{{ $site->slug }}.{{ config('services.cpanel.staging_domain') }}</a>
         </p>
-        <p class="mt-0.5 text-sm text-gray-400 flex items-center gap-2 flex-wrap">
-            Client preview:
-            @if($previewActive)
-                <a href="{{ $site->clientPreviewUrl() }}" target="_blank" class="text-brand-500 hover:underline font-mono text-xs">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</a>
-                <form method="POST" action="{{ route('sites.preview.takedown', $site) }}" class="inline" data-confirm="Take down the client preview URL? Visitors will see a 404.">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition">Take down</button>
-                </form>
-            @else
-                <span class="text-gray-400 font-mono text-xs line-through">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</span>
-                <form method="POST" action="{{ route('sites.preview.restore', $site) }}" class="inline">
-                    @csrf
-                    <button type="submit" class="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Restore</button>
-                </form>
-            @endif
-        </p>
     </div>
     <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}" class="flex-shrink-0">
         @csrf
@@ -323,7 +307,6 @@
         @foreach($sortedReleases as $release)
             @php
                 $isLive = $release->version === $site->live_release;
-                $isClientPreview = $release->version === $site->preview_release;
             @endphp
             <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
                     {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
@@ -338,11 +321,6 @@
                         @if($isLive)
                             <span class="live-badge inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live
-                            </span>
-                        @endif
-                        @if($isClientPreview)
-                            <span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
-                                <span class="h-1.5 w-1.5 rounded-full bg-violet-500"></span>client preview
                             </span>
                         @endif
                         @if($release->notes)
@@ -376,12 +354,6 @@
                         <form method="POST" action="{{ route('sites.releases.version-preview.enable', [$site, $release->version]) }}" class="hidden sm:inline">
                             @csrf
                             <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Share v{{ $release->version }}</button>
-                        </form>
-                    @endif
-                    @if(!$isClientPreview)
-                        <form method="POST" action="{{ route('sites.releases.set-preview', [$site, $release->version]) }}">
-                            @csrf
-                            <button type="submit" class="rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">Set as preview</button>
                         </form>
                     @endif
                     @if($isLive)

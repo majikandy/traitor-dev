@@ -30,11 +30,8 @@ class SiteService
         // "Coming soon" page served on the real domain until first Go Live
         File::put($sitePath . '/coming-soon/public/index.html', $this->comingSoon($name));
 
-        // Live symlink starts pointing at coming-soon so the preview shows something immediately
+        // Live symlink starts pointing at coming-soon so the staging URL shows something immediately
         symlink($sitePath . '/coming-soon', $sitePath . '/live');
-
-        // Preview symlink also starts at coming-soon; updated to latest release on each createRelease()
-        symlink($sitePath . '/coming-soon', $site->previewSymlinkPath());
 
         return $site;
     }
@@ -87,10 +84,7 @@ class SiteService
             'created_at' => now(),
         ]);
 
-        $site->update(['current_release' => $nextVersion, 'preview_release' => $nextVersion]);
-
-        // Advance the client preview symlink to the new release automatically
-        $this->swapPreviewSymlink($site, $site->sitesPath() . '/releases/' . $nextVersion);
+        $site->update(['current_release' => $nextVersion]);
 
         return $release;
     }
@@ -167,41 +161,6 @@ class SiteService
         }
     }
 
-    public function takeDownPreview(Site $site): void
-    {
-        $previewPath = $site->previewSymlinkPath();
-        if (is_link($previewPath) || file_exists($previewPath)) {
-            unlink($previewPath);
-        }
-    }
-
-    public function restorePreview(Site $site): void
-    {
-        if (is_link($site->previewSymlinkPath()) || file_exists($site->previewSymlinkPath())) {
-            return;
-        }
-
-        $target = $site->preview_release
-            ? $site->sitesPath() . '/releases/' . $site->preview_release
-            : ($site->current_release
-                ? $site->sitesPath() . '/releases/' . $site->current_release
-                : $site->sitesPath() . '/coming-soon');
-
-        symlink($target, $site->previewSymlinkPath());
-    }
-
-    public function setPreview(Site $site, int $version): void
-    {
-        $releasePath = $site->sitesPath() . '/releases/' . $version;
-
-        if (!is_dir($releasePath)) {
-            throw new \RuntimeException("Release {$version} not found at {$releasePath}.");
-        }
-
-        $this->swapPreviewSymlink($site, $releasePath);
-        $site->update(['preview_release' => $version]);
-    }
-
     public function promote(Site $site, int $version): void
     {
         $releasePath = $site->sitesPath() . '/releases/' . $version;
@@ -224,8 +183,7 @@ class SiteService
         }
 
         $this->swapLiveSymlink($site, $comingSoon);
-        $this->swapPreviewSymlink($site, $comingSoon);
-        $site->update(['live_release' => null, 'preview_release' => null, 'maintenance_mode' => false]);
+        $site->update(['live_release' => null, 'maintenance_mode' => false]);
     }
 
     public function enableMaintenance(Site $site): void
@@ -256,14 +214,6 @@ class SiteService
         $tmpPath  = $livePath . '_tmp_' . uniqid();
         symlink($target, $tmpPath);
         rename($tmpPath, $livePath);
-    }
-
-    private function swapPreviewSymlink(Site $site, string $target): void
-    {
-        $previewPath = $site->previewSymlinkPath();
-        $tmpPath     = $previewPath . '_tmp_' . uniqid();
-        symlink($target, $tmpPath);
-        rename($tmpPath, $previewPath);
     }
 
     public function delete(Site $site, GitHubService $github): void
