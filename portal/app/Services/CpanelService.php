@@ -47,14 +47,15 @@ class CpanelService
         $previewDomain = config('services.cpanel.preview_domain')
             ?? throw new \RuntimeException('CPANEL_PREVIEW_DOMAIN is not set in .env');
 
-        $result = $this->uapi('SubDomain', 'addsubdomain', [
-            'domain'     => $slug,
+        $result = $this->v2('SubDomain', 'addsubdomain', [
+            'subdomain'  => $slug,
             'rootdomain' => $previewDomain,
             'dir'        => $docroot,
         ]);
 
-        if (($result['status'] ?? 0) !== 1) {
-            $reason = $result['errors'][0] ?? 'Unknown error';
+        $success = $result['data'][0]['result'] ?? false;
+        if (!$success) {
+            $reason = $result['data'][0]['reason'] ?? 'Unknown error';
             // Treat "already exists" as success — idempotent re-provisioning
             if (!str_contains((string) $reason, 'already exists')) {
                 throw new \RuntimeException("cPanel failed to create preview subdomain: {$reason}");
@@ -67,8 +68,8 @@ class CpanelService
         $previewDomain = config('services.cpanel.preview_domain')
             ?? throw new \RuntimeException('CPANEL_PREVIEW_DOMAIN is not set in .env');
 
-        $this->uapi('SubDomain', 'delsubdomain', [
-            'domain' => $slug . '.' . $previewDomain,
+        $this->v2('SubDomain', 'delsubdomain', [
+            'subdomain' => $slug . '.' . $previewDomain,
         ]);
     }
 
