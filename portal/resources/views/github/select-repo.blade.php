@@ -52,11 +52,9 @@
                 </div>
                 <div class="mb-4 hidden" id="branch-section">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Branch</label>
-                    <p class="text-sm text-gray-500" id="branch-default-label"></p>
-                    <input type="text" name="branch" id="branch-input" placeholder="e.g. production"
-                        list="branches-list" autocomplete="off"
-                        class="hidden w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
-                    <datalist id="branches-list"></datalist>
+                    <select name="branch" id="branch-select"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    </select>
                 </div>
                 <div class="mb-6 hidden" id="subfolder-section">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Subfolder</label>
@@ -96,10 +94,8 @@
                 (function () {
                     var defaultBranches = @json($defaultBranches);
                     var repoSelect      = document.querySelector('select[name="repo"]');
-                    var branchesList   = document.getElementById('branches-list');
+                    var branchSelect   = document.getElementById('branch-select');
                     var hint           = document.getElementById('dirs-hint');
-                    var branchLabel    = document.getElementById('branch-default-label');
-                    var branchInput    = document.getElementById('branch-input');
                     var pathInput      = document.getElementById('repo-path');
                     var picker         = document.getElementById('folder-picker');
                     var chips          = document.getElementById('folder-chips');
@@ -159,7 +155,7 @@
 
                     repoSelect.addEventListener('change', function () {
                         var repo = this.value;
-                        branchesList.innerHTML = '';
+                        branchSelect.innerHTML = '';
                         allDirs = [];
                         picker.classList.add('hidden');
                         subfolderSection.classList.add('hidden');
@@ -170,36 +166,38 @@
 
                         if (!repo) return;
 
-                        // Branch UI
+                        // Branch dropdown
                         if (repo && defaultBranches[repo]) {
                             var def = defaultBranches[repo];
                             branchSection.classList.remove('hidden');
-                            subfolderSection.classList.remove('hidden');
-                            branchInput.classList.add('hidden');
-                            branchInput.value = '';
-                            branchLabel.classList.remove('hidden');
-                            branchLabel.innerHTML = '<span class="font-medium text-gray-700">' + def + '</span>'
-                                + ' &mdash; <button type="button" id="branch-override" class="text-xs text-brand-600 hover:underline">Use a different branch</button>';
-                            document.getElementById('branch-override').addEventListener('click', function () {
-                                branchLabel.classList.add('hidden');
-                                branchInput.classList.remove('hidden');
-                                branchInput.placeholder = def;
-                                branchInput.focus();
+                            subfolderSection.classList.add('hidden');
+
+                            // Seed with default immediately so it's usable before the fetch returns
+                            branchSelect.innerHTML = '';
+                            var defOpt = document.createElement('option');
+                            defOpt.value = def; defOpt.textContent = def + ' (default)'; defOpt.selected = true;
+                            branchSelect.appendChild(defOpt);
+
+                            // Show subfolder section whenever a branch is selected
+                            branchSelect.addEventListener('change', function () {
+                                subfolderSection.classList.remove('hidden');
                             });
+                            // Also show it now since default is pre-selected
+                            subfolderSection.classList.remove('hidden');
+
                             fetch(branchesUrl + '?repo=' + encodeURIComponent(repo), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                                 .then(function (r) { return r.json(); })
                                 .then(function (branches) {
+                                    var current = branchSelect.value;
+                                    branchSelect.innerHTML = '';
                                     branches.forEach(function (b) {
                                         var opt = document.createElement('option');
                                         opt.value = b;
-                                        branchesList.appendChild(opt);
+                                        opt.textContent = b === def ? b + ' (default)' : b;
+                                        opt.selected = (b === current);
+                                        branchSelect.appendChild(opt);
                                     });
                                 });
-                        } else {
-                            branchLabel.textContent = 'Select a repository to see its default branch.';
-                            branchLabel.classList.remove('hidden');
-                            branchInput.classList.add('hidden');
-                            branchInput.value = '';
                         }
 
                         // Folder picker
