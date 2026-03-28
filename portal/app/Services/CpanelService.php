@@ -42,6 +42,33 @@ class CpanelService
         ]);
     }
 
+    public function createPreviewSubdomain(string $slug, string $docroot): void
+    {
+        $previewDomain = config('services.cpanel.preview_domain')
+            ?? throw new \RuntimeException('CPANEL_PREVIEW_DOMAIN is not set in .env');
+
+        $result = $this->uapi('SubDomain', 'addsubdomain', [
+            'domain'     => $slug,
+            'rootdomain' => $previewDomain,
+            'dir'        => $docroot,
+        ]);
+
+        if (($result['status'] ?? 0) !== 1) {
+            $reason = $result['errors'][0] ?? 'Unknown error';
+            throw new \RuntimeException("cPanel failed to create preview subdomain: {$reason}");
+        }
+    }
+
+    public function removePreviewSubdomain(string $slug): void
+    {
+        $previewDomain = config('services.cpanel.preview_domain')
+            ?? throw new \RuntimeException('CPANEL_PREVIEW_DOMAIN is not set in .env');
+
+        $this->uapi('SubDomain', 'delsubdomain', [
+            'domain' => $slug . '.' . $previewDomain,
+        ]);
+    }
+
     public function triggerAutoSsl(): void
     {
         $this->uapi('SSL', 'start_autossl_check');

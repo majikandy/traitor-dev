@@ -36,10 +36,11 @@ return [
     ],
 
     'cpanel' => [
-        'host'        => env('CPANEL_HOST'),
-        'user'        => env('CPANEL_USER'),
-        'token'       => env('CPANEL_TOKEN'),
-        'root_domain' => env('CPANEL_ROOT_DOMAIN'),
+        'host'           => env('CPANEL_HOST'),
+        'user'           => env('CPANEL_USER'),
+        'token'          => env('CPANEL_TOKEN'),
+        'root_domain'    => env('CPANEL_ROOT_DOMAIN'),
+        'preview_domain' => env('CPANEL_PREVIEW_DOMAIN'),
     ],
 
     'github' => [

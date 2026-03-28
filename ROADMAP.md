@@ -6,6 +6,7 @@
 
 - **LLM site builder** — describe changes in a text box, AI edits draft files directly and creates a release. The whole premise of the product.
 - **Deploy from GitHub** — connect a repo as an alternative to zip uploads; auto-create a release on push to main.
+- **Preview subdomains** — `{slug}.preview.traitor.dev` per site via cPanel SubDomain API (same pattern as custom domain attachment). One-time server setup: add `preview.traitor.dev` as a cPanel addon domain. Portal calls API on site create/delete. AutoSSL handles SSL automatically. Path-based `/preview/{token}/` stays for version-specific links.
 
 ## Backlog
 
@@ -29,6 +30,9 @@
 ### Technical
 - ~~**Deploy from GitHub**~~ — moved to next up
 - **Custom 404 / error pages** — per-site, uploaded or edited in the portal
+- **Custom domain SSL automation** — after DNS verified, portal triggers AutoSSL and tracks `domain_status` through `pending_dns → dns_verified → ssl_active` without manual certbot steps
+- **GitHub auto-deploy toggle** — `github_auto_deploy` column exists, no UI yet
+- **Maintenance mode UI** — `maintenance_mode` column exists, not wired to a toggle in the dashboard
 
 ## Done
 

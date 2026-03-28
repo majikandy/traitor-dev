@@ -29,7 +29,7 @@ class SiteController extends Controller
         return view('sites.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request, CpanelService $cpanel)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -41,7 +41,7 @@ class SiteController extends Controller
             return back()->withInput()->with('error', 'You already have a site with that name.');
         }
 
-        $site = $this->siteService->create($request->name, $slug, Auth::user()->organisation_id);
+        $site = $this->siteService->create($request->name, $slug, Auth::user()->organisation_id, $cpanel);
 
         return redirect()->route('sites.show', $site)->with('success', 'Site created! Upload a zip to create your first release.');
     }
@@ -175,10 +175,22 @@ class SiteController extends Controller
         return back()->with('success', 'Maintenance mode enabled — visitors now see the coming soon page.');
     }
 
-    public function destroy(Site $site, GitHubService $github)
+    public function setPreview(Site $site, int $version)
+    {
+        $site->releases()->where('version', $version)->firstOrFail();
+        $this->siteService->setPreview($site, $version);
+
+        if (request()->expectsJson()) {
+            return response()->json(['version' => $version]);
+        }
+
+        return back()->with('success', "v{$version} set as client preview.");
+    }
+
+    public function destroy(Site $site, GitHubService $github, CpanelService $cpanel)
     {
         $name = $site->name;
-        $this->siteService->delete($site, $github);
+        $this->siteService->delete($site, $github, $cpanel);
 
         return redirect()->route('sites.index')->with('success', "Deleted {$name}.");
     }

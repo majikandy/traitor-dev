@@ -61,6 +61,10 @@
                 {{ $site->slug }}
             @endif
         </p>
+        <p class="mt-0.5 text-sm text-gray-400">
+            Client preview:
+            <a href="{{ $site->clientPreviewUrl() }}" target="_blank" class="text-brand-500 hover:underline font-mono text-xs">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</a>
+        </p>
     </div>
     @if($site->domain_status === 'active')
     <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}" class="flex-shrink-0">
@@ -307,7 +311,10 @@
             </div>
         @endif
         @foreach($sortedReleases as $release)
-            @php $isLive = $release->version === $site->live_release; @endphp
+            @php
+                $isLive = $release->version === $site->live_release;
+                $isClientPreview = $release->version === $site->preview_release;
+            @endphp
             <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
                     {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
                 data-preview-url="{{ $release->previewUrl() }}"
@@ -322,6 +329,11 @@
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live
                         </span>
                     @endif
+                    @if($isClientPreview)
+                        <span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
+                            <span class="h-1.5 w-1.5 rounded-full bg-violet-500"></span>client preview
+                        </span>
+                    @endif
                     @if($release->notes)
                         <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes }}</span>
                     @endif
@@ -329,6 +341,12 @@
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
+                    @if(!$isClientPreview)
+                        <form method="POST" action="{{ route('sites.releases.set-preview', [$site, $release->version]) }}">
+                            @csrf
+                            <button type="submit" class="rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">Set as preview</button>
+                        </form>
+                    @endif
                     @if($isLive)
                         @if($hasDomain)
                             <a href="{{ $liveUrl }}" target="_blank"
