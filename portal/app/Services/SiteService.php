@@ -168,6 +168,16 @@ class SiteService
         $cpanel->createPreviewSubdomain($site->slug, $docroot);
     }
 
+    public function unprovisionPreview(Site $site, CpanelService $cpanel): void
+    {
+        $cpanel->removePreviewSubdomain($site->slug);
+
+        $previewPath = $site->previewSymlinkPath();
+        if (is_link($previewPath) || file_exists($previewPath)) {
+            unlink($previewPath);
+        }
+    }
+
     public function setPreview(Site $site, int $version): void
     {
         $releasePath = $site->sitesPath() . '/releases/' . $version;

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SentEmail;
 use App\Models\Setting;
+use App\Services\CpanelService;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -69,5 +70,15 @@ class AdminController extends Controller
     public function showEmail(SentEmail $email): \Illuminate\View\View
     {
         return view('admin.email-show', compact('email'));
+    }
+
+    public function cpanel(CpanelService $cpanel): \Illuminate\View\View
+    {
+        $addonDomains = $cpanel->listAddonDomains();
+        $subdomains   = $cpanel->listSubdomains();
+        $diskUsage    = $cpanel->getDiskUsage();
+        $sslCerts     = $cpanel->listSslDomains();
+
+        return view('admin.cpanel', compact('addonDomains', 'subdomains', 'diskUsage', 'sslCerts'));
     }
 }

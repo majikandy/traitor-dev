@@ -62,6 +62,13 @@ class SiteController extends Controller
         return back()->with('success', "Client preview provisioned at {$site->clientPreviewUrl()}");
     }
 
+    public function unprovisionPreview(Site $site, CpanelService $cpanel)
+    {
+        $this->siteService->unprovisionPreview($site, $cpanel);
+
+        return back()->with('success', 'Client preview subdomain removed.');
+    }
+
     public function createRelease(Request $request, Site $site)
     {
         $request->validate([

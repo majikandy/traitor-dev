@@ -80,6 +80,30 @@ class CpanelService
         $this->uapi('SSL', 'start_autossl_check');
     }
 
+    public function listAddonDomains(): array
+    {
+        $result = $this->uapi('AddonDomain', 'listaddondomains');
+        return $result['data'] ?? [];
+    }
+
+    public function listSubdomains(): array
+    {
+        $result = $this->v2('SubDomain', 'listsubdomains', []);
+        return $result['data'] ?? [];
+    }
+
+    public function getDiskUsage(): array
+    {
+        $result = $this->uapi('Quota', 'get_quota_info');
+        return $result['data'] ?? [];
+    }
+
+    public function listSslDomains(): array
+    {
+        $result = $this->uapi('SSL', 'list_certs');
+        return $result['data'] ?? [];
+    }
+
     private function subdomainHandle(string $domain): string
     {
         return str_replace('.', '-', $domain);

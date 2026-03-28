@@ -61,7 +61,7 @@
                 {{ $site->slug }}
             @endif
         </p>
-        <p class="mt-0.5 text-sm text-gray-400 flex items-center gap-2">
+        <p class="mt-0.5 text-sm text-gray-400 flex items-center gap-2 flex-wrap">
             Client preview:
             @if($previewProvisioned)
                 <a href="{{ $site->clientPreviewUrl() }}" target="_blank" class="text-brand-500 hover:underline font-mono text-xs">{{ $site->slug }}.{{ config('services.cpanel.preview_domain') }}</a>
@@ -69,9 +69,16 @@
             <form method="POST" action="{{ route('sites.provision-preview', $site) }}" class="inline">
                 @csrf
                 <button type="submit" class="rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">
-                    {{ $previewProvisioned ? '↺ Re-provision' : 'Provision preview subdomain' }}
+                    {{ $previewProvisioned ? '↺ Re-provision' : 'Provision' }}
                 </button>
             </form>
+            @if($previewProvisioned)
+                <form method="POST" action="{{ route('sites.unprovision-preview', $site) }}" class="inline" onsubmit="return confirm('Remove preview subdomain from cPanel?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition">Remove</button>
+                </form>
+            @endif
         </p>
     </div>
     @if($site->domain_status === 'active')
