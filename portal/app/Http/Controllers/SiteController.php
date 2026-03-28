@@ -200,11 +200,11 @@ class SiteController extends Controller
     {
         if ($site->maintenance_mode) {
             $this->siteService->disableMaintenance($site);
-            return back()->with('success', 'Site is back online.');
+            return back();
         }
 
         $this->siteService->enableMaintenance($site);
-        return back()->with('success', 'Maintenance mode enabled — visitors now see the coming soon page.');
+        return back();
     }
 
     public function destroy(Site $site, GitHubService $github)
