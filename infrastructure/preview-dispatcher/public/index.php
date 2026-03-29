@@ -41,28 +41,28 @@ if (!preg_match('/^[a-z0-9][a-z0-9\-]*$/', $slug)) {
 if (preg_match('/^(.+)-v(\d+)$/', $slug, $m)) {
     $siteSlug    = $m[1];
     $releaseDir  = SITES_PATH . '/' . $siteSlug . '/releases/' . $m[2];
-    $markerFile  = $releaseDir . '/.preview-enabled';
+    $tokenFile   = $releaseDir . '/.preview-token';
 
-    $notAvailable = function() {
-        http_response_code(404);
+    $badToken = function() {
+        http_response_code(403);
         header('Content-Type: text/html; charset=utf-8');
-        exit('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Not available</title>
+        exit('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Access denied</title>
         <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f9fafb;color:#374151}
         .box{text-align:center;max-width:420px;padding:2rem}h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}p{color:#6b7280}</style></head>
-        <body><div class="box"><h1>Not available</h1><p>This version isn\'t currently shared. Check back later or contact us for access.</p></div></body></html>');
+        <body><div class="box"><h1>Access denied</h1><p>This link is invalid or has been revoked.</p></div></body></html>');
     };
 
-    if (!file_exists($markerFile)) {
-        $notAvailable();
+    if (!file_exists($tokenFile)) {
+        $badToken();
     }
 
-    $storedToken = trim(file_get_contents($markerFile));
+    $storedToken = trim(file_get_contents($tokenFile));
     $cookieName  = 'pt_' . md5($host);
 
     // Token in URL — validate, set cookie, redirect to clean URL
     if (isset($_GET['token'])) {
         if (!hash_equals($storedToken, $_GET['token'])) {
-            $notAvailable();
+            $badToken();
         }
         setcookie($cookieName, $storedToken, [
             'expires'  => time() + 60 * 60 * 24 * 30,
@@ -78,7 +78,7 @@ if (preg_match('/^(.+)-v(\d+)$/', $slug, $m)) {
 
     // Cookie present — validate
     if (!isset($_COOKIE[$cookieName]) || !hash_equals($storedToken, $_COOKIE[$cookieName])) {
-        $notAvailable();
+        $badToken();
     }
 
     $docroot = $releaseDir . '/public';

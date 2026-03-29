@@ -84,6 +84,9 @@ class SiteService
             'created_at' => now(),
         ]);
 
+        // Write token file so the preview dispatcher can validate without a DB lookup
+        File::put($releasePath . '/.preview-token', $release->preview_token);
+
         $site->update(['current_release' => $nextVersion]);
 
         return $release;
@@ -137,28 +140,13 @@ class SiteService
         symlink($target, $livePath);
     }
 
-    public function enableVersionPreview(Site $site, int $version): string
+    public function rotatePreviewToken(Site $site, int $version): string
     {
-        $markerFile = $site->sitesPath() . '/releases/' . $version . '/.preview-enabled';
-        $token = \Illuminate\Support\Str::random(16);
-        File::put($markerFile, $token);
+        $release = $site->releases()->where('version', $version)->firstOrFail();
+        $token = \Illuminate\Support\Str::uuid()->toString();
+        $release->update(['preview_token' => $token]);
+        File::put($site->sitesPath() . '/releases/' . $version . '/.preview-token', $token);
         return $token;
-    }
-
-    public function regenerateVersionPreviewToken(Site $site, int $version): string
-    {
-        $markerFile = $site->sitesPath() . '/releases/' . $version . '/.preview-enabled';
-        $token = \Illuminate\Support\Str::random(16);
-        File::put($markerFile, $token);
-        return $token;
-    }
-
-    public function disableVersionPreview(Site $site, int $version): void
-    {
-        $markerFile = $site->sitesPath() . '/releases/' . $version . '/.preview-enabled';
-        if (file_exists($markerFile)) {
-            File::delete($markerFile);
-        }
     }
 
     public function promote(Site $site, int $version): void

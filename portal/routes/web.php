@@ -80,9 +80,9 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::patch('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
     Route::post('/sites/{site}/release', [SiteController::class, 'createRelease'])->name('sites.release');
     Route::post('/sites/{site}/releases/{version}/promote', [SiteController::class, 'promoteRelease'])->name('sites.releases.promote');
-    Route::post('/sites/{site}/releases/{version}/version-preview', [SiteController::class, 'enableVersionPreview'])->name('sites.releases.version-preview.enable');
+    Route::post('/sites/{site}/releases/{version}/version-preview/share', [SiteController::class, 'shareVersionPreview'])->name('sites.releases.version-preview.share');
     Route::post('/sites/{site}/releases/{version}/version-preview/regenerate', [SiteController::class, 'regenerateVersionPreviewToken'])->name('sites.releases.version-preview.regenerate');
-    Route::delete('/sites/{site}/releases/{version}/version-preview', [SiteController::class, 'disableVersionPreview'])->name('sites.releases.version-preview.disable');
+    Route::post('/sites/{site}/releases/{version}/version-preview/revoke', [SiteController::class, 'revokeVersionPreview'])->name('sites.releases.version-preview.revoke');
     Route::post('/sites/{site}/revert-to-coming-soon', [SiteController::class, 'revertToComingSoon'])->name('sites.revert-to-coming-soon');
     Route::post('/sites/{site}/domain', [SiteController::class, 'attachDomain'])->name('sites.domain.attach');
     Route::delete('/sites/{site}/domain', [SiteController::class, 'detachDomain'])->name('sites.domain.detach');

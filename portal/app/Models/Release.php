@@ -10,10 +10,11 @@ class Release extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['site_id', 'version', 'preview_token', 'notes', 'created_at'];
+    protected $fillable = ['site_id', 'version', 'preview_token', 'preview_shared', 'notes', 'created_at'];
 
     protected $casts = [
-        'created_at' => 'datetime',
+        'created_at'     => 'datetime',
+        'preview_shared' => 'boolean',
     ];
 
     protected static function booted(): void

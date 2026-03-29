@@ -230,13 +230,10 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
             @php
                 $isLive = $release->version === $site->live_release;
             @endphp
-            @php $rowSharedUrl = isset($versionPreviewTokens[$release->version])
-                ? 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $versionPreviewTokens[$release->version]
-                : null; @endphp
             <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
                     {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
                 data-preview-url="{{ $release->previewUrl() }}"
-                @if($rowSharedUrl) data-shared-url="{{ $rowSharedUrl }}" @endif
+                @if($release->preview_shared) data-shared-url="{{ 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token }}" @endif
                 data-version="v{{ $release->version }}"
                 data-is-live="{{ $isLive ? 'true' : 'false' }}"
                 data-promote-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
@@ -262,35 +259,27 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                             </span>
                         @endif
                     </div>
-                    @if(isset($versionPreviewEnabled[$release->version]))
-                        @php $vUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . ($versionPreviewTokens[$release->version] ?? ''); @endphp
+                    @if($release->preview_shared)
+                        @php $vUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token; @endphp
                         <a href="{{ $vUrl }}" target="_blank" onclick="event.stopPropagation()" class="font-mono text-xs text-violet-500 hover:underline truncate max-w-xs">{{ $site->slug }}-v{{ $release->version }}.{{ config('services.cpanel.preview_domain') }}</a>
                     @endif
                 </div>
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
-                    @php
-                        $vEnabled = isset($versionPreviewEnabled[$release->version]);
-                        $vToken   = $versionPreviewTokens[$release->version] ?? null;
-                        $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . ($vToken ? '?token=' . $vToken : '');
-                    @endphp
-                    @if($vEnabled)
+                    @php $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token; @endphp
+                    @if($release->preview_shared)
                         <div class="hidden sm:inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 overflow-hidden">
                             <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ v{{ $release->version }}', 1000) })" class="px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">⧉ v{{ $release->version }}</button>
-                            <form method="POST" action="{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}" data-confirm="Regenerate link? The old URL will stop working immediately.">
+                            <button onclick="copyAndUpdate(this, '{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}', 'data-confirm', 'Regenerate link? The old URL will stop working immediately.')"
+                                class="border-l border-violet-200 px-2 py-1 text-xs text-violet-500 hover:bg-violet-100 transition" title="Regenerate link">↻</button>
+                            <form method="POST" action="{{ route('sites.releases.version-preview.revoke', [$site, $release->version]) }}" data-confirm="Revoke link? Anyone with the current URL will lose access.">
                                 @csrf
-                                <button type="submit" class="border-l border-violet-200 px-2 py-1 text-xs text-violet-500 hover:bg-violet-100 transition">↻</button>
-                            </form>
-                            <form method="POST" action="{{ route('sites.releases.version-preview.disable', [$site, $release->version]) }}">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="border-l border-violet-200 px-2 py-1 text-xs text-violet-400 hover:bg-violet-100 transition">✕</button>
+                                <button type="submit" class="border-l border-violet-200 px-2 py-1 text-xs text-violet-400 hover:bg-violet-100 transition" title="Revoke — rotates token, hides URL">✕</button>
                             </form>
                         </div>
                     @else
-                        <form method="POST" action="{{ route('sites.releases.version-preview.enable', [$site, $release->version]) }}" class="hidden sm:inline">
-                            @csrf
-                            <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Share v{{ $release->version }}</button>
-                        </form>
+                        <button onclick="shareVersionPreview(this, '{{ route('sites.releases.version-preview.share', [$site, $release->version]) }}')"
+                            class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Share v{{ $release->version }}</button>
                     @endif
                     @if($isLive)
                         @if($hasDomain)
@@ -367,6 +356,40 @@ function selectRelease(row) {
     document.getElementById('preview-open-link').href = isMaintenance ? siteMetaLiveUrl : previewSrc;
     document.getElementById('preview-label').textContent = row.dataset.version;
     updatePreviewIndicator(isLive, isMaintenance);
+}
+function shareVersionPreview(btn, url) {
+    fetch(url, { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            navigator.clipboard.writeText(data.url);
+            btn.textContent = '✓ Copied!';
+            // Reload so shared state is reflected in UI
+            setTimeout(() => location.reload(), 800);
+        });
+}
+function copyAndUpdate(btn, url, confirmAttr, confirmMsg) {
+    var proceed = function() {
+        fetch(url, { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(data => {
+                navigator.clipboard.writeText(data.url);
+                btn.textContent = '✓';
+                setTimeout(() => { btn.textContent = '↻'; }, 1000);
+                // Update the copy button in the same pill with the new URL
+                var pill = btn.closest('div');
+                if (pill) {
+                    var copyBtn = pill.querySelector('button:first-child');
+                    if (copyBtn) {
+                        var v = copyBtn.textContent.trim().replace('⧉ ', '');
+                        copyBtn.setAttribute('onclick', copyBtn.getAttribute('onclick').replace(/writeText\('[^']+'\)/, "writeText('" + data.url + "')"));
+                    }
+                }
+                // Also update the row's data-shared-url
+                var row = btn.closest('.release-row');
+                if (row) row.dataset.sharedUrl = data.url;
+            });
+    };
+    if (confirmMsg) { window.showConfirm(confirmMsg, proceed); } else { proceed(); }
 }
 function resetPreview() {
     document.querySelectorAll('.release-row').forEach(function(r) {

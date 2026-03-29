@@ -50,39 +50,34 @@ class SiteController extends Controller
     {
         $site->load('releases', 'organisation');
 
-        $versionPreviewTokens = [];
-        foreach ($site->releases as $release) {
-            $markerFile = $site->sitesPath() . '/releases/' . $release->version . '/.preview-enabled';
-            if (file_exists($markerFile)) {
-                $versionPreviewTokens[$release->version] = trim(file_get_contents($markerFile));
-            }
-        }
-        $versionPreviewEnabled = array_flip(array_keys($versionPreviewTokens));
-
-        return view('sites.show', compact('site', 'versionPreviewEnabled', 'versionPreviewTokens'));
+        return view('sites.show', compact('site'));
     }
 
-    public function enableVersionPreview(Site $site, int $version)
+    public function shareVersionPreview(Site $site, int $version)
     {
-        $site->releases()->where('version', $version)->firstOrFail();
-        $this->siteService->enableVersionPreview($site, $version);
-
-        return back()->with('success', "v{$version} preview enabled.");
+        $release = $site->releases()->where('version', $version)->firstOrFail();
+        $release->update(['preview_shared' => true]);
+        $url = $this->versionPreviewUrl($site, $release->preview_token, $version);
+        return response()->json(['url' => $url]);
     }
 
     public function regenerateVersionPreviewToken(Site $site, int $version)
     {
-        $site->releases()->where('version', $version)->firstOrFail();
-        $this->siteService->regenerateVersionPreviewToken($site, $version);
-
-        return back()->with('success', "v{$version} preview link regenerated — old links are now invalid.");
+        $token = $this->siteService->rotatePreviewToken($site, $version);
+        $url = $this->versionPreviewUrl($site, $token, $version);
+        return response()->json(['url' => $url]);
     }
 
-    public function disableVersionPreview(Site $site, int $version)
+    public function revokeVersionPreview(Site $site, int $version)
     {
-        $this->siteService->disableVersionPreview($site, $version);
+        $this->siteService->rotatePreviewToken($site, $version);
+        $site->releases()->where('version', $version)->update(['preview_shared' => false]);
+        return back();
+    }
 
-        return back()->with('success', "v{$version} preview disabled.");
+    private function versionPreviewUrl(Site $site, string $token, int $version): string
+    {
+        return 'https://' . $site->slug . '-v' . $version . '.' . config('services.cpanel.preview_domain') . '?token=' . $token;
     }
 
     public function createRelease(Request $request, Site $site)
