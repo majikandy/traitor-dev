@@ -44,13 +44,6 @@ jobs:
             infrastructure/preview-dispatcher/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/preview-dispatcher/
 
-      - name: Deploy marketing site
-        run: |
-          rsync -azP --delete \
-            -e "ssh -q -o StrictHostKeyChecking=no" \
-            marketing/ \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.MARKETING_PATH }}/
-
 
       - name: Deploy portal (zero-downtime)
         run: |
