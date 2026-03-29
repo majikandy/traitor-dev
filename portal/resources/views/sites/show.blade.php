@@ -291,14 +291,14 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                     @else
                         @php $isRollback = $site->live_release && $release->version < $site->live_release; @endphp
                         <button type="button"
-                            class="go-live-btn rounded-lg px-3 py-1.5 text-xs font-semibold transition
+                            class="go-live-btn group rounded-lg px-3 py-1.5 text-xs font-semibold transition
                                 {{ $isRollback
                                     ? 'border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
                                     : 'bg-emerald-600 text-white hover:bg-emerald-700' }}"
                             data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
                             data-version="{{ $release->version }}"
                             data-go-live-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
-                            onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '⏪ Rollback' : 'Make Current' }}</button>
+                            onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '⏪' : 'Make Current' }}@if($isRollback)<span class="hidden group-hover:inline ml-1">Rollback</span>@endif</button>
                     @endif
                     <a href="{{ route('sites.download.release', [$site, $release]) }}" title="Download v{{ $release->version }}" onclick="event.stopPropagation()"
                        class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition">
