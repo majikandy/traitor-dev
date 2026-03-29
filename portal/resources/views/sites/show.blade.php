@@ -259,10 +259,6 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                             </span>
                         @endif
                     </div>
-                    @if($release->preview_shared)
-                        @php $vUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token; @endphp
-                        <a href="{{ $vUrl }}" target="_blank" onclick="event.stopPropagation()" class="font-mono text-xs text-violet-500 hover:underline truncate max-w-xs">{{ $site->slug }}-v{{ $release->version }}.{{ config('services.cpanel.preview_domain') }}</a>
-                    @endif
                 </div>
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
