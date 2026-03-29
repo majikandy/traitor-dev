@@ -232,7 +232,7 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
             @endphp
             <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
                     {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
-                data-preview-url="{{ 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') }}"
+                data-preview-url="{{ $isLive ? $liveUrl : 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') }}"
                 @if($release->preview_shared) data-shared-url="{{ 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token }}" @endif
                 data-version="v{{ $release->version }}"
                 data-is-live="{{ $isLive ? 'true' : 'false' }}"
