@@ -18,5 +18,12 @@ Schedule::call(function () {
         ->where('maintenance_page', 'countdown')
         ->whereNotNull('launch_date')
         ->whereDate('launch_date', '<=', now())
-        ->each(fn (Site $site) => $service->disableMaintenance($site));
+        ->each(function (Site $site) use ($service) {
+            $version = $site->current_release ?? $site->live_release;
+            if ($version) {
+                $service->promote($site, $version);
+            } else {
+                $service->disableMaintenance($site);
+            }
+        });
 })->everyMinute()->name('launch-countdown-sites'); // TODO: change to ->hourly() after testing
