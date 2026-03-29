@@ -250,9 +250,9 @@ class GitHubController extends Controller
             return response()->json(['message' => 'no changes in any watched repo path, ignored']);
         }
 
-        // Set pending status on all affected sites
+        // Set pending status on all affected sites — best-effort, never blocks release creation
         foreach ($sites as $site) {
-            $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'pending', 'Creating release...');
+            try { $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'pending', 'Creating release...'); } catch (\Throwable) {}
         }
 
         // Download zipball once for all sites
@@ -273,10 +273,10 @@ class GitHubController extends Controller
                         $this->siteService->promote($site, $release->version);
                     }
 
-                    $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'success', 'Release v' . $release->version . ' created');
+                    try { $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'success', 'Release v' . $release->version . ' created'); } catch (\Throwable) {}
                     $results[$site->slug] = ['version' => $release->version];
                 } catch (\Throwable $e) {
-                    $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'failure', 'Release failed: ' . $e->getMessage());
+                    try { $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'failure', 'Release failed: ' . $e->getMessage()); } catch (\Throwable) {}
                     $results[$site->slug] = ['error' => $e->getMessage()];
                 }
             }
