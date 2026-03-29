@@ -125,4 +125,7 @@ return [
 
     'server_ip' => env('SERVER_IP'),
 
+    // Platform's own domain — cannot be attached via the normal cPanel flow.
+    'platform_domain' => env('PLATFORM_DOMAIN', 'traitor.dev'),
+
 ];

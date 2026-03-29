@@ -546,6 +546,21 @@ if (window.innerWidth < 768) { setView('mobile'); }
         @error('domain')
             <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
         @enderror
+        @if(auth()->user()->is_admin)
+        <details class="mt-4">
+            <summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none">Admin: manually connect domain (no cPanel)</summary>
+            <form method="POST" action="{{ route('sites.domain.force-active', $site) }}" class="flex gap-2 mt-2">
+                @csrf
+                <input type="text" name="domain" placeholder="traitor.dev"
+                    value="{{ old('force_domain') }}"
+                    class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 {{ $errors->has('force_domain') ? 'border-red-400' : '' }}">
+                <button type="submit" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition whitespace-nowrap">Mark active</button>
+            </form>
+            @error('force_domain')
+                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+            @enderror
+        </details>
+        @endif
         <script>
         function startAttaching(form) {
             var input = document.getElementById('domain-input');

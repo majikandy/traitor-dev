@@ -137,6 +137,11 @@ class SiteController extends Controller
 
         $domain = strtolower($request->domain);
 
+        $platformDomain = config('app.platform_domain');
+        if ($domain === $platformDomain || str_ends_with($domain, '.' . $platformDomain)) {
+            return back()->withErrors(['domain' => "Cannot attach {$platformDomain} domains via the normal flow — contact your admin."]);
+        }
+
         if (Site::where('domain', $domain)->where('id', '!=', $site->id)->exists()) {
             return back()->withErrors(['domain' => 'That domain is already attached to another site.']);
         }
@@ -148,9 +153,33 @@ class SiteController extends Controller
 
     public function detachDomain(Site $site, CpanelService $cpanel)
     {
-        $this->siteService->detachDomain($site, $cpanel);
+        $platformDomain = config('app.platform_domain');
+        $isManual = $site->domain === $platformDomain || str_ends_with((string) $site->domain, '.' . $platformDomain);
+
+        if ($isManual) {
+            $site->update(['domain' => null, 'domain_status' => null]);
+        } else {
+            $this->siteService->detachDomain($site, $cpanel);
+        }
 
         return back()->with('success', 'Domain removed.');
+    }
+
+    public function forceActiveDomain(Request $request, Site $site)
+    {
+        abort_unless(auth()->user()->is_admin, 403);
+
+        $request->validate(['domain' => 'required|string|max:255|regex:/^[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}$/']);
+
+        $domain = strtolower($request->domain);
+
+        if (Site::where('domain', $domain)->where('id', '!=', $site->id)->exists()) {
+            return back()->withErrors(['force_domain' => 'That domain is already attached to another site.']);
+        }
+
+        $site->update(['domain' => $domain, 'domain_status' => 'active']);
+
+        return back()->with('success', "Domain {$domain} marked as active (manually managed — no cPanel).");
     }
 
     public function checkDns(Site $site, CpanelService $cpanel)

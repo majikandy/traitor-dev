@@ -87,6 +87,7 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::post('/sites/{site}/domain', [SiteController::class, 'attachDomain'])->name('sites.domain.attach');
     Route::delete('/sites/{site}/domain', [SiteController::class, 'detachDomain'])->name('sites.domain.detach');
     Route::post('/sites/{site}/domain/check-dns', [SiteController::class, 'checkDns'])->name('sites.domain.check-dns');
+    Route::post('/sites/{site}/domain/force-active', [SiteController::class, 'forceActiveDomain'])->name('sites.domain.force-active');
     Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraft'])->name('sites.download.draft');
     Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
     Route::post('/sites/{site}/maintenance', [SiteController::class, 'toggleMaintenance'])->name('sites.maintenance.toggle');
