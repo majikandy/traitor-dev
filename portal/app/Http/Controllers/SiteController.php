@@ -224,14 +224,22 @@ class SiteController extends Controller
         return back()->with('success', 'Site renamed.');
     }
 
-    public function toggleMaintenance(Site $site)
+    public function toggleMaintenance(Site $site, Request $request)
     {
         if ($site->maintenance_mode) {
             $this->siteService->disableMaintenance($site);
             return back();
         }
 
-        $this->siteService->enableMaintenance($site);
+        $request->validate([
+            'maintenance_page' => 'in:brb,countdown',
+            'launch_date'      => 'nullable|date|required_if:maintenance_page,countdown',
+        ]);
+
+        $page       = $request->input('maintenance_page', 'brb');
+        $launchDate = $request->filled('launch_date') ? new \DateTime($request->input('launch_date')) : null;
+
+        $this->siteService->enableMaintenance($site, $page, $launchDate);
         return back();
     }
 

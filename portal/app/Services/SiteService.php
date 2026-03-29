@@ -168,11 +168,19 @@ class SiteService
         $site->update(['live_release' => null, 'maintenance_mode' => false]);
     }
 
-    public function enableMaintenance(Site $site): void
+    public function enableMaintenance(Site $site, string $page = 'brb', ?\DateTimeInterface $launchDate = null): void
     {
-        $this->ensureSharedComingSoon();
-        $this->swapLiveSymlink($site, $this->sharedComingSoonPath());
-        $site->update(['maintenance_mode' => true]);
+        if ($page === 'countdown') {
+            $target = $site->sitesPath() . '/coming-soon-countdown';
+            File::ensureDirectoryExists($target . '/public');
+            File::put($target . '/public/index.html', $this->comingSoonCountdown($launchDate));
+        } else {
+            $this->ensureSharedComingSoon();
+            $target = $this->sharedComingSoonPath();
+        }
+
+        $this->swapLiveSymlink($site, $target);
+        $site->update(['maintenance_mode' => true, 'maintenance_page' => $page, 'launch_date' => $launchDate]);
     }
 
     public function disableMaintenance(Site $site): void
@@ -306,6 +314,121 @@ class SiteService
             File::ensureDirectoryExists($path);
             File::put($path . '/index.html', $this->comingSoon());
         }
+    }
+
+    private function comingSoonCountdown(?\DateTimeInterface $launchDate): string
+    {
+        $isoDate = $launchDate ? $launchDate->format('Y-m-d') : '';
+        return <<<HTML
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Coming Soon</title>
+            <style>
+                *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+                    display: flex; align-items: center; justify-content: center;
+                    min-height: 100vh; background: #000; color: #f5f5f7;
+                    -webkit-font-smoothing: antialiased;
+                }
+                .box { text-align: center; padding: 2rem; max-width: 640px; }
+                .label {
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    color: #6e6e73;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                    margin-bottom: 2rem;
+                }
+                .countdown {
+                    display: flex;
+                    gap: 2rem;
+                    justify-content: center;
+                    margin-bottom: 2rem;
+                }
+                .unit { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+                .num {
+                    font-size: clamp(2.5rem, 8vw, 5rem);
+                    font-weight: 700;
+                    letter-spacing: -0.03em;
+                    line-height: 1;
+                    background: linear-gradient(135deg, #f5f5f7 0%, #a1a1a6 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    min-width: 2ch;
+                    text-align: center;
+                }
+                .unit-label {
+                    font-size: 0.7rem;
+                    color: #3d3d3f;
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                }
+                .date-str {
+                    font-size: 0.9rem;
+                    color: #3d3d3f;
+                    letter-spacing: 0.02em;
+                }
+                #expired { display: none; }
+                #expired .brb {
+                    font-size: clamp(3.5rem, 10vw, 6rem);
+                    font-weight: 700;
+                    letter-spacing: -0.03em;
+                    background: linear-gradient(135deg, #f5f5f7 0%, #a1a1a6 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="box">
+                <div id="countdown-block">
+                    <div class="label">Launching in</div>
+                    <div class="countdown">
+                        <div class="unit"><span class="num" id="d">--</span><span class="unit-label">days</span></div>
+                        <div class="unit"><span class="num" id="h">--</span><span class="unit-label">hours</span></div>
+                        <div class="unit"><span class="num" id="m">--</span><span class="unit-label">mins</span></div>
+                        <div class="unit"><span class="num" id="s">--</span><span class="unit-label">secs</span></div>
+                    </div>
+                    <div class="date-str" id="date-str"></div>
+                </div>
+                <div id="expired">
+                    <div class="brb">Be Right Back</div>
+                </div>
+            </div>
+            <script>
+                var target = new Date('{$isoDate}T00:00:00');
+                var dateStr = target.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                document.getElementById('date-str').textContent = dateStr;
+
+                function tick() {
+                    var now = Date.now();
+                    var diff = target - now;
+                    if (diff <= 0) {
+                        document.getElementById('countdown-block').style.display = 'none';
+                        document.getElementById('expired').style.display = 'block';
+                        return;
+                    }
+                    var s = Math.floor(diff / 1000);
+                    var m = Math.floor(s / 60); s %= 60;
+                    var h = Math.floor(m / 60); m %= 60;
+                    var d = Math.floor(h / 24); h %= 24;
+                    document.getElementById('d').textContent = String(d).padStart(2, '0');
+                    document.getElementById('h').textContent = String(h).padStart(2, '0');
+                    document.getElementById('m').textContent = String(m).padStart(2, '0');
+                    document.getElementById('s').textContent = String(s).padStart(2, '0');
+                }
+                tick();
+                setInterval(tick, 1000);
+            </script>
+        </body>
+        </html>
+        HTML;
     }
 
     private function comingSoon(): string

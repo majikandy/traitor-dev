@@ -85,6 +85,8 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
     </div>
     <form method="POST" action="{{ route('sites.maintenance.toggle', $site) }}" class="flex-shrink-0" id="maintenance-toggle-form">
         @csrf
+        <input type="hidden" name="maintenance_page" id="maintenance-page-input" value="brb">
+        <input type="hidden" name="launch_date" id="launch-date-input" value="">
         <label class="flex items-center gap-2 cursor-pointer select-none group" title="{{ $site->maintenance_mode ? 'Bring site back online' : 'Enable maintenance mode' }}">
             <span class="text-xs font-medium text-gray-400 group-hover:text-gray-600 transition">Maintenance</span>
             <div class="relative">
@@ -92,8 +94,12 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                     onchange="
                         var form = document.getElementById('maintenance-toggle-form');
                         if (this.checked) {
-                            window.showConfirm('Enable maintenance mode? Visitors will see the coming soon page.', function(){ form.submit(); }, 'Enable maintenance?');
                             this.checked = false;
+                            showMaintenanceOptions(function(page, date) {
+                                document.getElementById('maintenance-page-input').value = page;
+                                document.getElementById('launch-date-input').value = date || '';
+                                form.submit();
+                            });
                         } else {
                             form.submit();
                         }
@@ -103,6 +109,37 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
             </div>
         </label>
     </form>
+
+    {{-- Maintenance options modal --}}
+    <div id="maintenance-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" id="maintenance-backdrop"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-base font-semibold text-gray-900 mb-4">Enable maintenance mode</h3>
+            <div class="flex flex-col gap-3 mb-5">
+                <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-gray-300 transition has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+                    <input type="radio" name="mpage" value="brb" checked class="mt-0.5 accent-brand-600">
+                    <div>
+                        <div class="text-sm font-medium text-gray-900">Be Right Back</div>
+                        <div class="text-xs text-gray-500">Simple page — we'll be back soon</div>
+                    </div>
+                </label>
+                <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-gray-300 transition has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+                    <input type="radio" name="mpage" value="countdown" class="mt-0.5 accent-brand-600" id="countdown-radio">
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-gray-900">Countdown</div>
+                        <div class="text-xs text-gray-500 mb-2">Show a live countdown to your launch date</div>
+                        <input type="date" id="countdown-date" class="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-40"
+                            value="{{ $site->launch_date ? $site->launch_date->format('Y-m-d') : '' }}"
+                            min="{{ now()->addDay()->format('Y-m-d') }}">
+                    </div>
+                </label>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" id="maintenance-cancel" class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+                <button type="button" id="maintenance-confirm" class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition">Enable</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @if(!$site->github_repo)
@@ -311,6 +348,35 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
 </div>
 
 <script>
+function showMaintenanceOptions(onConfirm) {
+    var modal    = document.getElementById('maintenance-modal');
+    var backdrop = document.getElementById('maintenance-backdrop');
+    var cancelBtn  = document.getElementById('maintenance-cancel');
+    var confirmBtn = document.getElementById('maintenance-confirm');
+    var countdownRadio = document.getElementById('countdown-radio');
+    var countdownDate  = document.getElementById('countdown-date');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    function close() {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    confirmBtn.onclick = function() {
+        var page = document.querySelector('input[name="mpage"]:checked').value;
+        if (page === 'countdown' && !countdownDate.value) {
+            countdownDate.focus();
+            return;
+        }
+        close();
+        onConfirm(page, page === 'countdown' ? countdownDate.value : null);
+    };
+
+    cancelBtn.onclick = backdrop.onclick = close;
+}
+
 var siteMetaLiveUrl = "{{ addslashes($liveUrl) }}";
 var siteMetaDefaultSrc = "{{ addslashes($defaultPreviewSrc) }}";
 var siteMetaDefaultLabel = "{{ addslashes($defaultLabel) }}";
