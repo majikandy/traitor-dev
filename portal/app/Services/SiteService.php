@@ -177,10 +177,8 @@ class SiteService
     public function enableMaintenance(Site $site): void
     {
         $comingSoon = $site->sitesPath() . '/coming-soon';
-        if (!is_dir($comingSoon . '/public')) {
-            File::ensureDirectoryExists($comingSoon . '/public');
-            File::put($comingSoon . '/public/index.html', $this->comingSoon($site->name));
-        }
+        File::ensureDirectoryExists($comingSoon . '/public');
+        File::put($comingSoon . '/public/index.html', $this->comingSoon($site->name));
 
         $this->swapLiveSymlink($site, $comingSoon);
         $site->update(['maintenance_mode' => true]);
