@@ -209,6 +209,7 @@ class GitHubController extends Controller
         $installationId = $data['installation']['id'] ?? null;
         $repoFullName   = $data['repository']['full_name'] ?? null;
         $sha            = $data['after'] ?? null;
+        $commitTitle    = strtok($data['head_commit']['message'] ?? '', "\n");
 
         abort_unless($installationId && $repoFullName && $sha, 400, 'Missing required fields in webhook payload.');
 
@@ -266,7 +267,7 @@ class GitHubController extends Controller
                     $this->siteService->uploadFromPath($site, $zipPath, $site->github_repo_path);
                     $release = $this->siteService->createRelease(
                         $site,
-                        'Auto-deployed from GitHub (' . substr($sha, 0, 7) . ')'
+                        substr($sha, 0, 7) . ': ' . $commitTitle
                     );
 
                     if ($site->github_auto_deploy) {

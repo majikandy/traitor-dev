@@ -106,8 +106,13 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
 </div>
 
 @if(!$site->github_repo)
-@include('sites._zip-panel', ['startOpen' => false])
 @include('sites._github-panel', ['startOpen' => true])
+<div class="flex items-center gap-4 mb-6 px-2">
+    <div class="flex-1 border-t border-gray-200"></div>
+    <span class="text-xs font-medium text-gray-400 uppercase tracking-widest">or</span>
+    <div class="flex-1 border-t border-gray-200"></div>
+</div>
+@include('sites._zip-panel', ['startOpen' => false])
 @endif
 
 {{-- Releases + Preview --}}
@@ -518,8 +523,13 @@ if (window.innerWidth < 768) { setView('mobile'); }
 @endif
 
 @if($site->github_repo)
-@include('sites._zip-panel', ['startOpen' => false])
 @include('sites._github-panel', ['startOpen' => false])
+<div class="flex items-center gap-4 mb-6 px-2">
+    <div class="flex-1 border-t border-gray-200"></div>
+    <span class="text-xs font-medium text-gray-400 uppercase tracking-widest">or</span>
+    <div class="flex-1 border-t border-gray-200"></div>
+</div>
+@include('sites._zip-panel', ['startOpen' => false])
 @endif
 
 {{-- Domain --}}
