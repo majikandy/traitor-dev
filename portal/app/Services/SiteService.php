@@ -200,8 +200,15 @@ class SiteService
     {
         $livePath = $site->sitesPath() . '/live';
         $tmpPath  = $livePath . '_tmp_' . uniqid();
-        symlink($target, $tmpPath);
-        rename($tmpPath, $livePath);
+
+        if (!symlink($target, $tmpPath)) {
+            throw new \RuntimeException("symlink() failed: {$tmpPath} → {$target}");
+        }
+
+        if (!rename($tmpPath, $livePath)) {
+            unlink($tmpPath);
+            throw new \RuntimeException("rename() failed: could not swap live symlink at {$livePath}");
+        }
     }
 
     public function delete(Site $site, GitHubService $github): void
