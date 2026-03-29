@@ -307,30 +307,51 @@ class SiteService
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta http-equiv="refresh" content="30">
-            <title>{$name} — Coming Soon</title>
+            <title>{$name}</title>
             <style>
                 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
                 body {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
                     display: flex; align-items: center; justify-content: center;
-                    min-height: 100vh; background: #0f172a; color: #e2e8f0;
+                    min-height: 100vh; background: #000; color: #f5f5f7;
+                    -webkit-font-smoothing: antialiased;
                 }
-                .box { text-align: center; padding: 2rem; max-width: 480px; }
-                .label {
-                    display: inline-block; font-size: 0.75rem; font-weight: 600;
-                    letter-spacing: 0.1em; text-transform: uppercase;
-                    color: #6366f1; background: rgba(99,102,241,0.15);
-                    padding: 0.25rem 0.75rem; border-radius: 9999px; margin-bottom: 1.5rem;
+                .box { text-align: center; padding: 2rem; max-width: 560px; }
+                .brb {
+                    font-size: clamp(3.5rem, 10vw, 6rem);
+                    font-weight: 700;
+                    letter-spacing: -0.03em;
+                    line-height: 1;
+                    background: linear-gradient(135deg, #f5f5f7 0%, #a1a1a6 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    margin-bottom: 1.25rem;
                 }
-                h1 { font-size: 2.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 1rem; color: #f8fafc; }
-                p { font-size: 1.1rem; color: #94a3b8; line-height: 1.6; }
+                .name {
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                    color: #6e6e73;
+                    letter-spacing: -0.01em;
+                    margin-bottom: 0.5rem;
+                }
+                .tagline {
+                    font-size: 0.9rem;
+                    color: #3d3d3f;
+                    letter-spacing: 0.02em;
+                    text-transform: uppercase;
+                }
+                .dot { display: inline-block; animation: pulse 2s ease-in-out infinite; }
+                .dot:nth-child(2) { animation-delay: 0.3s; }
+                .dot:nth-child(3) { animation-delay: 0.6s; }
+                @keyframes pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
             </style>
         </head>
         <body>
             <div class="box">
-                <span class="label">Coming Soon</span>
-                <h1>{$name}</h1>
-                <p>Something great is on its way. Check back soon.</p>
+                <div class="name">{$name}</div>
+                <div class="brb">Be Right Back</div>
+                <div class="tagline">Something exciting is happening<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
             </div>
         </body>
         </html>
