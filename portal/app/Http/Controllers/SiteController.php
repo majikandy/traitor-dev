@@ -138,8 +138,8 @@ class SiteController extends Controller
         $domain = strtolower($request->domain);
 
         $platformDomain = config('app.platform_domain');
-        if ($domain === $platformDomain || str_ends_with($domain, '.' . $platformDomain)) {
-            return back()->withErrors(['domain' => "Cannot attach {$platformDomain} domains via the normal flow — contact your admin."]);
+        if (!auth()->user()->is_admin && ($domain === $platformDomain || str_ends_with($domain, '.' . $platformDomain))) {
+            return back()->withErrors(['domain' => "Cannot attach {$platformDomain} domains."]);
         }
 
         if (Site::where('domain', $domain)->where('id', '!=', $site->id)->exists()) {
