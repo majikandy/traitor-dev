@@ -128,6 +128,7 @@ Route::post('/github/webhook', [GitHubController::class, 'webhook'])->name('gith
 
 Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::get('/github/install/{site}', [GitHubController::class, 'install'])->name('github.install');
+    Route::get('/github/{site}/manage-repos', [GitHubController::class, 'manageRepos'])->name('github.manage-repos');
     Route::get('/github/callback', [GitHubController::class, 'callback'])->name('github.callback');
     Route::get('/github/{site}/repo', [GitHubController::class, 'selectRepoForm'])->name('github.select-repo-form');
     Route::get('/github/{site}/repo/dirs', [GitHubController::class, 'repoDirs'])->name('github.repo-dirs');

@@ -34,27 +34,56 @@ class GitHubController extends Controller
     }
 
     /**
-     * GitHub redirects back here after installation.
+     * Add repositories to an existing installation.
+     * Sets the session so the callback knows which site to return to.
+     */
+    public function manageRepos(Site $site): RedirectResponse
+    {
+        session([
+            'github_connect_site_id' => $site->id,
+            'github_connect_org_id'  => Auth::user()->organisation_id,
+        ]);
+
+        return redirect($site->organisation->githubInstallationUrl());
+    }
+
+    /**
+     * GitHub redirects back here after installation or updating repo access.
      * Save the installation_id on the organisation, then send the user
      * to the repo-picker for their site.
      */
     public function callback(Request $request): RedirectResponse
     {
-        $siteId         = session('github_connect_site_id');
-        $orgId          = session('github_connect_org_id');
         $installationId = $request->integer('installation_id');
         $action         = $request->input('setup_action');
+        $siteId         = session('github_connect_site_id');
+        $orgId          = session('github_connect_org_id');
 
-        abort_unless($siteId && $orgId && $installationId && in_array($action, ['install', 'update']), 400, 'Invalid GitHub callback.');
+        abort_unless($installationId && in_array($action, ['install', 'update']), 400, 'Invalid GitHub callback.');
 
-        Organisation::findOrFail($orgId)->update(['github_installation_id' => $installationId]);
+        // For a fresh install the session must be present.
+        // For an update (adding repos) the user may have gone to GitHub settings directly
+        // without going through our manageRepos() route — find the org by installation_id.
+        if ($orgId) {
+            $org = Organisation::findOrFail($orgId);
+        } else {
+            $org = Organisation::where('github_installation_id', $installationId)->firstOrFail();
+        }
 
+        $org->update(['github_installation_id' => $installationId]);
         session()->forget(['github_connect_site_id', 'github_connect_org_id']);
+
+        if (!$siteId) {
+            return redirect()->route('sites.index')
+                ->with('success', 'GitHub repository access updated.');
+        }
 
         $site = Site::findOrFail($siteId);
 
         return redirect()->route('github.select-repo-form', $site)
-            ->with('success', 'GitHub App installed. Now pick a repository for this site.');
+            ->with('success', $action === 'install'
+                ? 'GitHub App installed. Now pick a repository for this site.'
+                : 'Repository access updated. Now pick a repository for this site.');
     }
 
     /**
