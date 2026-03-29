@@ -262,15 +262,17 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                         $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . ($vToken ? '?token=' . $vToken : '');
                     @endphp
                     @if($vEnabled)
-                        <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ v{{ $release->version }}', 1000) })" class="hidden sm:inline-flex rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">⧉ v{{ $release->version }}</button>
-                        <form method="POST" action="{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}" class="hidden sm:inline" data-confirm="Regenerate link? The old URL will stop working immediately.">
-                            @csrf
-                            <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-400 hover:bg-gray-50 transition">↻</button>
-                        </form>
-                        <form method="POST" action="{{ route('sites.releases.version-preview.disable', [$site, $release->version]) }}" class="hidden sm:inline">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-400 hover:bg-gray-50 transition">Revoke</button>
-                        </form>
+                        <div class="hidden sm:inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 overflow-hidden">
+                            <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ v{{ $release->version }}', 1000) })" class="px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">⧉ v{{ $release->version }}</button>
+                            <form method="POST" action="{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}" data-confirm="Regenerate link? The old URL will stop working immediately.">
+                                @csrf
+                                <button type="submit" class="border-l border-violet-200 px-2 py-1 text-xs text-violet-500 hover:bg-violet-100 transition">↻</button>
+                            </form>
+                            <form method="POST" action="{{ route('sites.releases.version-preview.disable', [$site, $release->version]) }}">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="border-l border-violet-200 px-2 py-1 text-xs text-violet-400 hover:bg-violet-100 transition">✕</button>
+                            </form>
+                        </div>
                     @else
                         <form method="POST" action="{{ route('sites.releases.version-preview.enable', [$site, $release->version]) }}" class="hidden sm:inline">
                             @csrf
