@@ -212,6 +212,16 @@
     </script>
 
     <script src="/js/portal.js"></script>
+    <script>
+        (function () {
+            var key = 'scroll:' + location.pathname;
+            var saved = sessionStorage.getItem(key);
+            if (saved !== null) { window.scrollTo(0, parseInt(saved, 10)); sessionStorage.removeItem(key); }
+            document.addEventListener('submit', function (e) {
+                if (e.target.tagName === 'FORM') sessionStorage.setItem(key, window.scrollY);
+            });
+        })();
+    </script>
     @php $version = file_exists(base_path('VERSION')) ? trim(file_get_contents(base_path('VERSION'))) : 'dev'; @endphp
     <div class="fixed bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 text-xs text-gray-300">
         <span>v{{ $version }}</span>
