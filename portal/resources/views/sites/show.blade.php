@@ -171,7 +171,7 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                     <div class="flex items-center gap-0.5 rounded-lg bg-gray-200 p-0.5">
                         <button id="view-desktop-btn" onclick="setView('desktop')" class="rounded-md px-2 py-1 text-xs font-medium bg-white text-gray-900 shadow-sm transition">Desktop</button>
                         <button id="view-mobile-btn" onclick="setView('mobile')" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition">Mobile</button>
-                        <button id="view-live-btn" onclick="setView('live')" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition" title="Load live URL">Live</button>
+                        <button id="view-live-btn" onclick="resetPreview()" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition" title="Show live site in preview">Live</button>
                     </div>
                     <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
                     <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline flex-shrink-0">↗</a>
@@ -351,6 +351,8 @@ function selectRelease(row) {
         if (r.dataset.isLive !== 'true' && r.dataset.isMaintenance !== 'true') r.classList.remove('bg-brand-50');
     });
     if (!isLive && !isMaintenance) row.classList.add('bg-brand-50');
+    var lBtn = document.getElementById('view-live-btn');
+    if (lBtn) lBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition text-gray-500 hover:text-gray-700';
     var previewSrc = row.dataset.sharedUrl || row.dataset.previewUrl;
     document.getElementById('preview-iframe').src = previewSrc;
     document.getElementById('preview-mobile-iframe').src = previewSrc;
@@ -401,6 +403,8 @@ function resetPreview() {
     document.getElementById('preview-open-link').href = siteMetaDefaultSrc;
     document.getElementById('preview-label').textContent = siteMetaDefaultLabel;
     updatePreviewIndicator(!!siteMetaLiveVersion, siteMaintenanceActive);
+    var lBtn = document.getElementById('view-live-btn');
+    if (lBtn) lBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition bg-white text-gray-900 shadow-sm';
 }
 function goLive(btn) {
     var msg = btn.dataset.goLiveConfirm;
@@ -492,14 +496,6 @@ function setView(view) {
     dBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + inactive;
     mBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + inactive;
     lBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + inactive;
-    if (view === 'live') {
-        window.open(siteMetaLiveUrl, '_blank');
-        lBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + inactive;
-        // Re-activate whichever was previously active
-        currentView = currentView === 'live' ? 'desktop' : currentView;
-        setView(currentView === 'mobile' ? 'mobile' : 'desktop');
-        return;
-    }
     if (view === 'mobile') {
         phoneView.classList.remove('hidden');
         desktopIframe.style.visibility = 'hidden';
