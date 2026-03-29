@@ -7,9 +7,12 @@
 - **LLM site builder** — describe changes in a text box, AI edits draft files directly and creates a release. The whole premise of the product.
 - **Deploy from GitHub** — connect a repo as an alternative to zip uploads; auto-create a release on push to main.
 - **Preview subdomains** — `{slug}.preview.traitor.dev` per site via cPanel SubDomain API (same pattern as custom domain attachment). One-time server setup: add `preview.traitor.dev` as a cPanel addon domain. Portal calls API on site create/delete. AutoSSL handles SSL automatically. Path-based `/preview/{token}/` stays for version-specific links.
-- **traitor.dev marketing site as a managed site** — dogfood the platform by running traitor.dev itself as a site in the portal. The marketing site becomes just another site: zip uploads or GitHub-backed, preview URLs, one-tap deploys, rollback. Proves the product works end-to-end on a real public domain and means any AI edits to the marketing site go through the same publish flow as customer sites.
+- **traitor.dev marketing site as a managed site** — dogfood the platform by running traitor.dev itself as a site in the portal. public_html symlinked to sites/traitor-www/live/public. In progress: marketing site files in traitor-sites repo, publish flow and maintenance mode working.
 
 ## Backlog
+
+### Distribution
+- **Self-hosted cPanel install** — package traitor.dev as an installable tool for anyone on shared cPanel hosting, not just a SaaS. Each person manages their own sites on their own server. Install wizard detects cPanel home directory and sets SITES_PATH automatically. Multi-tenancy becomes optional (useful for agencies). Monetise as one-time purchase or annual license. Security model simplifies — no tenant isolation needed when it's your own server.
 
 ### AI
 - **AI-generated release notes** — auto-summarise what changed between releases by diffing files
@@ -33,7 +36,6 @@
 - **Custom 404 / error pages** — per-site, uploaded or edited in the portal
 - **Custom domain SSL automation** — after DNS verified, portal triggers AutoSSL and tracks `domain_status` through `pending_dns → dns_verified → ssl_active` without manual certbot steps
 - **GitHub auto-deploy toggle** — `github_auto_deploy` column exists, no UI yet
-- **Maintenance mode UI** — `maintenance_mode` column exists, not wired to a toggle in the dashboard
 
 ## Done
 
