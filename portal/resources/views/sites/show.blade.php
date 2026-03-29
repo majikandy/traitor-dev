@@ -128,9 +128,9 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                     <div class="flex-1">
                         <div class="text-sm font-medium text-gray-900">Countdown</div>
                         <div class="text-xs text-gray-500 mb-2">Show a live countdown to your launch date</div>
-                        <input type="date" id="countdown-date" class="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-40"
-                            value="{{ $site->launch_date ? $site->launch_date->format('Y-m-d') : '' }}"
-                            min="{{ now()->addDay()->format('Y-m-d') }}">
+                        <input type="datetime-local" id="countdown-date" class="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-40"
+                            value="{{ $site->launch_date ? $site->launch_date->format('Y-m-d\TH:i') : '' }}"
+                            min="{{ now()->addHour()->format('Y-m-d\TH:i') }}">
                     </div>
                 </label>
             </div>

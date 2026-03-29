@@ -318,7 +318,7 @@ class SiteService
 
     private function comingSoonCountdown(?\DateTimeInterface $launchDate): string
     {
-        $isoDate = $launchDate ? $launchDate->format('Y-m-d') : '';
+        $isoDate = $launchDate ? $launchDate->format('Y-m-d\TH:i:s') : '';
         return <<<HTML
         <!DOCTYPE html>
         <html lang="en">
@@ -389,7 +389,7 @@ class SiteService
                 </div>
             </div>
             <script>
-                var target = new Date('{$isoDate}T00:00:00');
+                var target = new Date('{$isoDate}');
                 var dateStr = target.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
                 document.getElementById('date-str').textContent = dateStr;
 

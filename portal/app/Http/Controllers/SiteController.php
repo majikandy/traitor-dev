@@ -233,7 +233,7 @@ class SiteController extends Controller
 
         $request->validate([
             'maintenance_page' => 'in:brb,countdown',
-            'launch_date'      => 'nullable|date|required_if:maintenance_page,countdown',
+            'launch_date'      => 'nullable|date_format:Y-m-d\TH:i|required_if:maintenance_page,countdown',
         ]);
 
         $page       = $request->input('maintenance_page', 'brb');

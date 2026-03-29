@@ -17,7 +17,7 @@ Schedule::call(function () {
         ->where('maintenance_mode', true)
         ->where('maintenance_page', 'countdown')
         ->whereNotNull('launch_date')
-        ->whereDate('launch_date', '<=', now())
+        ->where('launch_date', '<=', now())
         ->each(function (Site $site) use ($service) {
             $version = $site->current_release ?? $site->live_release;
             if ($version) {
