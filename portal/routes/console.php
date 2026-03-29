@@ -1,8 +1,22 @@
 <?php
 
+use App\Models\Site;
+use App\Services\SiteService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Schedule::call(function () {
+    $service = app(SiteService::class);
+
+    Site::withoutGlobalScopes()
+        ->where('maintenance_mode', true)
+        ->where('maintenance_page', 'countdown')
+        ->whereNotNull('launch_date')
+        ->whereDate('launch_date', '<=', now())
+        ->each(fn (Site $site) => $service->disableMaintenance($site));
+})->everyMinute()->name('launch-countdown-sites'); // TODO: change to ->hourly() after testing

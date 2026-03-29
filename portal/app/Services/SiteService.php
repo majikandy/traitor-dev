@@ -373,16 +373,6 @@ class SiteService
                     color: #3d3d3f;
                     letter-spacing: 0.02em;
                 }
-                #expired { display: none; }
-                #expired .brb {
-                    font-size: clamp(3.5rem, 10vw, 6rem);
-                    font-weight: 700;
-                    letter-spacing: -0.03em;
-                    background: linear-gradient(135deg, #f5f5f7 0%, #a1a1a6 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                }
             </style>
         </head>
         <body>
@@ -397,9 +387,6 @@ class SiteService
                     </div>
                     <div class="date-str" id="date-str"></div>
                 </div>
-                <div id="expired">
-                    <div class="brb">Be Right Back</div>
-                </div>
             </div>
             <script>
                 var target = new Date('{$isoDate}T00:00:00');
@@ -410,8 +397,7 @@ class SiteService
                     var now = Date.now();
                     var diff = target - now;
                     if (diff <= 0) {
-                        document.getElementById('countdown-block').style.display = 'none';
-                        document.getElementById('expired').style.display = 'block';
+                        setTimeout(function() { location.reload(); }, 30000);
                         return;
                     }
                     var s = Math.floor(diff / 1000);
