@@ -246,7 +246,16 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                             </span>
                         @endif
                         @if($release->notes)
-                            <span class="text-sm text-gray-500 hidden sm:inline">{{ $release->notes }}</span>
+                            @php
+                                preg_match('/^([0-9a-f]{7})(: .+)$/', $release->notes, $shaMatch);
+                            @endphp
+                            <span class="text-sm text-gray-500 hidden sm:inline truncate max-w-xs" title="{{ $release->notes }}">
+                                @if($shaMatch && $site->github_repo)
+                                    <a href="https://github.com/{{ $site->github_repo }}/commit/{{ $shaMatch[1] }}" target="_blank" onclick="event.stopPropagation()" class="font-mono hover:underline">{{ $shaMatch[1] }}</a>{{ $shaMatch[2] }}
+                                @else
+                                    {{ $release->notes }}
+                                @endif
+                            </span>
                         @endif
                     </div>
                     @if(isset($versionPreviewEnabled[$release->version]))
