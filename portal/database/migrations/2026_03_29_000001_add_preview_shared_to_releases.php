@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::table('releases', function (Blueprint $table) {
             $table->boolean('preview_shared')->default(false)->after('preview_token');
         });
+
     }
 
     public function down(): void
