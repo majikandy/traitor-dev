@@ -205,7 +205,7 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
         @if($site->maintenance_mode)
             <div id="maintenance-row"
                 class="release-row flex items-center justify-between px-6 py-3 cursor-pointer bg-amber-50/60 transition-colors"
-                data-preview-url="{{ $site->previewUrl() }}"
+                data-preview-url="{{ $site->stagingUrl() }}"
                 data-version="Maintenance"
                 data-is-live="false"
                 data-is-maintenance="true"
