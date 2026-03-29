@@ -256,7 +256,6 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                 </div>
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
                     <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
-                    <a href="{{ route('sites.download.release', [$site, $release]) }}" class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Download</a>
                     @php
                         $vEnabled = isset($versionPreviewEnabled[$release->version]);
                         $vToken   = $versionPreviewTokens[$release->version] ?? null;
@@ -299,6 +298,10 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                             data-go-live-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
                             onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '↩ Rollback' : 'Make Current' }}</button>
                     @endif
+                    <a href="{{ route('sites.download.release', [$site, $release]) }}" title="Download v{{ $release->version }}" onclick="event.stopPropagation()"
+                       class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                    </a>
                 </div>
             </div>
         @endforeach
