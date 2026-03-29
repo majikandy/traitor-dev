@@ -230,9 +230,13 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
             @php
                 $isLive = $release->version === $site->live_release;
             @endphp
+            @php $rowSharedUrl = isset($versionPreviewTokens[$release->version])
+                ? 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $versionPreviewTokens[$release->version]
+                : null; @endphp
             <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
                     {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
                 data-preview-url="{{ $release->previewUrl() }}"
+                @if($rowSharedUrl) data-shared-url="{{ $rowSharedUrl }}" @endif
                 data-version="v{{ $release->version }}"
                 data-is-live="{{ $isLive ? 'true' : 'false' }}"
                 data-promote-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
@@ -357,7 +361,7 @@ function selectRelease(row) {
         if (r.dataset.isLive !== 'true' && r.dataset.isMaintenance !== 'true') r.classList.remove('bg-brand-50');
     });
     if (!isLive && !isMaintenance) row.classList.add('bg-brand-50');
-    var previewSrc = row.dataset.previewUrl;
+    var previewSrc = row.dataset.sharedUrl || row.dataset.previewUrl;
     document.getElementById('preview-iframe').src = previewSrc;
     document.getElementById('preview-mobile-iframe').src = previewSrc;
     document.getElementById('preview-open-link').href = isMaintenance ? siteMetaLiveUrl : previewSrc;
