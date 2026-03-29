@@ -164,14 +164,13 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                     <span id="preview-maintenance-warning" class="hidden inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 flex-shrink-0">
                         <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>maintenance
                     </span>
-                    <button onclick="resetPreview()" class="text-xs text-gray-400 hover:text-gray-600 transition flex-shrink-0" title="Back to live site">↺</button>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
+                    <button id="view-live-btn" onclick="resetPreview()" class="text-xs font-semibold text-gray-400 hover:text-gray-700 transition" title="Show live site in preview">Live</button>
                     {{-- Desktop / Mobile toggle --}}
                     <div class="flex items-center gap-0.5 rounded-lg bg-gray-200 p-0.5">
                         <button id="view-desktop-btn" onclick="setView('desktop')" class="rounded-md px-2 py-1 text-xs font-medium bg-white text-gray-900 shadow-sm transition">Desktop</button>
                         <button id="view-mobile-btn" onclick="setView('mobile')" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition">Mobile</button>
-                        <button id="view-live-btn" onclick="resetPreview()" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition" title="Show live site in preview">Live</button>
                     </div>
                     <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
                     <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline flex-shrink-0">↗</a>
