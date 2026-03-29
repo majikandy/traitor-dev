@@ -171,6 +171,7 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                     <div class="flex items-center gap-0.5 rounded-lg bg-gray-200 p-0.5">
                         <button id="view-desktop-btn" onclick="setView('desktop')" class="rounded-md px-2 py-1 text-xs font-medium bg-white text-gray-900 shadow-sm transition">Desktop</button>
                         <button id="view-mobile-btn" onclick="setView('mobile')" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition">Mobile</button>
+                        <button id="view-live-btn" onclick="setView('live')" class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition" title="Load live URL">Live</button>
                     </div>
                     <button onclick="toggleExpand()" id="expand-btn" class="text-xs text-gray-400 hover:text-gray-600 transition">⤢ Expand</button>
                     <a id="preview-open-link" href="{{ $liveUrl }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline flex-shrink-0">↗</a>
@@ -485,18 +486,28 @@ function setView(view) {
     var desktopIframe = document.getElementById('preview-iframe');
     var dBtn = document.getElementById('view-desktop-btn');
     var mBtn = document.getElementById('view-mobile-btn');
+    var lBtn = document.getElementById('view-live-btn');
     var active = 'bg-white text-gray-900 shadow-sm';
     var inactive = 'text-gray-500 hover:text-gray-700';
+    dBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + inactive;
+    mBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + inactive;
+    lBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + inactive;
+    if (view === 'live') {
+        window.open(siteMetaLiveUrl, '_blank');
+        lBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + inactive;
+        // Re-activate whichever was previously active
+        currentView = currentView === 'live' ? 'desktop' : currentView;
+        setView(currentView === 'mobile' ? 'mobile' : 'desktop');
+        return;
+    }
     if (view === 'mobile') {
         phoneView.classList.remove('hidden');
         desktopIframe.style.visibility = 'hidden';
-        mBtn.className = 'rounded-md px-2.5 py-1 text-xs font-medium transition ' + active;
-        dBtn.className = 'rounded-md px-2.5 py-1 text-xs font-medium transition ' + inactive;
+        mBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + active;
     } else {
         phoneView.classList.add('hidden');
         desktopIframe.style.visibility = '';
-        dBtn.className = 'rounded-md px-2.5 py-1 text-xs font-medium transition ' + active;
-        mBtn.className = 'rounded-md px-2.5 py-1 text-xs font-medium transition ' + inactive;
+        dBtn.className = 'rounded-md px-2 py-1 text-xs font-medium transition ' + active;
     }
 }
 function toggleExpand() {
