@@ -37,6 +37,10 @@ class SiteController extends Controller
 
         $slug = Str::slug($request->name);
 
+        if ($slug === 'shared') {
+            return back()->withInput()->with('error', '"shared" is a reserved name.');
+        }
+
         if (Site::where('slug', $slug)->exists()) {
             return back()->withInput()->with('error', 'You already have a site with that name.');
         }

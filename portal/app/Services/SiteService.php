@@ -22,16 +22,13 @@ class SiteService
         $sitePath = $site->sitesPath();
         File::ensureDirectoryExists($site->draftsPath());
         File::ensureDirectoryExists($sitePath . '/releases');
-        File::ensureDirectoryExists($sitePath . '/coming-soon/public');
 
         // Placeholder shown in the preview before any files are uploaded
         File::put($site->draftsPath() . '/index.html', $this->draftPlaceholder($name));
 
-        // "Coming soon" page served on the real domain until first Go Live
-        File::put($sitePath . '/coming-soon/public/index.html', $this->comingSoon($name));
-
-        // Live symlink starts pointing at coming-soon so the staging URL shows something immediately
-        symlink($sitePath . '/coming-soon', $sitePath . '/live');
+        // Live symlink starts pointing at shared coming-soon until first Go Live
+        $this->ensureSharedComingSoon();
+        symlink($this->sharedComingSoonPath(), $sitePath . '/live');
 
         return $site;
     }
@@ -130,11 +127,8 @@ class SiteService
         if ($site->live_release) {
             $target = $site->sitesPath() . '/releases/' . $site->live_release;
         } else {
-            $target = $site->sitesPath() . '/coming-soon';
-            if (!is_dir($target . '/public')) {
-                File::ensureDirectoryExists($target . '/public');
-                File::put($target . '/public/index.html', $this->comingSoon($site->name));
-            }
+            $this->ensureSharedComingSoon();
+            $target = $this->sharedComingSoonPath();
         }
 
         symlink($target, $livePath);
@@ -176,11 +170,8 @@ class SiteService
 
     public function enableMaintenance(Site $site): void
     {
-        $comingSoon = $site->sitesPath() . '/coming-soon';
-        File::ensureDirectoryExists($comingSoon . '/public');
-        File::put($comingSoon . '/public/index.html', $this->comingSoon($site->name));
-
-        $this->swapLiveSymlink($site, $comingSoon);
+        $this->ensureSharedComingSoon();
+        $this->swapLiveSymlink($site, $this->sharedComingSoonPath());
         $site->update(['maintenance_mode' => true]);
     }
 
@@ -303,16 +294,30 @@ class SiteService
         HTML;
     }
 
-    private function comingSoon(string $name): string
+    private function sharedComingSoonPath(): string
     {
-        return <<<HTML
+        return config('sites.path') . '/shared/coming-soon';
+    }
+
+    private function ensureSharedComingSoon(): void
+    {
+        $path = $this->sharedComingSoonPath() . '/public';
+        if (!is_dir($path)) {
+            File::ensureDirectoryExists($path);
+            File::put($path . '/index.html', $this->comingSoon());
+        }
+    }
+
+    private function comingSoon(): string
+    {
+        return <<<'HTML'
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta http-equiv="refresh" content="30">
-            <title>{$name}</title>
+            <title>Be Right Back</title>
             <style>
                 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
                 body {
@@ -333,13 +338,6 @@ class SiteService
                     background-clip: text;
                     margin-bottom: 1.25rem;
                 }
-                .name {
-                    font-size: 1.1rem;
-                    font-weight: 500;
-                    color: #6e6e73;
-                    letter-spacing: -0.01em;
-                    margin-bottom: 0.5rem;
-                }
                 .tagline {
                     font-size: 0.9rem;
                     color: #3d3d3f;
@@ -354,7 +352,6 @@ class SiteService
         </head>
         <body>
             <div class="box">
-                <div class="name">{$name}</div>
                 <div class="brb">Be Right Back</div>
                 <div class="tagline">Something exciting is happening<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
             </div>
