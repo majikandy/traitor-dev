@@ -49,6 +49,7 @@
                             <option value="{{ $repo }}">{{ $repo }}</option>
                         @endforeach
                     </select>
+                    <p class="mt-1.5 text-xs text-gray-400">Don't see your repo? <a href="{{ route('github.manage-repos', $site) }}" class="text-brand-600 hover:underline">Add repo access on GitHub ↗</a></p>
                 </div>
                 <div class="mb-4 hidden" id="branch-section">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Branch</label>
