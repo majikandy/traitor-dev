@@ -7,6 +7,7 @@ use App\Models\Site;
 use App\Services\GitHubService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 use ZipArchive;
 
 class SiteService
@@ -46,47 +47,130 @@ class SiteService
             throw new \RuntimeException('Could not open zip file.');
         }
 
-        $draftsPath = $site->draftsPath();
+        // Extract into a temp dir on the same filesystem as the site (so rename() is atomic)
+        $tmpPath = $site->sitesPath() . '/.tmp_upload_' . uniqid();
+        File::ensureDirectoryExists($tmpPath);
 
-        File::cleanDirectory($draftsPath);
-        $zip->extractTo($draftsPath);
+        $zip->extractTo($tmpPath);
         $zip->close();
 
-        $this->hoistIfWrappedInSingleFolder($draftsPath);
+        try {
+            $this->hoistIfWrappedInSingleFolder($tmpPath);
 
-        if ($subPath !== null) {
-            $subDir = $draftsPath . '/' . trim($subPath, '/');
-            if (!is_dir($subDir)) {
-                throw new \RuntimeException("Subfolder '{$subPath}' not found in repository.");
+            if ($subPath !== null) {
+                $subDir = $tmpPath . '/' . trim($subPath, '/');
+                if (!is_dir($subDir)) {
+                    throw new \RuntimeException("Subfolder '{$subPath}' not found in repository.");
+                }
+                $hoisted = $site->sitesPath() . '/.tmp_sub_' . uniqid();
+                rename($subDir, $hoisted);
+                File::deleteDirectory($tmpPath);
+                $tmpPath = $hoisted;
             }
-            $tmp = dirname($draftsPath) . '/.tmp_sub_' . uniqid();
-            rename($subDir, $tmp);
-            File::deleteDirectory($draftsPath);
-            rename($tmp, $draftsPath);
+
+            // Detect Laravel by the presence of the artisan console entry point
+            if (file_exists($tmpPath . '/artisan') && $site->type !== 'laravel') {
+                $site->update(['type' => 'laravel']);
+                $site->refresh();
+            }
+
+            $draftsPath = $site->draftsPath();
+            File::ensureDirectoryExists(dirname($draftsPath));
+
+            if (is_dir($draftsPath)) {
+                File::deleteDirectory($draftsPath);
+            }
+
+            rename($tmpPath, $draftsPath);
+        } catch (\Throwable $e) {
+            if (is_dir($tmpPath)) {
+                File::deleteDirectory($tmpPath);
+            }
+            throw $e;
         }
     }
 
     public function createRelease(Site $site, ?string $notes = null): Release
     {
-        $nextVersion = $site->current_release + 1;
-        $releasePath = $site->releasePath($nextVersion);
+        $nextVersion  = $site->current_release + 1;
+        $releaseRoot  = $site->sitesPath() . '/releases/' . $nextVersion;
 
-        // Snapshot drafts into a new release
-        File::copyDirectory($site->draftsPath(), $releasePath);
+        if ($site->type === 'laravel') {
+            $this->createLaravelRelease($site, $releaseRoot);
+        } else {
+            // PHP: snapshot drafts/public/ → releases/{N}/public/
+            File::copyDirectory($site->draftsPath(), $releaseRoot . '/public');
+        }
 
         $release = Release::create([
-            'site_id' => $site->id,
-            'version' => $nextVersion,
-            'notes' => $notes,
+            'site_id'    => $site->id,
+            'version'    => $nextVersion,
+            'notes'      => $notes,
             'created_at' => now(),
         ]);
 
-        // Write token file so the preview dispatcher can validate without a DB lookup
-        File::put($releasePath . '/.preview-token', $release->preview_token);
+        // Token file lives at the release root for both types
+        File::put($releaseRoot . '/.preview-token', $release->preview_token);
 
         $site->update(['current_release' => $nextVersion]);
 
         return $release;
+    }
+
+    private function createLaravelRelease(Site $site, string $releaseRoot): void
+    {
+        $sharedPath = $site->sitesPath() . '/shared';
+
+        $this->ensureSharedStorage($sharedPath);
+
+        // Copy full project to release root
+        File::copyDirectory($site->draftsPath(), $releaseRoot);
+
+        // Remove any storage directory from the copy — shared symlink takes over
+        if (is_dir($releaseRoot . '/storage')) {
+            File::deleteDirectory($releaseRoot . '/storage');
+        }
+
+        // Symlink shared .env and storage into the release
+        $sharedEnv = $sharedPath . '/.env';
+        if (file_exists($sharedEnv)) {
+            symlink($sharedEnv, $releaseRoot . '/.env');
+        }
+
+        symlink($sharedPath . '/storage', $releaseRoot . '/storage');
+
+        $result = Process::path($releaseRoot)->run(
+            'composer install --no-dev --optimize-autoloader --no-interaction'
+        );
+
+        if ($result->failed()) {
+            throw new \RuntimeException('composer install failed: ' . $result->output());
+        }
+
+        if (!file_exists($sharedEnv)) {
+            return;
+        }
+
+        foreach (['php artisan migrate --force', 'php artisan optimize', 'php artisan storage:link'] as $cmd) {
+            $result = Process::path($releaseRoot)->run($cmd);
+            if ($result->failed()) {
+                throw new \RuntimeException("{$cmd} failed: " . $result->output());
+            }
+        }
+    }
+
+    private function ensureSharedStorage(string $sharedPath): void
+    {
+        foreach ([
+            'storage/app/public',
+            'storage/app/private',
+            'storage/framework/cache/data',
+            'storage/framework/sessions',
+            'storage/framework/views',
+            'storage/logs',
+        ] as $dir) {
+            File::ensureDirectoryExists($sharedPath . '/' . $dir);
+        }
     }
 
     public function attachDomain(Site $site, string $domain, CpanelService $cpanel): void

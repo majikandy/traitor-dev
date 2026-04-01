@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 class Site extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'slug', 'organisation_id', 'preview_token', 'domain', 'domain_status', 'maintenance_mode', 'maintenance_page', 'launch_date', 'status', 'current_release', 'live_release', 'github_repo', 'github_repo_path', 'github_branch', 'github_auto_deploy'];
+    protected $fillable = ['name', 'slug', 'type', 'organisation_id', 'preview_token', 'domain', 'domain_status', 'maintenance_mode', 'maintenance_page', 'launch_date', 'status', 'current_release', 'live_release', 'github_repo', 'github_repo_path', 'github_branch', 'github_auto_deploy'];
 
     protected $casts = ['maintenance_mode' => 'boolean', 'github_auto_deploy' => 'boolean', 'launch_date' => 'datetime'];
 
@@ -48,12 +48,16 @@ class Site extends Model
 
     public function draftsPath(): string
     {
-        return $this->sitesPath() . '/drafts/public';
+        return $this->type === 'laravel'
+            ? $this->sitesPath() . '/drafts'
+            : $this->sitesPath() . '/drafts/public';
     }
 
     public function releasePath(int $version): string
     {
-        return $this->sitesPath() . '/releases/' . $version . '/public';
+        return $this->type === 'laravel'
+            ? $this->sitesPath() . '/releases/' . $version
+            : $this->sitesPath() . '/releases/' . $version . '/public';
     }
 
     public function livePath(): string

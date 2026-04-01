@@ -29,10 +29,10 @@ class PublishingTest extends TestCase
 
     protected function tearDown(): void
     {
-        parent::tearDown();
         if (is_dir($this->sitesPath)) {
             File::deleteDirectory($this->sitesPath);
         }
+        parent::tearDown();
     }
 
     // -------------------------------------------------------------------------
