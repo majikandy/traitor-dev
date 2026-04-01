@@ -139,12 +139,12 @@ class SiteService
 
         symlink($sharedPath . '/storage', $releaseRoot . '/storage');
 
-        $result = Process::path($releaseRoot)->run(
-            'composer install --no-dev --optimize-autoloader --no-interaction'
-        );
+        $result = Process::path($releaseRoot)
+            ->env(['PATH' => '/usr/local/bin:/usr/bin:/bin'])
+            ->run('composer install --no-dev --optimize-autoloader --no-interaction');
 
         if ($result->failed()) {
-            throw new \RuntimeException('composer install failed: ' . $result->output());
+            throw new \RuntimeException('composer install failed: ' . $result->output() . $result->errorOutput());
         }
 
         if (!file_exists($sharedEnv)) {
@@ -152,9 +152,11 @@ class SiteService
         }
 
         foreach (['php artisan migrate --force', 'php artisan optimize', 'php artisan storage:link'] as $cmd) {
-            $result = Process::path($releaseRoot)->run($cmd);
+            $result = Process::path($releaseRoot)
+                ->env(['PATH' => '/usr/local/bin:/usr/bin:/bin'])
+                ->run($cmd);
             if ($result->failed()) {
-                throw new \RuntimeException("{$cmd} failed: " . $result->output());
+                throw new \RuntimeException("{$cmd} failed: " . $result->output() . $result->errorOutput());
             }
         }
     }
