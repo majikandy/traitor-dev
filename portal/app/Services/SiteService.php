@@ -6,8 +6,10 @@ use App\Models\Release;
 use App\Models\Site;
 use App\Services\GitHubService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Str;
 use ZipArchive;
 
 class SiteService
@@ -173,6 +175,59 @@ class SiteService
         ] as $dir) {
             File::ensureDirectoryExists($sharedPath . '/' . $dir);
         }
+    }
+
+    public function hasSharedEnv(Site $site): bool
+    {
+        return file_exists($site->sitesPath() . '/shared/.env');
+    }
+
+    /**
+     * Create a MySQL database and user for a Laravel site and write shared/.env.
+     * Returns the generated credentials so the caller can display them once.
+     */
+    public function setupDatabase(Site $site): array
+    {
+        $slug   = $site->slug;
+        $dbName = 'traitor_' . str_replace('-', '_', $slug);
+        $dbUser = substr('t_' . str_replace('-', '_', $slug), 0, 32);
+        $dbPass = Str::random(32);
+        $appKey = 'base64:' . base64_encode(random_bytes(32));
+        $appUrl = $site->domain
+            ? 'https://' . $site->domain
+            : 'https://' . $site->slug . '.' . config('services.cpanel.staging_domain');
+
+        DB::statement("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        DB::statement("CREATE USER IF NOT EXISTS '{$dbUser}'@'localhost' IDENTIFIED BY '{$dbPass}'");
+        DB::statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO '{$dbUser}'@'localhost'");
+        DB::statement('FLUSH PRIVILEGES');
+
+        $sharedPath = $site->sitesPath() . '/shared';
+        File::ensureDirectoryExists($sharedPath);
+
+        File::put($sharedPath . '/.env', implode("\n", [
+            'APP_NAME="' . $site->name . '"',
+            'APP_ENV=production',
+            'APP_KEY=' . $appKey,
+            'APP_DEBUG=false',
+            'APP_URL=' . $appUrl,
+            '',
+            'DB_CONNECTION=mysql',
+            'DB_HOST=127.0.0.1',
+            'DB_PORT=3306',
+            'DB_DATABASE=' . $dbName,
+            'DB_USERNAME=' . $dbUser,
+            'DB_PASSWORD=' . $dbPass,
+            '',
+            'LOG_CHANNEL=stack',
+            'LOG_LEVEL=error',
+            '',
+            'CACHE_DRIVER=file',
+            'SESSION_DRIVER=file',
+            'QUEUE_CONNECTION=sync',
+        ]));
+
+        return compact('dbName', 'dbUser', 'dbPass');
     }
 
     public function attachDomain(Site $site, string $domain, CpanelService $cpanel): void

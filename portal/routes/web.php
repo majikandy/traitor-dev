@@ -91,6 +91,8 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::get('/sites/{site}/download/draft', [SiteController::class, 'downloadDraft'])->name('sites.download.draft');
     Route::get('/sites/{site}/download/{release}', [SiteController::class, 'downloadRelease'])->name('sites.download.release');
     Route::post('/sites/{site}/maintenance', [SiteController::class, 'toggleMaintenance'])->name('sites.maintenance.toggle');
+    Route::get('/sites/{site}/laravel-setup', [SiteController::class, 'laravelSetupForm'])->name('sites.laravel-setup');
+    Route::post('/sites/{site}/laravel-setup', [SiteController::class, 'laravelSetup'])->name('sites.laravel-setup.submit');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
     Route::get('/team', [UsersController::class, 'index'])->name('team.index');

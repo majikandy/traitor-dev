@@ -153,10 +153,19 @@ class GitHubController extends Controller
 
         try {
             $this->siteService->uploadFromPath($site, $zipPath, $repoPath);
-            $release = $this->siteService->createRelease($site, "Initial import from {$repo}");
         } finally {
             @unlink($zipPath);
         }
+
+        $site->refresh();
+
+        // Laravel sites need database + .env before the first release can run migrations
+        if ($site->type === 'laravel' && !$this->siteService->hasSharedEnv($site)) {
+            return redirect()->route('sites.laravel-setup', $site)
+                ->with('info', 'Laravel app detected — set up your database to create your first release.');
+        }
+
+        $release = $this->siteService->createRelease($site, "Initial import from {$repo}");
 
         return redirect()->route('sites.show', $site)
             ->with('success', "GitHub connected and release v{$release->version} created from {$repo}.");

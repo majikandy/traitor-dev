@@ -243,6 +243,28 @@ class SiteController extends Controller
         return back();
     }
 
+    public function laravelSetupForm(Site $site)
+    {
+        abort_unless($site->type === 'laravel', 404);
+
+        return view('sites.laravel-setup', ['site' => $site]);
+    }
+
+    public function laravelSetup(Site $site)
+    {
+        abort_unless($site->type === 'laravel', 404);
+
+        $creds   = $this->siteService->setupDatabase($site);
+        $release = $this->siteService->createRelease($site, 'Initial release');
+
+        return redirect()->route('sites.show', $site)->with('laravel_creds', [
+            'db_name' => $creds['dbName'],
+            'db_user' => $creds['dbUser'],
+            'db_pass' => $creds['dbPass'],
+            'version' => $release->version,
+        ]);
+    }
+
     public function destroy(Site $site, GitHubService $github)
     {
         $name = $site->name;

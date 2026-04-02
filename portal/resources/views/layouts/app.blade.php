@@ -134,6 +134,18 @@
                         {{ session('error') }}
                     </div>
                 @endif
+                @if(session('laravel_creds'))
+                @php $creds = session('laravel_creds'); @endphp
+                    <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-sm flash">
+                        <p class="font-semibold text-amber-900 mb-2">Release v{{ $creds['version'] }} created — save your database password now</p>
+                        <div class="font-mono text-xs space-y-1 text-amber-800 mb-3">
+                            <div>DB_DATABASE={{ $creds['db_name'] }}</div>
+                            <div>DB_USERNAME={{ $creds['db_user'] }}</div>
+                            <div>DB_PASSWORD=<strong>{{ $creds['db_pass'] }}</strong></div>
+                        </div>
+                        <p class="text-xs text-amber-700">This password will not be shown again. It is already written to <code class="bg-amber-100 px-1 rounded">shared/.env</code> on the server.</p>
+                    </div>
+                @endif
 
                 @yield('content')
             </main>
