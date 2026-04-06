@@ -142,6 +142,19 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
     </div>
 </div>
 
+@if($needsLaravelSetup)
+<div class="rounded-xl border border-amber-200 bg-amber-50 p-5 mb-6 flex items-start gap-4">
+    <svg class="h-5 w-5 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+    <div class="flex-1">
+        <p class="text-sm font-semibold text-amber-900 mb-1">Laravel setup required</p>
+        <p class="text-sm text-amber-700 mb-3">A database and <code class="bg-amber-100 px-1 rounded text-xs">.env</code> are needed before the first release can be built.</p>
+        <a href="{{ route('sites.laravel-setup', $site) }}" class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition">
+            Set up database &amp; build first release
+        </a>
+    </div>
+</div>
+@endif
+
 @if(!$site->github_repo)
 @include('sites._github-panel', ['startOpen' => true])
 <div class="flex items-center gap-4 mb-6 px-2">
@@ -628,7 +641,15 @@ if (window.innerWidth < 768) { setView('mobile'); }
         <h2 class="text-base font-semibold text-gray-900">Releases</h2>
     </div>
     <div class="p-8 text-center">
-        <p class="text-sm text-gray-500">No releases yet. Upload a .zip above to create the first one.</p>
+        <p class="text-sm text-gray-500">
+            @if($needsLaravelSetup)
+                No releases yet. Complete the Laravel setup above to build the first one.
+            @elseif($site->github_repo)
+                No releases yet. Push to <span class="font-medium">{{ $site->github_branch ?? 'the default branch' }}</span> to create the first one.
+            @else
+                No releases yet. Upload a .zip or connect a GitHub repository above.
+            @endif
+        </p>
     </div>
 </div>
 @endif

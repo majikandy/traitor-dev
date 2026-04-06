@@ -54,7 +54,9 @@ class SiteController extends Controller
     {
         $site->load('releases', 'organisation');
 
-        return view('sites.show', compact('site'));
+        $needsLaravelSetup = $site->type === 'laravel' && !$this->siteService->hasSharedEnv($site);
+
+        return view('sites.show', compact('site', 'needsLaravelSetup'));
     }
 
     public function shareVersionPreview(Site $site, int $version)
