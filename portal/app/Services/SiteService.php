@@ -140,12 +140,22 @@ class SiteService
 
         symlink($sharedPath . '/storage', $releaseRoot . '/storage');
 
+        // Locate composer — check common paths on cPanel servers
+        $composerBin = $this->findExecutable('composer', [
+            '/usr/local/bin/composer',
+            '/usr/bin/composer',
+            getenv('HOME') . '/bin/composer',
+            '/opt/cpanel/composer/bin/composer',
+        ]);
+
+        $path = '/usr/local/bin:/usr/bin:/bin:' . dirname($composerBin);
+
         $result = Process::path($releaseRoot)
-            ->env(['PATH' => '/usr/local/bin:/usr/bin:/bin'])
-            ->run('composer install --no-dev --optimize-autoloader --no-interaction');
+            ->env(['PATH' => $path])
+            ->run("{$composerBin} install --no-dev --optimize-autoloader --no-interaction 2>&1");
 
         if ($result->failed()) {
-            throw new \RuntimeException('composer install failed: ' . $result->output() . $result->errorOutput());
+            throw new \RuntimeException("composer install failed (exit {$result->exitCode()}): " . $result->output());
         }
 
         if (!file_exists($sharedEnv)) {
@@ -154,12 +164,24 @@ class SiteService
 
         foreach (['php artisan migrate --force', 'php artisan optimize', 'php artisan storage:link'] as $cmd) {
             $result = Process::path($releaseRoot)
-                ->env(['PATH' => '/usr/local/bin:/usr/bin:/bin'])
-                ->run($cmd);
+                ->env(['PATH' => $path])
+                ->run("{$cmd} 2>&1");
             if ($result->failed()) {
-                throw new \RuntimeException("{$cmd} failed: " . $result->output() . $result->errorOutput());
+                throw new \RuntimeException("{$cmd} failed (exit {$result->exitCode()}): " . $result->output());
             }
         }
+    }
+
+    private function findExecutable(string $name, array $candidates): string
+    {
+        foreach ($candidates as $path) {
+            if (is_file($path) && is_executable($path)) {
+                return $path;
+            }
+        }
+
+        // Fall back to whatever is on PATH — if it's not there the error message will say so
+        return $name;
     }
 
     private function ensureSharedStorage(string $sharedPath): void
