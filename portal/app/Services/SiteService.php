@@ -6,7 +6,6 @@ use App\Models\Release;
 use App\Models\Site;
 use App\Services\GitHubService;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
@@ -183,24 +182,21 @@ class SiteService
     }
 
     /**
-     * Create a MySQL database and user for a Laravel site and write shared/.env.
+     * Create a MySQL database and user for a Laravel site via cPanel API and write shared/.env.
      * Returns the generated credentials so the caller can display them once.
      */
-    public function setupDatabase(Site $site): array
+    public function setupDatabase(Site $site, CpanelService $cpanel): array
     {
-        $slug   = $site->slug;
-        $dbName = 'traitor_' . str_replace('-', '_', $slug);
-        $dbUser = substr('t_' . str_replace('-', '_', $slug), 0, 32);
+        $suffix = str_replace('-', '_', $site->slug);
         $dbPass = Str::random(32);
         $appKey = 'base64:' . base64_encode(random_bytes(32));
         $appUrl = $site->domain
             ? 'https://' . $site->domain
             : 'https://' . $site->slug . '.' . config('services.cpanel.staging_domain');
 
-        DB::statement("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        DB::statement("CREATE USER IF NOT EXISTS '{$dbUser}'@'localhost' IDENTIFIED BY '{$dbPass}'");
-        DB::statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO '{$dbUser}'@'localhost'");
-        DB::statement('FLUSH PRIVILEGES');
+        $dbName = $cpanel->createMysqlDatabase($suffix);
+        $dbUser = $cpanel->createMysqlUser($suffix, $dbPass);
+        $cpanel->grantMysqlPrivileges($dbName, $dbUser);
 
         $sharedPath = $site->sitesPath() . '/shared';
         File::ensureDirectoryExists($sharedPath);

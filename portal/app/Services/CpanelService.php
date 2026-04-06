@@ -71,6 +71,56 @@ class CpanelService
         return $result['data'] ?? [];
     }
 
+    /**
+     * Create a MySQL database via cPanel UAPI.
+     * cPanel auto-prefixes with the account username.
+     * Returns the full database name (e.g. traitor8921_panya).
+     */
+    public function createMysqlDatabase(string $suffix): string
+    {
+        $result = $this->uapi('Mysql', 'create_database', ['name' => $suffix]);
+
+        if (($result['status'] ?? 0) !== 1) {
+            throw new \RuntimeException('cPanel failed to create database: ' . ($result['errors'][0] ?? 'unknown'));
+        }
+
+        return $this->user . '_' . $suffix;
+    }
+
+    /**
+     * Create a MySQL user via cPanel UAPI.
+     * Returns the full username (e.g. traitor8921_panya).
+     */
+    public function createMysqlUser(string $suffix, string $password): string
+    {
+        $result = $this->uapi('Mysql', 'create_user', [
+            'name'     => $suffix,
+            'password' => $password,
+        ]);
+
+        if (($result['status'] ?? 0) !== 1) {
+            throw new \RuntimeException('cPanel failed to create MySQL user: ' . ($result['errors'][0] ?? 'unknown'));
+        }
+
+        return $this->user . '_' . $suffix;
+    }
+
+    /**
+     * Grant all privileges on a database to a user (both full prefixed names).
+     */
+    public function grantMysqlPrivileges(string $database, string $user): void
+    {
+        $result = $this->uapi('Mysql', 'set_privileges_on_database', [
+            'user'       => $user,
+            'database'   => $database,
+            'privileges' => 'ALL PRIVILEGES',
+        ]);
+
+        if (($result['status'] ?? 0) !== 1) {
+            throw new \RuntimeException('cPanel failed to grant MySQL privileges: ' . ($result['errors'][0] ?? 'unknown'));
+        }
+    }
+
     private function subdomainHandle(string $domain): string
     {
         return str_replace('.', '-', $domain);
