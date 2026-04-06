@@ -78,13 +78,14 @@ class CpanelService
      */
     public function createMysqlDatabase(string $suffix): string
     {
-        $result = $this->uapi('Mysql', 'create_database', ['name' => $suffix]);
+        $fullName = $this->user . '_' . $suffix;
+        $result   = $this->uapi('Mysql', 'create_database', ['name' => $fullName]);
 
         if (($result['status'] ?? 0) !== 1) {
             throw new \RuntimeException('cPanel failed to create database: ' . ($result['errors'][0] ?? 'unknown'));
         }
 
-        return $this->user . '_' . $suffix;
+        return $fullName;
     }
 
     /**
@@ -93,8 +94,9 @@ class CpanelService
      */
     public function createMysqlUser(string $suffix, string $password): string
     {
-        $result = $this->uapi('Mysql', 'create_user', [
-            'name'     => $suffix,
+        $fullName = $this->user . '_' . $suffix;
+        $result   = $this->uapi('Mysql', 'create_user', [
+            'name'     => $fullName,
             'password' => $password,
         ]);
 
@@ -102,7 +104,7 @@ class CpanelService
             throw new \RuntimeException('cPanel failed to create MySQL user: ' . ($result['errors'][0] ?? 'unknown'));
         }
 
-        return $this->user . '_' . $suffix;
+        return $fullName;
     }
 
     /**
