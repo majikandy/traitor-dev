@@ -44,6 +44,13 @@ jobs:
             infrastructure/preview-dispatcher/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/preview-dispatcher/
 
+      - name: Deploy sites dispatcher
+        run: |
+          rsync -azP --delete \
+            -e "ssh -q -o StrictHostKeyChecking=no" \
+            infrastructure/sites-dispatcher/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/sites-dispatcher/
+
 
       - name: Deploy portal (zero-downtime)
         run: |
