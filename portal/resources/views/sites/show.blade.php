@@ -807,6 +807,12 @@ function cancelRename() {
     <form action="{{ route('sites.destroy', $site) }}" method="POST" class="ml-12" data-confirm="Delete {{ $site->name }}? This cannot be undone — all releases will be permanently removed.">
         @csrf
         @method('DELETE')
+        @if($site->type === 'laravel')
+        <label class="flex items-center gap-2 mb-3 cursor-pointer">
+            <input type="checkbox" name="drop_database" value="1" class="rounded border-gray-300 text-red-600">
+            <span class="text-sm text-gray-600">Also delete the MySQL database and user</span>
+        </label>
+        @endif
         <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition">Delete Site</button>
     </form>
 </div>

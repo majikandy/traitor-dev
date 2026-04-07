@@ -282,11 +282,13 @@ class SiteController extends Controller
         return redirect()->route('sites.show', $site)->with('laravel_creds', $flash);
     }
 
-    public function destroy(Site $site, GitHubService $github)
+    public function destroy(Request $request, Site $site, GitHubService $github, CpanelService $cpanel)
     {
         $name = $site->name;
-        $this->siteService->delete($site, $github);
+        $dropDb = $request->boolean('drop_database') && $site->type === 'laravel';
 
-        return redirect()->route('sites.index')->with('success', "Deleted {$name}.");
+        $this->siteService->delete($site, $github, $dropDb ? $cpanel : null);
+
+        return redirect()->route('sites.index')->with('success', "Deleted {$name}" . ($dropDb ? ' and its database.' : '.'));
     }
 }

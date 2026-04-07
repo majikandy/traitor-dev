@@ -109,6 +109,16 @@ class CpanelService
         return $fullName;
     }
 
+    public function dropMysqlDatabase(string $fullName): void
+    {
+        $this->uapi('Mysql', 'delete_database', ['name' => $fullName]);
+    }
+
+    public function dropMysqlUser(string $fullName): void
+    {
+        $this->uapi('Mysql', 'delete_user', ['name' => $fullName]);
+    }
+
     /**
      * Grant all privileges on a database to a user (both full prefixed names).
      */

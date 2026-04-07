@@ -369,7 +369,7 @@ class SiteService
         }
     }
 
-    public function delete(Site $site, GitHubService $github): void
+    public function delete(Site $site, GitHubService $github, ?CpanelService $cpanel = null): void
     {
         $org = $site->organisation;
 
@@ -383,6 +383,13 @@ class SiteService
                 $github->deleteInstallation($org->github_installation_id);
                 $org->update(['github_installation_id' => null]);
             }
+        }
+
+        if ($cpanel !== null && $site->type === 'laravel') {
+            $suffix   = str_replace('-', '_', $site->slug);
+            $fullName = config('services.cpanel.user') . '_' . $suffix;
+            $cpanel->dropMysqlDatabase($fullName);
+            $cpanel->dropMysqlUser($fullName);
         }
 
         File::deleteDirectory($site->sitesPath());
