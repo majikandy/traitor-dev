@@ -33,15 +33,20 @@
             </div>
         </div>
 
+        @if($envExists)
+        <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 mb-5 text-sm text-emerald-800">
+            Database already configured — <code class="text-xs bg-emerald-100 px-1 rounded">shared/.env</code> exists. This will retry the release build only.
+        </div>
+        @else
         <p class="text-sm text-gray-600 mb-5">
             This will create a dedicated MySQL database and user, write <code class="text-xs bg-gray-100 px-1 rounded">shared/.env</code>, then build your first release.
         </p>
-
         <div class="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 mb-5 space-y-1 font-mono text-xs text-gray-600">
-            <div><span class="text-gray-400">database</span>  traitor_{{ str_replace('-', '_', $site->slug) }}</div>
-            <div><span class="text-gray-400">user     </span>  t_{{ str_replace('-', '_', $site->slug) }}</div>
+            <div><span class="text-gray-400">database</span>  traitor8921_{{ str_replace('-', '_', $site->slug) }}</div>
+            <div><span class="text-gray-400">user     </span>  traitor8921_{{ str_replace('-', '_', $site->slug) }}</div>
             <div><span class="text-gray-400">password </span>  <span class="text-gray-400 italic">generated</span></div>
         </div>
+        @endif
 
         <form method="POST" action="{{ route('sites.laravel-setup.submit', $site) }}" id="setup-form">
             @csrf
@@ -52,9 +57,9 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
                     </svg>
-                    <span id="setup-label">Create database &amp; build first release</span>
+                    <span id="setup-label">{{ $envExists ? 'Retry build' : 'Create database & build first release' }}</span>
                 </button>
-                <a href="{{ route('sites.show', $site) }}" class="text-sm text-gray-500 hover:text-gray-700">Skip — I'll configure manually</a>
+                <a href="{{ route('sites.show', $site) }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
             </div>
         </form>
     </div>

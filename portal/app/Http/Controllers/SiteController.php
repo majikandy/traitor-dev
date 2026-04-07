@@ -249,22 +249,34 @@ class SiteController extends Controller
     {
         abort_unless($site->type === 'laravel', 404);
 
-        return view('sites.laravel-setup', ['site' => $site]);
+        $envExists = $this->siteService->hasSharedEnv($site);
+
+        return view('sites.laravel-setup', compact('site', 'envExists'));
     }
 
     public function laravelSetup(Site $site, CpanelService $cpanel)
     {
         abort_unless($site->type === 'laravel', 404);
 
-        $creds   = $this->siteService->setupDatabase($site, $cpanel);
+        $envAlreadyExists = $this->siteService->hasSharedEnv($site);
+
+        if (!$envAlreadyExists) {
+            $creds = $this->siteService->setupDatabase($site, $cpanel);
+        }
+
         $release = $this->siteService->createRelease($site, 'Initial release');
 
-        return redirect()->route('sites.show', $site)->with('laravel_creds', [
-            'db_name' => $creds['dbName'],
-            'db_user' => $creds['dbUser'],
-            'db_pass' => $creds['dbPass'],
-            'version' => $release->version,
-        ]);
+        $flash = ['version' => $release->version];
+
+        if (!$envAlreadyExists) {
+            $flash += [
+                'db_name' => $creds['dbName'],
+                'db_user' => $creds['dbUser'],
+                'db_pass' => $creds['dbPass'],
+            ];
+        }
+
+        return redirect()->route('sites.show', $site)->with('laravel_creds', $flash);
     }
 
     public function destroy(Site $site, GitHubService $github)

@@ -136,6 +136,7 @@
                 @endif
                 @if(session('laravel_creds'))
                 @php $creds = session('laravel_creds'); @endphp
+                    @if(isset($creds['db_pass']))
                     <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-sm flash">
                         <p class="font-semibold text-amber-900 mb-2">Release v{{ $creds['version'] }} created — save your database password now</p>
                         <div class="font-mono text-xs space-y-1 text-amber-800 mb-3">
@@ -145,6 +146,12 @@
                         </div>
                         <p class="text-xs text-amber-700">This password will not be shown again. It is already written to <code class="bg-amber-100 px-1 rounded">shared/.env</code> on the server.</p>
                     </div>
+                    @else
+                    <div class="mb-6 flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flash">
+                        <svg class="h-5 w-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        Release v{{ $creds['version'] }} created successfully.
+                    </div>
+                    @endif
                 @endif
 
                 @yield('content')
