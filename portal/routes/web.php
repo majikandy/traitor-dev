@@ -98,6 +98,7 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::put('/sites/{site}/env', [SiteController::class, 'updateEnv'])->name('sites.env.update');
     Route::get('/sites/{site}/artisan', [SiteController::class, 'artisanCommands'])->name('sites.artisan.commands');
     Route::post('/sites/{site}/artisan', [SiteController::class, 'artisanRun'])->name('sites.artisan.run');
+    Route::post('/sites/{site}/restart', [SiteController::class, 'restart'])->name('sites.restart');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
     Route::get('/team', [UsersController::class, 'index'])->name('team.index');

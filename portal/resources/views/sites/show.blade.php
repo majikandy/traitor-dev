@@ -793,6 +793,28 @@ function cancelRename() {
     document.getElementById('rename-form').classList.remove('flex');
     document.getElementById('site-name-display').classList.remove('hidden');
 }
+function restartApp() {
+    var btn = document.getElementById('restart-btn');
+    var icon = document.getElementById('restart-icon');
+    btn.disabled = true;
+    icon.classList.add('animate-spin');
+
+    fetch('{{ route('sites.restart', $site) }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var output = document.getElementById('artisan-output');
+        output.textContent = '$ php artisan optimize:clear\n' + (data.output || '(no output)') + '\n[exit ' + data.exitCode + ']';
+        output.classList.remove('hidden');
+    })
+    .catch(function() { alert('Restart failed.'); })
+    .finally(function() {
+        btn.disabled = false;
+        icon.classList.remove('animate-spin');
+    });
+}
 var artisanLoaded = false;
 var artisanRunning = false;
 var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
@@ -950,7 +972,13 @@ function copyLog(btn, text) {
             </div>
             <h2 class="text-base font-semibold text-gray-900">Artisan</h2>
         </div>
-        <button type="button" onclick="loadArtisan(this)" class="text-xs text-gray-400 hover:text-gray-600">Load commands</button>
+        <div class="flex items-center gap-3">
+            <button type="button" id="restart-btn" onclick="restartApp()" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
+                <svg id="restart-icon" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                Restart
+            </button>
+            <button type="button" onclick="loadArtisan(this)" class="text-xs text-gray-400 hover:text-gray-600">Load commands</button>
+        </div>
     </div>
 
     <div id="artisan-output" class="hidden mb-4 rounded-lg bg-gray-950 px-4 py-3 text-xs font-mono text-green-400 whitespace-pre-wrap break-all max-h-64 overflow-y-auto"></div>

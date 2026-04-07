@@ -103,8 +103,7 @@ class SiteController extends Controller
         $livePath = $site->sitesPath() . '/live';
         $env      = $this->artisanEnv();
 
-        $result = \Illuminate\Support\Facades\Process::path($livePath)->env($env)->timeout(120)
-            ->run(['php', 'artisan', $command, '--no-interaction', '--ansi']);
+        $result = $this->runArtisanCommand($site, $command);
 
         return response()->json([
             'output'   => $result->output() ?: $result->errorOutput(),
@@ -127,10 +126,32 @@ class SiteController extends Controller
         abort_unless($site->type === 'laravel', 404);
 
         $envPath = $site->sitesPath() . '/shared/.env';
-
         file_put_contents($envPath, $request->input('env_content', ''));
 
-        return back()->with('success', '.env saved. Changes take effect on next request.');
+        $this->runArtisanCommand($site, 'config:clear');
+
+        return back()->with('success', '.env saved and config cache cleared.');
+    }
+
+    public function restart(Site $site)
+    {
+        abort_unless($site->type === 'laravel', 404);
+
+        $result = $this->runArtisanCommand($site, 'optimize:clear');
+
+        return response()->json([
+            'output'   => $result->output() ?: $result->errorOutput(),
+            'exitCode' => $result->exitCode(),
+        ]);
+    }
+
+    private function runArtisanCommand(Site $site, string $command): \Illuminate\Process\ProcessResult
+    {
+        $livePath = $site->sitesPath() . '/live';
+        return \Illuminate\Support\Facades\Process::path($livePath)
+            ->env($this->artisanEnv())
+            ->timeout(30)
+            ->run(['php', 'artisan', $command, '--no-interaction']);
     }
 
     private function readEnv(Site $site): ?string
