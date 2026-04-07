@@ -140,15 +140,17 @@ class SiteService
 
         symlink($sharedPath . '/storage', $releaseRoot . '/storage');
 
-        // Locate composer — check common paths on cPanel servers
+        // Locate composer — check common paths on cPanel servers.
+        // ~/bin/composer is checked first so a locally-installed Composer 2
+        // takes precedence over any system-wide Composer 1.
+        $home = '/home/' . config('services.cpanel.user');
         $composerBin = $this->findExecutable('composer', [
+            $home . '/bin/composer',
             '/usr/local/bin/composer',
             '/usr/bin/composer',
-            getenv('HOME') . '/bin/composer',
             '/opt/cpanel/composer/bin/composer',
         ]);
 
-        $home = '/home/' . config('services.cpanel.user');
         $path = '/usr/local/bin:/usr/bin:/bin:' . dirname($composerBin);
         $env  = ['PATH' => $path, 'HOME' => $home, 'COMPOSER_HOME' => $home . '/.composer'];
 
