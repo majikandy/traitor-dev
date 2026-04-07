@@ -61,6 +61,67 @@ class SiteController extends Controller
         return view('sites.show', compact('site', 'needsLaravelSetup', 'logEntries', 'envContent'));
     }
 
+    public function artisanCommands(Site $site)
+    {
+        abort_unless($site->type === 'laravel', 404);
+
+        $livePath = $site->sitesPath() . '/live';
+
+        if (!is_dir($livePath)) {
+            return response()->json([]);
+        }
+
+        $env    = $this->artisanEnv();
+        $result = \Illuminate\Support\Facades\Process::path($livePath)->env($env)->timeout(30)
+            ->run('php artisan list --format=json 2>&1');
+
+        if ($result->failed()) {
+            return response()->json(['error' => $result->output()], 500);
+        }
+
+        $data   = json_decode($result->output(), true);
+        $groups = [];
+
+        foreach ($data['commands'] ?? [] as $cmd) {
+            $parts  = explode(':', $cmd['name'], 2);
+            $ns     = count($parts) > 1 ? $parts[0] : '';
+            $groups[$ns][] = ['name' => $cmd['name'], 'description' => $cmd['description']];
+        }
+
+        ksort($groups);
+
+        return response()->json($groups);
+    }
+
+    public function artisanRun(Request $request, Site $site)
+    {
+        abort_unless($site->type === 'laravel', 404);
+
+        $request->validate(['command' => ['required', 'string', 'regex:/^[a-z0-9:_\-]+$/']]);
+
+        $command  = $request->input('command');
+        $livePath = $site->sitesPath() . '/live';
+        $env      = $this->artisanEnv();
+
+        $result = \Illuminate\Support\Facades\Process::path($livePath)->env($env)->timeout(120)
+            ->run(['php', 'artisan', $command, '--no-interaction', '--ansi']);
+
+        return response()->json([
+            'output'   => $result->output() ?: $result->errorOutput(),
+            'exitCode' => $result->exitCode(),
+        ]);
+    }
+
+    private function artisanEnv(): array
+    {
+        $home = '/home/' . config('services.cpanel.user');
+        return [
+            'HOME'          => $home,
+            'COMPOSER_HOME' => $home . '/.composer',
+            'PATH'          => '/usr/local/bin:/usr/bin:/bin:' . $home . '/bin',
+        ];
+    }
+
     public function updateEnv(Request $request, Site $site)
     {
         abort_unless($site->type === 'laravel', 404);

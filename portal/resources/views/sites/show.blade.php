@@ -793,6 +793,101 @@ function cancelRename() {
     document.getElementById('rename-form').classList.remove('flex');
     document.getElementById('site-name-display').classList.remove('hidden');
 }
+var artisanLoaded = false;
+var artisanRunning = false;
+var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+
+var DESTRUCTIVE = ['migrate:fresh','migrate:reset','migrate:rollback','db:wipe','queue:flush','cache:clear','config:clear','route:clear','view:clear','optimize:clear'];
+
+function loadArtisan(btn) {
+    if (artisanLoaded) {
+        document.getElementById('artisan-groups').classList.toggle('hidden');
+        return;
+    }
+    btn.textContent = 'Loading…';
+    btn.disabled = true;
+    document.getElementById('artisan-loading').classList.remove('hidden');
+
+    fetch('{{ route('sites.artisan.commands', $site) }}')
+        .then(function(r) { return r.json(); })
+        .then(function(groups) {
+            artisanLoaded = true;
+            document.getElementById('artisan-loading').classList.add('hidden');
+            btn.textContent = 'Hide';
+            btn.disabled = false;
+            btn.onclick = function() {
+                document.getElementById('artisan-groups').classList.toggle('hidden');
+                btn.textContent = document.getElementById('artisan-groups').classList.contains('hidden') ? 'Show' : 'Hide';
+            };
+
+            var container = document.getElementById('artisan-groups');
+            container.innerHTML = '';
+
+            Object.keys(groups).forEach(function(ns) {
+                var label = ns === '' ? 'General' : ns;
+                var section = document.createElement('div');
+                section.innerHTML = '<p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">' + label + '</p>';
+                var wrap = document.createElement('div');
+                wrap.className = 'flex flex-wrap gap-2';
+                groups[ns].forEach(function(cmd) {
+                    var btn = document.createElement('button');
+                    var isDestructive = DESTRUCTIVE.indexOf(cmd.name) !== -1;
+                    btn.type = 'button';
+                    btn.title = cmd.description;
+                    btn.textContent = cmd.name;
+                    btn.className = 'rounded px-2.5 py-1 text-xs font-mono font-medium transition ' +
+                        (isDestructive
+                            ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200');
+                    btn.onclick = function() { runArtisan(cmd.name, isDestructive, btn); };
+                    wrap.appendChild(btn);
+                });
+                section.appendChild(wrap);
+                container.appendChild(section);
+            });
+
+            container.classList.remove('hidden');
+        })
+        .catch(function(e) {
+            document.getElementById('artisan-loading').classList.add('hidden');
+            document.getElementById('artisan-error').textContent = 'Failed to load commands.';
+            document.getElementById('artisan-error').classList.remove('hidden');
+            btn.textContent = 'Retry';
+            btn.disabled = false;
+        });
+}
+
+function runArtisan(command, isDestructive, btn) {
+    if (artisanRunning) return;
+    if (isDestructive && !confirm('Run "php artisan ' + command + '"? This is a destructive command.')) return;
+
+    artisanRunning = true;
+    var orig = btn.textContent;
+    btn.textContent = '…';
+    btn.disabled = true;
+
+    var output = document.getElementById('artisan-output');
+    output.textContent = '$ php artisan ' + command + '\n';
+    output.classList.remove('hidden');
+
+    fetch('{{ route('sites.artisan.run', $site) }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+        body: JSON.stringify({ command: command }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        output.textContent += data.output || '(no output)';
+        output.textContent += '\n[exit ' + data.exitCode + ']';
+        output.scrollTop = output.scrollHeight;
+    })
+    .catch(function() { output.textContent += '\nRequest failed.'; })
+    .finally(function() {
+        artisanRunning = false;
+        btn.textContent = orig;
+        btn.disabled = false;
+    });
+}
 function toggleEnvEditor() {
     var el = document.getElementById('env-editor');
     var btn = document.getElementById('env-toggle');
@@ -842,6 +937,27 @@ function copyLog(btn, text) {
             </div>
         </form>
     </div>
+</div>
+@endif
+
+{{-- Artisan Commands (Laravel only) --}}
+@if($site->type === 'laravel' && $envContent !== null)
+<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600">
+                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+            </div>
+            <h2 class="text-base font-semibold text-gray-900">Artisan</h2>
+        </div>
+        <button type="button" onclick="loadArtisan(this)" class="text-xs text-gray-400 hover:text-gray-600">Load commands</button>
+    </div>
+
+    <div id="artisan-output" class="hidden mb-4 rounded-lg bg-gray-950 px-4 py-3 text-xs font-mono text-green-400 whitespace-pre-wrap break-all max-h-64 overflow-y-auto"></div>
+
+    <div id="artisan-groups" class="hidden space-y-3"></div>
+    <p id="artisan-loading" class="hidden text-sm text-gray-400">Loading commands…</p>
+    <p id="artisan-error" class="hidden text-sm text-red-500"></p>
 </div>
 @endif
 
