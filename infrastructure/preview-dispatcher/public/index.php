@@ -98,7 +98,21 @@ $uri      = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $uri      = '/' . ltrim($uri, '/');
 $realFile = realpath($realDocroot . $uri);
 
-if ($realFile === false || (strpos($realFile, $realDocroot . '/') !== 0 && $realFile !== $realDocroot)) {
+// File not found on disk — fall back to index.php (supports Laravel / front-controller apps)
+if ($realFile === false) {
+    $indexPhp = $realDocroot . '/index.php';
+    if (file_exists($indexPhp)) {
+        chdir($realDocroot);
+        $_SERVER['DOCUMENT_ROOT']   = $realDocroot;
+        $_SERVER['SCRIPT_FILENAME'] = $indexPhp;
+        include $indexPhp;
+        exit;
+    }
+    http_response_code(404);
+    exit('Not found');
+}
+
+if (strpos($realFile, $realDocroot . '/') !== 0 && $realFile !== $realDocroot) {
     http_response_code(403);
     exit('Forbidden');
 }
