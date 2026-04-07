@@ -793,7 +793,73 @@ function cancelRename() {
     document.getElementById('rename-form').classList.remove('flex');
     document.getElementById('site-name-display').classList.remove('hidden');
 }
+function toggleLog(id) {
+    var el = document.getElementById(id);
+    var chevron = document.getElementById(id + '-chevron');
+    el.classList.toggle('hidden');
+    chevron.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
+}
+function copyLog(btn, text) {
+    navigator.clipboard.writeText(text).then(function() {
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<svg class="h-3.5 w-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>';
+        setTimeout(function() { btn.innerHTML = orig; }, 1500);
+    });
+}
 </script>
+
+{{-- Application Logs (Laravel only) --}}
+@if($site->type === 'laravel')
+<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900">
+                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" /></svg>
+            </div>
+            <h2 class="text-base font-semibold text-gray-900">Application Logs</h2>
+        </div>
+        <a href="{{ route('sites.show', $site) }}#logs" onclick="location.reload()" class="text-xs text-gray-400 hover:text-gray-600">Refresh</a>
+    </div>
+
+    @if(empty($logEntries))
+    <p class="text-sm text-gray-400 font-mono">No log entries found.</p>
+    @else
+    <div id="logs" class="space-y-1">
+        @foreach($logEntries as $i => $entry)
+        @php
+            $levelColour = match($entry['level']) {
+                'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY' => 'text-red-400',
+                'WARNING' => 'text-yellow-400',
+                'NOTICE', 'INFO' => 'text-blue-400',
+                default => 'text-gray-400',
+            };
+            $hasTrace = !empty($entry['trace']);
+            $entryId  = 'log-' . $i;
+        @endphp
+        <div class="rounded-lg bg-gray-950 text-xs font-mono overflow-hidden">
+            <div class="flex items-start gap-2 px-3 py-2 {{ $hasTrace ? 'cursor-pointer select-none' : '' }}"
+                 {{ $hasTrace ? "onclick=\"toggleLog('{$entryId}')\"" : '' }}>
+                <span class="shrink-0 text-gray-500">{{ $entry['timestamp'] }}</span>
+                <span class="shrink-0 font-semibold {{ $levelColour }}">{{ $entry['level'] }}</span>
+                <span class="flex-1 text-gray-200 break-all">{{ $entry['message'] }}</span>
+                <button type="button"
+                    onclick="event.stopPropagation(); copyLog(this, {{ json_encode($entry['timestamp'] . ' ' . $entry['level'] . ': ' . $entry['message']) }})"
+                    class="shrink-0 text-gray-600 hover:text-gray-300 transition ml-1" title="Copy">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                </button>
+                @if($hasTrace)
+                <svg id="{{ $entryId }}-chevron" class="h-3.5 w-3.5 shrink-0 text-gray-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                @endif
+            </div>
+            @if($hasTrace)
+            <div id="{{ $entryId }}" class="hidden border-t border-gray-800 px-3 py-2 text-gray-500 whitespace-pre-wrap break-all">{{ implode("\n", $entry['trace']) }}</div>
+            @endif
+        </div>
+        @endforeach
+    </div>
+    @endif
+</div>
+@endif
 
 {{-- Danger Zone --}}
 <div class="rounded-xl border border-red-200 bg-white p-6 shadow-sm">

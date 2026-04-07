@@ -55,8 +55,47 @@ class SiteController extends Controller
         $site->load('releases', 'organisation');
 
         $needsLaravelSetup = $site->type === 'laravel' && !$this->siteService->hasSharedEnv($site);
+        $logEntries        = $site->type === 'laravel' ? $this->parseLog($site) : [];
 
-        return view('sites.show', compact('site', 'needsLaravelSetup'));
+        return view('sites.show', compact('site', 'needsLaravelSetup', 'logEntries'));
+    }
+
+    private function parseLog(Site $site): array
+    {
+        $logPath = $site->sitesPath() . '/shared/storage/logs/laravel.log';
+
+        if (!file_exists($logPath)) {
+            return [];
+        }
+
+        $size    = filesize($logPath);
+        $handle  = fopen($logPath, 'r');
+        $readLen = min($size, 100 * 1024);
+        if ($size > $readLen) {
+            fseek($handle, -$readLen, SEEK_END);
+        }
+        $content = fread($handle, $readLen);
+        fclose($handle);
+
+        $entries = [];
+        $current = null;
+
+        foreach (explode("\n", $content) as $line) {
+            if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] \w+\.(\w+): (.+)/', $line, $m)) {
+                if ($current !== null) {
+                    $entries[] = $current;
+                }
+                $current = ['timestamp' => $m[1], 'level' => strtoupper($m[2]), 'message' => $m[3], 'trace' => []];
+            } elseif ($current !== null && trim($line) !== '') {
+                $current['trace'][] = $line;
+            }
+        }
+
+        if ($current !== null) {
+            $entries[] = $current;
+        }
+
+        return array_reverse(array_slice($entries, -25));
     }
 
     public function shareVersionPreview(Site $site, int $version)
