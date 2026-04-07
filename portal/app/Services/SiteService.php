@@ -231,6 +231,9 @@ class SiteService
         File::put($sharedPath . '/.env', implode("\n", [
             'APP_NAME="' . $site->name . '"',
             'APP_ENV=production',
+            '# NEVER change this key — it encrypts cookies, sessions, and encrypted model fields.',
+            '# If you copy a database from another environment that has encrypted records,',
+            '# copy that environment\'s APP_KEY instead of regenerating.',
             'APP_KEY=' . $appKey,
             'APP_DEBUG=false',
             'APP_URL=' . $appUrl,
