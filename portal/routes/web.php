@@ -95,6 +95,7 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::post('/sites/{site}/maintenance', [SiteController::class, 'toggleMaintenance'])->name('sites.maintenance.toggle');
     Route::get('/sites/{site}/laravel-setup', [SiteController::class, 'laravelSetupForm'])->name('sites.laravel-setup');
     Route::post('/sites/{site}/laravel-setup', [SiteController::class, 'laravelSetup'])->name('sites.laravel-setup.submit');
+    Route::put('/sites/{site}/env', [SiteController::class, 'updateEnv'])->name('sites.env.update');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
     Route::get('/team', [UsersController::class, 'index'])->name('team.index');

@@ -56,8 +56,26 @@ class SiteController extends Controller
 
         $needsLaravelSetup = $site->type === 'laravel' && !$this->siteService->hasSharedEnv($site);
         $logEntries        = $site->type === 'laravel' ? $this->parseLog($site) : [];
+        $envContent        = $site->type === 'laravel' ? $this->readEnv($site) : null;
 
-        return view('sites.show', compact('site', 'needsLaravelSetup', 'logEntries'));
+        return view('sites.show', compact('site', 'needsLaravelSetup', 'logEntries', 'envContent'));
+    }
+
+    public function updateEnv(Request $request, Site $site)
+    {
+        abort_unless($site->type === 'laravel', 404);
+
+        $envPath = $site->sitesPath() . '/shared/.env';
+
+        file_put_contents($envPath, $request->input('env_content', ''));
+
+        return back()->with('success', '.env saved. Changes take effect on next request.');
+    }
+
+    private function readEnv(Site $site): ?string
+    {
+        $envPath = $site->sitesPath() . '/shared/.env';
+        return file_exists($envPath) ? file_get_contents($envPath) : null;
     }
 
     private function parseLog(Site $site): array

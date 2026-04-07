@@ -793,6 +793,12 @@ function cancelRename() {
     document.getElementById('rename-form').classList.remove('flex');
     document.getElementById('site-name-display').classList.remove('hidden');
 }
+function toggleEnvEditor() {
+    var el = document.getElementById('env-editor');
+    var btn = document.getElementById('env-toggle');
+    el.classList.toggle('hidden');
+    btn.textContent = el.classList.contains('hidden') ? 'Show' : 'Hide';
+}
 function toggleLog(id) {
     var el = document.getElementById(id);
     var chevron = document.getElementById(id + '-chevron');
@@ -807,6 +813,37 @@ function copyLog(btn, text) {
     });
 }
 </script>
+
+{{-- .env Editor (Laravel only) --}}
+@if($site->type === 'laravel' && $envContent !== null)
+<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-700">
+                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+            </div>
+            <div>
+                <h2 class="text-base font-semibold text-gray-900">Environment</h2>
+                <p class="text-xs text-gray-400">shared/.env — shared across all releases</p>
+            </div>
+        </div>
+        <button type="button" onclick="toggleEnvEditor()" class="text-xs text-gray-400 hover:text-gray-600" id="env-toggle">Show</button>
+    </div>
+
+    <div id="env-editor" class="hidden">
+        <form method="POST" action="{{ route('sites.env.update', $site) }}">
+            @csrf
+            @method('PUT')
+            <textarea name="env_content" rows="16"
+                class="w-full rounded-lg border border-gray-200 bg-gray-950 px-4 py-3 text-xs font-mono text-green-400 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-y">{{ $envContent }}</textarea>
+            <div class="flex items-center gap-3 mt-3">
+                <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition">Save .env</button>
+                <span class="text-xs text-gray-400">Changes take effect immediately — no rebuild needed.</span>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 
 {{-- Application Logs (Laravel only) --}}
 @if($site->type === 'laravel')
