@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
+Route::get('/version', fn() => response(file_get_contents(base_path('VERSION')), 200, ['Content-Type' => 'text/plain']));
+
 // Auth
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
