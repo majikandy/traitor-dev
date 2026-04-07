@@ -148,10 +148,12 @@ class SiteService
             '/opt/cpanel/composer/bin/composer',
         ]);
 
+        $home = '/home/' . config('services.cpanel.user');
         $path = '/usr/local/bin:/usr/bin:/bin:' . dirname($composerBin);
+        $env  = ['PATH' => $path, 'HOME' => $home, 'COMPOSER_HOME' => $home . '/.composer'];
 
         $result = Process::path($releaseRoot)
-            ->env(['PATH' => $path])
+            ->env($env)
             ->run("{$composerBin} install --no-dev --optimize-autoloader --no-interaction 2>&1");
 
         if ($result->failed()) {
@@ -164,7 +166,7 @@ class SiteService
 
         foreach (['php artisan migrate --force', 'php artisan optimize', 'php artisan storage:link'] as $cmd) {
             $result = Process::path($releaseRoot)
-                ->env(['PATH' => $path])
+                ->env($env)
                 ->run("{$cmd} 2>&1");
             if ($result->failed()) {
                 throw new \RuntimeException("{$cmd} failed (exit {$result->exitCode()}): " . $result->output());
