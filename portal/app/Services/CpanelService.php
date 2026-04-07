@@ -81,8 +81,9 @@ class CpanelService
         $fullName = $this->user . '_' . $suffix;
         $result   = $this->uapi('Mysql', 'create_database', ['name' => $fullName]);
 
-        if (($result['status'] ?? 0) !== 1) {
-            throw new \RuntimeException('cPanel failed to create database: ' . ($result['errors'][0] ?? 'unknown'));
+        $error = $result['errors'][0] ?? '';
+        if (($result['status'] ?? 0) !== 1 && !str_contains($error, 'already exists')) {
+            throw new \RuntimeException('cPanel failed to create database: ' . $error);
         }
 
         return $fullName;
@@ -100,8 +101,9 @@ class CpanelService
             'password' => $password,
         ]);
 
-        if (($result['status'] ?? 0) !== 1) {
-            throw new \RuntimeException('cPanel failed to create MySQL user: ' . ($result['errors'][0] ?? 'unknown'));
+        $error = $result['errors'][0] ?? '';
+        if (($result['status'] ?? 0) !== 1 && !str_contains($error, 'already exists')) {
+            throw new \RuntimeException('cPanel failed to create MySQL user: ' . $error);
         }
 
         return $fullName;
