@@ -140,26 +140,27 @@ class SiteService
 
         symlink($sharedPath . '/storage', $releaseRoot . '/storage');
 
-        // Locate composer — check common paths on cPanel servers.
-        // ~/bin/composer is checked first so a locally-installed Composer 2
-        // takes precedence over any system-wide Composer 1.
-        $home = '/home/' . config('services.cpanel.user');
-        $composerBin = $this->findExecutable('composer', [
-            $home . '/bin/composer',
-            '/usr/local/bin/composer',
-            '/usr/bin/composer',
-            '/opt/cpanel/composer/bin/composer',
-        ]);
+        // Only run composer install if vendor/ wasn't already shipped in the zip.
+        // CI pipelines typically build vendor/ before packaging, so we skip it.
+        if (!is_dir($releaseRoot . '/vendor')) {
+            $home = '/home/' . config('services.cpanel.user');
+            $composerBin = $this->findExecutable('composer', [
+                $home . '/bin/composer',
+                '/usr/local/bin/composer',
+                '/usr/bin/composer',
+                '/opt/cpanel/composer/bin/composer',
+            ]);
 
-        $path = '/usr/local/bin:/usr/bin:/bin:' . dirname($composerBin);
-        $env  = ['PATH' => $path, 'HOME' => $home, 'COMPOSER_HOME' => $home . '/.composer'];
+            $path = '/usr/local/bin:/usr/bin:/bin:' . dirname($composerBin);
+            $env  = ['PATH' => $path, 'HOME' => $home, 'COMPOSER_HOME' => $home . '/.composer'];
 
-        $result = Process::path($releaseRoot)
-            ->env($env)
-            ->run("{$composerBin} install --no-dev --optimize-autoloader --no-interaction 2>&1");
+            $result = Process::path($releaseRoot)
+                ->env($env)
+                ->run("{$composerBin} install --no-dev --optimize-autoloader --no-interaction 2>&1");
 
-        if ($result->failed()) {
-            throw new \RuntimeException("composer install failed (exit {$result->exitCode()}): " . $result->output());
+            if ($result->failed()) {
+                throw new \RuntimeException("composer install failed (exit {$result->exitCode()}): " . $result->output());
+            }
         }
 
         if (!file_exists($sharedEnv)) {
