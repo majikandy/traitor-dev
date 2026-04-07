@@ -33,23 +33,36 @@
             </div>
         </div>
 
-        @if($envExists)
-        <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 mb-5 text-sm text-emerald-800">
-            Database already configured — <code class="text-xs bg-emerald-100 px-1 rounded">shared/.env</code> exists. This will retry the release build only.
-        </div>
-        @else
-        <p class="text-sm text-gray-600 mb-5">
-            This will create a dedicated MySQL database and user, write <code class="text-xs bg-gray-100 px-1 rounded">shared/.env</code>, then build your first release.
-        </p>
-        <div class="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 mb-5 space-y-1 font-mono text-xs text-gray-600">
-            <div><span class="text-gray-400">database</span>  traitor8921_{{ str_replace('-', '_', $site->slug) }}</div>
-            <div><span class="text-gray-400">user     </span>  traitor8921_{{ str_replace('-', '_', $site->slug) }}</div>
-            <div><span class="text-gray-400">password </span>  <span class="text-gray-400 italic">generated</span></div>
-        </div>
-        @endif
-
         <form method="POST" action="{{ route('sites.laravel-setup.submit', $site) }}" id="setup-form">
             @csrf
+
+            @if($envExists)
+            <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 mb-5 text-sm text-emerald-800">
+                Database already configured — <code class="text-xs bg-emerald-100 px-1 rounded">shared/.env</code> exists. This will retry the release build only.
+            </div>
+            @else
+            <p class="text-sm text-gray-600 mb-4">
+                This will create a dedicated MySQL database and user, write <code class="text-xs bg-gray-100 px-1 rounded">shared/.env</code>, then build your first release.
+            </p>
+
+            @if($errors->any())
+            <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 mb-4 text-sm text-red-800">
+                {{ $errors->first() }}
+            </div>
+            @endif
+
+            <div class="mb-5">
+                <label class="block text-xs font-medium text-gray-700 mb-1">Database &amp; username suffix</label>
+                <div class="flex items-center rounded-lg border border-gray-300 overflow-hidden focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
+                    <span class="bg-gray-50 px-3 py-2 text-xs text-gray-400 font-mono border-r border-gray-300 shrink-0">traitor8921_</span>
+                    <input type="text" name="db_suffix" value="{{ old('db_suffix', str_replace('-', '_', $site->slug)) }}"
+                        class="flex-1 px-3 py-2 text-sm font-mono bg-white focus:outline-none"
+                        pattern="[a-z0-9_]+" title="Lowercase letters, numbers and underscores only">
+                </div>
+                <p class="mt-1 text-xs text-gray-400">Change this if the name is already taken. Lowercase, numbers, underscores only.</p>
+            </div>
+            @endif
+
             <div class="flex items-center gap-3">
                 <button type="submit" id="setup-btn"
                     class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed">

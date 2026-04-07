@@ -254,14 +254,17 @@ class SiteController extends Controller
         return view('sites.laravel-setup', compact('site', 'envExists'));
     }
 
-    public function laravelSetup(Site $site, CpanelService $cpanel)
+    public function laravelSetup(Request $request, Site $site, CpanelService $cpanel)
     {
         abort_unless($site->type === 'laravel', 404);
 
         $envAlreadyExists = $this->siteService->hasSharedEnv($site);
 
         if (!$envAlreadyExists) {
-            $creds = $this->siteService->setupDatabase($site, $cpanel);
+            $request->validate([
+                'db_suffix' => ['required', 'regex:/^[a-z0-9_]+$/'],
+            ]);
+            $creds = $this->siteService->setupDatabase($site, $cpanel, $request->input('db_suffix'));
         }
 
         $release = $this->siteService->createRelease($site, 'Initial release');

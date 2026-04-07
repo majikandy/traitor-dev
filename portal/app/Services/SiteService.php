@@ -209,9 +209,9 @@ class SiteService
      * Create a MySQL database and user for a Laravel site via cPanel API and write shared/.env.
      * Returns the generated credentials so the caller can display them once.
      */
-    public function setupDatabase(Site $site, CpanelService $cpanel): array
+    public function setupDatabase(Site $site, CpanelService $cpanel, ?string $suffix = null): array
     {
-        $suffix = str_replace('-', '_', $site->slug);
+        $suffix = $suffix ?? str_replace('-', '_', $site->slug);
         $dbPass = Str::random(32);
         $appKey = 'base64:' . base64_encode(random_bytes(32));
         $appUrl = $site->domain
