@@ -445,6 +445,46 @@ class SiteService
         }
     }
 
+    /**
+     * Returns disk usage in bytes for each release dir, keyed by version number.
+     * Also includes 'drafts' and 'shared' keys.
+     * Uses a single `du` call for efficiency.
+     */
+    public function diskUsage(Site $site): array
+    {
+        $sitePath = $site->sitesPath();
+
+        $result = Process::run("du -sb {$sitePath}/releases/*/ {$sitePath}/drafts/ {$sitePath}/shared/ 2>/dev/null");
+
+        $sizes = [];
+        foreach (explode("\n", trim($result->output())) as $line) {
+            if (!$line) continue;
+            [$bytes, $path] = preg_split('/\s+/', $line, 2);
+            $path  = rtrim($path, '/');
+            $label = basename($path);
+
+            if (is_numeric($label)) {
+                $sizes[(int) $label] = (int) $bytes;
+            } else {
+                $sizes[$label] = (int) $bytes;
+            }
+        }
+
+        return $sizes;
+    }
+
+    public function deleteRelease(Site $site, int $version): void
+    {
+        abort_if($version === $site->live_release, 422, "Cannot delete the live release.");
+
+        $releaseRoot = $site->sitesPath() . '/releases/' . $version;
+        abort_unless(is_dir($releaseRoot), 404, "Release v{$version} not found.");
+
+        File::deleteDirectory($releaseRoot);
+
+        Release::where('site_id', $site->id)->where('version', $version)->delete();
+    }
+
     public function delete(Site $site, GitHubService $github, ?CpanelService $cpanel = null): void
     {
         $org = $site->organisation;

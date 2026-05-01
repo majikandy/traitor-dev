@@ -82,6 +82,7 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::patch('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
     Route::post('/sites/{site}/release', [SiteController::class, 'createRelease'])->name('sites.release');
     Route::post('/sites/{site}/releases/{version}/promote', [SiteController::class, 'promoteRelease'])->name('sites.releases.promote');
+    Route::delete('/sites/{site}/releases', [SiteController::class, 'deleteReleases'])->name('sites.releases.delete');
     Route::post('/sites/{site}/releases/{version}/version-preview/share', [SiteController::class, 'shareVersionPreview'])->name('sites.releases.version-preview.share');
     Route::post('/sites/{site}/releases/{version}/version-preview/regenerate', [SiteController::class, 'regenerateVersionPreviewToken'])->name('sites.releases.version-preview.regenerate');
     Route::post('/sites/{site}/releases/{version}/version-preview/revoke', [SiteController::class, 'revokeVersionPreview'])->name('sites.releases.version-preview.revoke');

@@ -171,6 +171,13 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
     $sortedReleases = $site->releases->sortByDesc('version');
     $firstRelease = $sortedReleases->first();
     $hasDomain = $site->domain && $site->domain_status === 'active';
+    $fmtBytes = fn(int $b): string => match(true) {
+        $b >= 1073741824 => round($b / 1073741824, 1) . ' GB',
+        $b >= 1048576    => round($b / 1048576, 1) . ' MB',
+        $b >= 1024       => round($b / 1024, 1) . ' KB',
+        default          => $b . ' B',
+    };
+    $totalDisk = array_sum($diskUsage);
     // Default preview: staging URL always mirrors the live symlink exactly (coming soon, live release, or maintenance)
     $defaultPreviewSrc = $site->stagingUrl();
     $liveUrl = $hasDomain ? 'https://' . $site->domain : $defaultPreviewSrc;
@@ -194,8 +201,18 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
 @endphp
 <div class="rounded-xl border border-gray-200 bg-white shadow-sm mb-6 overflow-hidden">
     {{-- Section header --}}
-    <div class="px-6 py-4 border-b border-gray-100">
-        <h2 class="text-base font-semibold text-gray-900">Releases</h2>
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <h2 class="text-base font-semibold text-gray-900">Releases</h2>
+            @if($totalDisk > 0)
+                <span class="text-xs text-gray-400">{{ $fmtBytes($totalDisk) }} total</span>
+            @endif
+        </div>
+        @if($sortedReleases->where('version', '!=', $site->live_release)->isNotEmpty())
+            <button type="button" onclick="toggleManageReleases()"
+                id="manage-releases-btn"
+                class="text-xs text-gray-400 hover:text-gray-600 transition">Manage space</button>
+        @endif
     </div>
 
     {{-- Preview panel --}}
@@ -279,6 +296,7 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
         @foreach($sortedReleases as $release)
             @php
                 $isLive = $release->version === $site->live_release;
+                $releaseBytes = $diskUsage[$release->version] ?? 0;
             @endphp
             <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
                     {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
@@ -311,7 +329,15 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                     </div>
                 </div>
                 <div class="flex items-center gap-2" data-actions onclick="event.stopPropagation()">
+                    @if(!$isLive)
+                        <input type="checkbox" value="{{ $release->version }}"
+                            class="release-checkbox hidden h-4 w-4 rounded border-gray-300 text-red-600 cursor-pointer flex-shrink-0"
+                            onclick="updateDeleteSelection()">
+                    @endif
                     <span class="text-xs text-gray-400 hidden sm:inline">{{ $release->created_at->diffForHumans() }}</span>
+                    @if($releaseBytes > 0)
+                        <span class="text-xs text-gray-400 hidden sm:inline">· {{ $fmtBytes($releaseBytes) }}</span>
+                    @endif
                     @php $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token; @endphp
                     @if($release->preview_shared)
                         <div class="hidden sm:inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 overflow-hidden">
@@ -357,10 +383,40 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                 </div>
             </div>
         @endforeach
+        <form id="delete-releases-form" method="POST" action="{{ route('sites.releases.delete', $site) }}" class="hidden" data-confirm="Delete selected releases? This cannot be undone.">
+            @csrf
+            @method('DELETE')
+            <div id="delete-releases-checkboxes"></div>
+            <div class="px-6 py-3 bg-red-50 border-t border-red-100 flex items-center justify-between gap-4">
+                <span class="text-sm text-red-700"><span id="delete-count">0</span> release<span id="delete-plural">s</span> selected</span>
+                <button type="submit" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete selected</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
+function toggleManageReleases() {
+    var managing = document.querySelectorAll('.release-checkbox')[0]?.classList.contains('hidden') === false
+        ? true : document.querySelectorAll('.release-checkbox.hidden').length === 0;
+    var checkboxes = document.querySelectorAll('.release-checkbox');
+    var btn = document.getElementById('manage-releases-btn');
+    var entering = checkboxes[0]?.classList.contains('hidden');
+    checkboxes.forEach(function(cb) { cb.classList.toggle('hidden', !entering); if (!entering) cb.checked = false; });
+    if (btn) btn.textContent = entering ? 'Cancel' : 'Manage space';
+    updateDeleteSelection();
+}
+function updateDeleteSelection() {
+    var checked = Array.from(document.querySelectorAll('.release-checkbox:checked'));
+    var form = document.getElementById('delete-releases-form');
+    var box  = document.getElementById('delete-releases-checkboxes');
+    var countEl = document.getElementById('delete-count');
+    var pluralEl = document.getElementById('delete-plural');
+    box.innerHTML = checked.map(function(cb) { return '<input type="hidden" name="versions[]" value="' + cb.value + '">'; }).join('');
+    countEl.textContent = checked.length;
+    pluralEl.textContent = checked.length === 1 ? '' : 's';
+    form.classList.toggle('hidden', checked.length === 0);
+}
 function showMaintenanceOptions(onConfirm) {
     var modal    = document.getElementById('maintenance-modal');
     var backdrop = document.getElementById('maintenance-backdrop');

@@ -57,8 +57,9 @@ class SiteController extends Controller
         $needsLaravelSetup = $site->type === 'laravel' && !$this->siteService->hasSharedEnv($site);
         $logEntries        = $site->type === 'laravel' ? $this->parseLog($site) : [];
         $envContent        = $site->type === 'laravel' ? $this->readEnv($site) : null;
+        $diskUsage         = $site->releases->isNotEmpty() ? $this->siteService->diskUsage($site) : [];
 
-        return view('sites.show', compact('site', 'needsLaravelSetup', 'logEntries', 'envContent'));
+        return view('sites.show', compact('site', 'needsLaravelSetup', 'logEntries', 'envContent', 'diskUsage'));
     }
 
     public function artisanCommands(Site $site)
@@ -344,6 +345,22 @@ class SiteController extends Controller
         }
 
         return back()->with('success', "v{$release->version} is now live.");
+    }
+
+    public function deleteReleases(Request $request, Site $site)
+    {
+        $versions = array_map('intval', (array) $request->input('versions', []));
+
+        abort_if(empty($versions), 422, 'No releases selected.');
+
+        $deleted = 0;
+        foreach ($versions as $version) {
+            $this->siteService->deleteRelease($site, $version);
+            $deleted++;
+        }
+
+        return redirect()->route('sites.show', $site)
+            ->with('success', "Deleted {$deleted} release" . ($deleted !== 1 ? 's' : '') . '.');
     }
 
     public function revertToComingSoon(Site $site)
