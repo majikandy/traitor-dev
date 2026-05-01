@@ -23,6 +23,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null; // let Laravel handle 404/403/etc and API errors normally
             }
 
-            return redirect()->back()->withInput()->with('error', $e->getMessage() ?: get_class($e));
+            $input = $request->except(['_token', '_method', 'password', 'password_confirmation', 'zip']);
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $e->getMessage() ?: get_class($e))
+                ->with('error_meta', [
+                    'action' => strtoupper($request->method()) . ' /' . ltrim($request->path(), '/'),
+                    'input'  => $input ?: null,
+                ]);
         });
     })->create();
