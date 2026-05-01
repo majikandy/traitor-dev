@@ -326,6 +326,17 @@ class SiteController extends Controller
     public function checkDns(Site $site, CpanelService $cpanel)
     {
         if ($this->siteService->checkDns($site)) {
+            // Ensure the addon domain is registered with cPanel — it may have failed or timed out during attach.
+            $homeDir = '/home/' . config('services.cpanel.user');
+            $docroot = ltrim(str_replace($homeDir . '/', '', $site->sitesPath() . '/live/public'), '/');
+            try {
+                $cpanel->createAddonDomain($site->domain, $docroot);
+            } catch (\RuntimeException $e) {
+                if (!str_contains($e->getMessage(), 'already exists')) {
+                    throw $e;
+                }
+            }
+
             $site->update(['domain_status' => 'active']);
             $cpanel->triggerAutoSsl();
             return back()->with('success', 'DNS verified! SSL is being provisioned automatically.');

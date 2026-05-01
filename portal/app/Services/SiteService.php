@@ -330,12 +330,13 @@ class SiteService
     {
         $this->ensureLiveSymlink($site);
 
-        $homeDir  = '/home/' . config('services.cpanel.user');
-        $docroot  = ltrim(str_replace($homeDir . '/', '', $site->sitesPath() . '/live/public'), '/');
+        // Save the domain first so DNS instructions are visible even if cPanel registration fails.
+        $site->update(['domain' => $domain, 'domain_status' => 'pending_dns']);
+
+        $homeDir = '/home/' . config('services.cpanel.user');
+        $docroot = ltrim(str_replace($homeDir . '/', '', $site->sitesPath() . '/live/public'), '/');
 
         $cpanel->createAddonDomain($domain, $docroot);
-
-        $site->update(['domain' => $domain, 'domain_status' => 'pending_dns']);
     }
 
     public function detachDomain(Site $site, CpanelService $cpanel): void
