@@ -30,6 +30,10 @@ class CpanelService
 
         if (!($result['data'][0]['result'] ?? false)) {
             $reason = $result['data'][0]['reason'] ?? 'Unknown error';
+            // Treat "already exists" as success — a previous attempt may have partially registered it.
+            if (str_contains($reason, 'already exists')) {
+                return;
+            }
             throw new \RuntimeException("cPanel failed to create addon domain: {$reason}");
         }
     }
