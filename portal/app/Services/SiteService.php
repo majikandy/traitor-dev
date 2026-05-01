@@ -165,7 +165,14 @@ class SiteService
                 ->run("{$phpBin} {$composerBin} install --no-dev --optimize-autoloader --no-interaction 2>&1");
 
             if ($result->failed()) {
-                throw new \RuntimeException("composer install failed (exit {$result->exitCode()}): " . $result->output());
+                $output = $result->output();
+                if (str_contains($output, 'lock file does not contain a compatible set of packages')) {
+                    throw new \RuntimeException(
+                        "Your composer.lock was generated with a different PHP version than this server (PHP " . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . "). " .
+                        "Run `composer update` locally using PHP " . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ", commit the updated composer.lock, and push again."
+                    );
+                }
+                throw new \RuntimeException("composer install failed (exit {$result->exitCode()}): " . $output);
             }
         }
 
