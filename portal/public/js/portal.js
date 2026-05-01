@@ -2,8 +2,8 @@
 // Plain vanilla JS — no build step, no frameworks
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Auto-dismiss flash messages after 5 seconds
-    document.querySelectorAll('.flash').forEach(function (el) {
+    // Auto-dismiss flash messages after 5 seconds (skip persistent ones)
+    document.querySelectorAll('.flash:not(.flash-persist)').forEach(function (el) {
         setTimeout(function () {
             el.style.transition = 'opacity 0.3s';
             el.style.opacity = '0';
