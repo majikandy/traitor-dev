@@ -96,6 +96,11 @@ class SiteService
         $nextVersion  = $site->current_release + 1;
         $releaseRoot  = $site->sitesPath() . '/releases/' . $nextVersion;
 
+        // Clean up any partial release directory left by a previous failed attempt
+        if (is_dir($releaseRoot)) {
+            File::deleteDirectory($releaseRoot);
+        }
+
         if ($site->type === 'laravel') {
             $this->createLaravelRelease($site, $releaseRoot);
         } else {
