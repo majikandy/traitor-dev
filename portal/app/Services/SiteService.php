@@ -200,9 +200,9 @@ class SiteService
                 $reqMajor = (int) $m[1];
                 $reqMinor = (int) $m[2];
 
-                // Current PHP satisfies the minimum — use it directly
+                // Current PHP satisfies the minimum — use the CLI binary from the same install
                 if (PHP_MAJOR_VERSION > $reqMajor || (PHP_MAJOR_VERSION === $reqMajor && PHP_MINOR_VERSION >= $reqMinor)) {
-                    return PHP_BINARY;
+                    return $this->phpCliBinary();
                 }
 
                 // Current PHP is too old — look for the required version
@@ -225,7 +225,19 @@ class SiteService
             }
         }
 
-        return PHP_BINARY;
+        return $this->phpCliBinary();
+    }
+
+    /**
+     * Return the CLI php binary for the current PHP install.
+     * PHP_BINARY in a web context is the FPM/CGI SAPI binary, not the CLI binary.
+     * The CLI binary lives alongside it in PHP_BINDIR.
+     */
+    private function phpCliBinary(): string
+    {
+        $cli = PHP_BINDIR . '/php';
+
+        return (is_file($cli) && is_executable($cli)) ? $cli : PHP_BINARY;
     }
 
     private function findExecutable(string $name, array $candidates): string

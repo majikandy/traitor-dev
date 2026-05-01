@@ -165,11 +165,7 @@ class GitHubController extends Controller
                 ->with('info', 'Laravel app detected — set up your database to create your first release.');
         }
 
-        try {
-            $release = $this->siteService->createRelease($site, "Initial import from {$repo}");
-        } catch (\RuntimeException $e) {
-            return redirect()->route('sites.show', $site)->with('error', $e->getMessage());
-        }
+        $release = $this->siteService->createRelease($site, "Initial import from {$repo}");
 
         return redirect()->route('sites.show', $site)
             ->with('success', "GitHub connected and release v{$release->version} created from {$repo}.");
@@ -196,11 +192,7 @@ class GitHubController extends Controller
 
         $site->refresh();
 
-        try {
-            $release = $this->siteService->createRelease($site, "Initial import from {$site->github_repo}");
-        } catch (\RuntimeException $e) {
-            return redirect()->route('sites.show', $site)->with('error', $e->getMessage());
-        }
+        $release = $this->siteService->createRelease($site, "Initial import from {$site->github_repo}");
 
         return redirect()->route('sites.show', $site)
             ->with('success', "Release v{$release->version} created from {$site->github_repo}.");

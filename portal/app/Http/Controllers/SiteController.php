@@ -232,12 +232,7 @@ class SiteController extends Controller
         ]);
 
         $this->siteService->upload($site, $request->file('zip'));
-
-        try {
-            $release = $this->siteService->createRelease($site, $request->input('notes'));
-        } catch (\RuntimeException $e) {
-            return redirect()->route('sites.show', $site)->with('error', $e->getMessage());
-        }
+        $release = $this->siteService->createRelease($site, $request->input('notes'));
 
         return redirect()->route('sites.show', $site)->with('success', "Release v{$release->version} created.");
     }
@@ -411,11 +406,7 @@ class SiteController extends Controller
             $creds = $this->siteService->setupDatabase($site, $cpanel, $request->input('db_suffix'));
         }
 
-        try {
-            $release = $this->siteService->createRelease($site, 'Initial release');
-        } catch (\RuntimeException $e) {
-            return redirect()->route('sites.laravel-setup', $site)->with('error', $e->getMessage());
-        }
+        $release = $this->siteService->createRelease($site, 'Initial release');
 
         $flash = ['version' => $release->version];
 
