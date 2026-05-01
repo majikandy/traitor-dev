@@ -165,10 +165,45 @@ class GitHubController extends Controller
                 ->with('info', 'Laravel app detected — set up your database to create your first release.');
         }
 
-        $release = $this->siteService->createRelease($site, "Initial import from {$repo}");
+        try {
+            $release = $this->siteService->createRelease($site, "Initial import from {$repo}");
+        } catch (\RuntimeException $e) {
+            return redirect()->route('sites.show', $site)->with('error', $e->getMessage());
+        }
 
         return redirect()->route('sites.show', $site)
             ->with('success', "GitHub connected and release v{$release->version} created from {$repo}.");
+    }
+
+    /**
+     * Download the latest code from the connected branch and create a release.
+     * Used when the initial release was abandoned after repo selection.
+     */
+    public function createFirstRelease(Site $site): RedirectResponse
+    {
+        abort_unless($site->github_repo, 400, 'No GitHub repository connected to this site.');
+        abort_unless($site->releases()->count() === 0, 400, 'Site already has releases.');
+
+        $installationId = $site->organisation->github_installation_id;
+        $ref            = $site->github_branch ?? 'HEAD';
+        $zipPath        = $this->github->downloadZipball($installationId, $site->github_repo, $ref);
+
+        try {
+            $this->siteService->uploadFromPath($site, $zipPath, $site->github_repo_path);
+        } finally {
+            @unlink($zipPath);
+        }
+
+        $site->refresh();
+
+        try {
+            $release = $this->siteService->createRelease($site, "Initial import from {$site->github_repo}");
+        } catch (\RuntimeException $e) {
+            return redirect()->route('sites.show', $site)->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('sites.show', $site)
+            ->with('success', "Release v{$release->version} created from {$site->github_repo}.");
     }
 
     public function toggleAutoDeploy(Site $site): RedirectResponse

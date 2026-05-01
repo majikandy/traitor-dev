@@ -18,5 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['/github/webhook', '/preview/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson() || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                return null; // let Laravel handle 404/403/etc and API errors normally
+            }
+
+            return redirect()->back()->withInput()->with('error', $e->getMessage() ?: get_class($e));
+        });
     })->create();

@@ -140,23 +140,24 @@ class SiteService
 
         symlink($sharedPath . '/storage', $releaseRoot . '/storage');
 
+        $home        = '/home/' . config('services.cpanel.user');
+        $phpBin      = $this->resolvePhpBinary($releaseRoot);
+        $composerBin = $this->findExecutable('composer', [
+            $home . '/bin/composer',
+            '/usr/local/bin/composer',
+            '/usr/bin/composer',
+            '/opt/cpanel/composer/bin/composer',
+        ]);
+
+        $path = '/usr/local/bin:/usr/bin:/bin:' . dirname($composerBin) . ':' . dirname($phpBin);
+        $env  = ['PATH' => $path, 'HOME' => $home, 'COMPOSER_HOME' => $home . '/.composer'];
+
         // Only run composer install if vendor/ wasn't already shipped in the zip.
         // CI pipelines typically build vendor/ before packaging, so we skip it.
         if (!is_dir($releaseRoot . '/vendor')) {
-            $home = '/home/' . config('services.cpanel.user');
-            $composerBin = $this->findExecutable('composer', [
-                $home . '/bin/composer',
-                '/usr/local/bin/composer',
-                '/usr/bin/composer',
-                '/opt/cpanel/composer/bin/composer',
-            ]);
-
-            $path = '/usr/local/bin:/usr/bin:/bin:' . dirname($composerBin);
-            $env  = ['PATH' => $path, 'HOME' => $home, 'COMPOSER_HOME' => $home . '/.composer'];
-
             $result = Process::path($releaseRoot)
                 ->env($env)
-                ->run("{$composerBin} install --no-dev --optimize-autoloader --no-interaction 2>&1");
+                ->run("{$phpBin} {$composerBin} install --no-dev --optimize-autoloader --no-interaction 2>&1");
 
             if ($result->failed()) {
                 throw new \RuntimeException("composer install failed (exit {$result->exitCode()}): " . $result->output());
@@ -167,14 +168,57 @@ class SiteService
             return;
         }
 
-        foreach (['php artisan migrate --force', 'php artisan optimize', 'php artisan storage:link'] as $cmd) {
+        foreach (['migrate --force', 'optimize', 'storage:link'] as $cmd) {
             $result = Process::path($releaseRoot)
                 ->env($env)
-                ->run("{$cmd} 2>&1");
+                ->run("{$phpBin} artisan {$cmd} 2>&1");
             if ($result->failed()) {
-                throw new \RuntimeException("{$cmd} failed (exit {$result->exitCode()}): " . $result->output());
+                throw new \RuntimeException("php artisan {$cmd} failed (exit {$result->exitCode()}): " . $result->output());
             }
         }
+    }
+
+    /**
+     * Find a PHP binary that satisfies the version constraint in composer.json.
+     * On cPanel (EasyApache 4) PHP binaries live at /opt/cpanel/ea-phpXY/root/usr/bin/php.
+     * Falls back to the default php in PATH if nothing specific can be found.
+     */
+    private function resolvePhpBinary(string $releaseRoot): string
+    {
+        $composerJsonPath = $releaseRoot . '/composer.json';
+
+        if (file_exists($composerJsonPath)) {
+            $manifest      = json_decode(file_get_contents($composerJsonPath), true);
+            $phpConstraint = $manifest['require']['php'] ?? null;
+
+            if ($phpConstraint && preg_match('/(\d+)\.(\d+)/', $phpConstraint, $m)) {
+                $major = $m[1];
+                $minor = $m[2];
+                $bin   = $this->findExecutable("php{$major}.{$minor}", [
+                    "/opt/cpanel/ea-php{$major}{$minor}/root/usr/bin/php",
+                    "/usr/local/php{$major}{$minor}/bin/php",
+                    "/usr/bin/php{$major}.{$minor}",
+                    "/usr/local/bin/php{$major}.{$minor}",
+                ]);
+
+                if ($bin !== "php{$major}.{$minor}") {
+                    return $bin;
+                }
+
+                // Required version not found — fail loudly with an actionable message
+                $serverVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
+                throw new \RuntimeException(
+                    "This site requires PHP {$major}.{$minor} (from composer.json) " .
+                    "but only PHP {$serverVersion} is available on this server. " .
+                    "Ask your host to install PHP {$major}.{$minor}."
+                );
+            }
+        }
+
+        return $this->findExecutable('php', [
+            '/usr/local/bin/php',
+            '/usr/bin/php',
+        ]);
     }
 
     private function findExecutable(string $name, array $candidates): string
