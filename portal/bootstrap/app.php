@@ -23,6 +23,20 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null; // let Laravel handle 404/403/etc and API errors normally
             }
 
+            // Only intercept POST/PUT/PATCH/DELETE — GET exceptions would loop forever
+            // since redirect()->back() would re-trigger the same failing GET request.
+            if ($request->isMethod('GET')) {
+                return null;
+            }
+
+            $previous = url()->previous();
+            $current  = $request->url();
+
+            // If there's no meaningful "back" URL, don't redirect — let Laravel show its error page
+            if (!$previous || $previous === $current) {
+                return null;
+            }
+
             $input = $request->except(['_token', '_method', 'password', 'password_confirmation', 'zip']);
 
             return redirect()->back()
