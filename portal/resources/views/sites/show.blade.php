@@ -769,7 +769,7 @@ if (window.innerWidth < 768) { setView('mobile'); }
             var input = document.getElementById('domain-input');
             var btn   = document.getElementById('attach-btn');
             var status = document.getElementById('attach-status');
-            input.disabled = true;
+            input.readOnly = true;
             input.classList.add('bg-gray-50', 'text-gray-400');
             btn.disabled = true;
             btn.textContent = 'Attaching…';
