@@ -296,10 +296,11 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
         @foreach($sortedReleases as $release)
             @php
                 $isLive = $release->version === $site->live_release;
+                $isFailed = $release->failed();
                 $releaseBytes = $diskUsage[$release->version] ?? 0;
             @endphp
-            <div class="release-row flex items-center justify-between px-6 py-3 cursor-pointer transition-colors
-                    {{ $isLive ? 'bg-emerald-50/50' : 'hover:bg-gray-50' }}"
+            <div class="release-row {{ $isFailed ? '' : 'cursor-pointer' }} transition-colors
+                    flex flex-col px-6 py-3 {{ $isLive ? 'bg-emerald-50/50' : ($isFailed ? 'bg-red-50/60' : 'hover:bg-gray-50') }}"
                 data-preview-url="{{ $isLive ? $liveUrl : 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') }}"
                 @if($release->preview_shared) data-shared-url="{{ 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token }}" @endif
                 data-version="v{{ $release->version }}"
@@ -309,7 +310,11 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                 <div class="flex flex-col gap-1" data-badges>
                     <div class="flex items-center gap-3">
                         <span class="font-mono text-sm font-bold text-gray-900">v{{ $release->version }}</span>
-                        @if($isLive)
+                        @if($isFailed)
+                            <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>build failed
+                            </span>
+                        @elseif($isLive)
                             <span class="live-badge inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>live
                             </span>
@@ -338,50 +343,58 @@ main { background-image: repeating-linear-gradient(-45deg, rgba(245,158,11,0.04)
                     @if($releaseBytes > 0)
                         <span class="text-xs text-gray-400 hidden sm:inline">· {{ $fmtBytes($releaseBytes) }}</span>
                     @endif
-                    @php $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token; @endphp
-                    @if($release->preview_shared)
-                        <div class="hidden sm:inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 overflow-hidden">
-                            <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ v{{ $release->version }}', 1000) })" class="px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">⧉ v{{ $release->version }}</button>
-                            <button onclick="copyAndUpdate(this, '{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}', 'data-confirm', 'Regenerate link? The old URL will stop working immediately.')"
-                                class="border-l border-violet-200 px-2 py-1 text-xs text-violet-500 hover:bg-violet-100 transition" title="Regenerate link">↻</button>
-                            <form method="POST" action="{{ route('sites.releases.version-preview.revoke', [$site, $release->version]) }}" data-confirm="Revoke link? Anyone with the current URL will lose access.">
-                                @csrf
-                                <button type="submit" class="border-l border-violet-200 px-2 py-1 text-xs text-violet-400 hover:bg-violet-100 transition" title="Revoke — rotates token, hides URL">✕</button>
-                            </form>
-                        </div>
-                    @else
-                        <button onclick="shareVersionPreview(this, '{{ route('sites.releases.version-preview.share', [$site, $release->version]) }}')"
-                            class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Share v{{ $release->version }}</button>
-                    @endif
-                    @if($isLive)
-                        @if($hasDomain)
-                            <a href="{{ $liveUrl }}" target="_blank"
-                               class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
+                    @if(!$isFailed)
+                        @php $versionedUrl = 'https://' . $site->slug . '-v' . $release->version . '.' . config('services.cpanel.preview_domain') . '?token=' . $release->preview_token; @endphp
+                        @if($release->preview_shared)
+                            <div class="hidden sm:inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 overflow-hidden">
+                                <button onclick="navigator.clipboard.writeText('{{ $versionedUrl }}').then(() => { this.textContent='✓'; setTimeout(() => this.textContent='⧉ v{{ $release->version }}', 1000) })" class="px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition">⧉ v{{ $release->version }}</button>
+                                <button onclick="copyAndUpdate(this, '{{ route('sites.releases.version-preview.regenerate', [$site, $release->version]) }}', 'data-confirm', 'Regenerate link? The old URL will stop working immediately.')"
+                                    class="border-l border-violet-200 px-2 py-1 text-xs text-violet-500 hover:bg-violet-100 transition" title="Regenerate link">↻</button>
+                                <form method="POST" action="{{ route('sites.releases.version-preview.revoke', [$site, $release->version]) }}" data-confirm="Revoke link? Anyone with the current URL will lose access.">
+                                    @csrf
+                                    <button type="submit" class="border-l border-violet-200 px-2 py-1 text-xs text-violet-400 hover:bg-violet-100 transition" title="Revoke — rotates token, hides URL">✕</button>
+                                </form>
+                            </div>
+                        @else
+                            <button onclick="shareVersionPreview(this, '{{ route('sites.releases.version-preview.share', [$site, $release->version]) }}')"
+                                class="hidden sm:inline-flex rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition">Share v{{ $release->version }}</button>
                         @endif
-                        @if($sortedReleases->count() === 1)
-                            <form method="POST" action="{{ route('sites.revert-to-coming-soon', $site) }}" data-confirm="Revert to coming soon page? The live site will show the placeholder.">
-                                @csrf
-                                <button type="submit" class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">↩ Revert to coming soon</button>
-                            </form>
+                        @if($isLive)
+                            @if($hasDomain)
+                                <a href="{{ $liveUrl }}" target="_blank"
+                                   class="visit-live-link rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition">Visit live ↗</a>
+                            @endif
+                            @if($sortedReleases->count() === 1)
+                                <form method="POST" action="{{ route('sites.revert-to-coming-soon', $site) }}" data-confirm="Revert to coming soon page? The live site will show the placeholder.">
+                                    @csrf
+                                    <button type="submit" class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">↩ Revert to coming soon</button>
+                                </form>
+                            @endif
+                        @else
+                            @php $isRollback = $site->live_release && $release->version < $site->live_release; @endphp
+                            <button type="button"
+                                class="go-live-btn group rounded-lg px-3 py-1.5 text-xs font-semibold transition
+                                    {{ $isRollback
+                                        ? 'border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                        : 'bg-emerald-600 text-white hover:bg-emerald-700' }}"
+                                data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
+                                data-version="{{ $release->version }}"
+                                data-go-live-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
+                                onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '⏪' : 'Make Current' }}@if($isRollback)<span class="hidden group-hover:inline ml-1">Rollback</span>@endif</button>
                         @endif
-                    @else
-                        @php $isRollback = $site->live_release && $release->version < $site->live_release; @endphp
-                        <button type="button"
-                            class="go-live-btn group rounded-lg px-3 py-1.5 text-xs font-semibold transition
-                                {{ $isRollback
-                                    ? 'border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                    : 'bg-emerald-600 text-white hover:bg-emerald-700' }}"
-                            data-url="{{ route('sites.releases.promote', [$site, $release->version]) }}"
-                            data-version="{{ $release->version }}"
-                            data-go-live-confirm="{{ $isRollback ? 'Roll back to v' . $release->version . '? Visitors will see this older version.' : '' }}"
-                            onclick="event.stopPropagation(); goLive(this)">{{ $isRollback ? '⏪' : 'Make Current' }}@if($isRollback)<span class="hidden group-hover:inline ml-1">Rollback</span>@endif</button>
+                        <a href="{{ route('sites.download.release', [$site, $release]) }}" title="Download v{{ $release->version }}" onclick="event.stopPropagation()"
+                           class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition">
+                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        </a>
                     @endif
-                    <a href="{{ route('sites.download.release', [$site, $release]) }}" title="Download v{{ $release->version }}" onclick="event.stopPropagation()"
-                       class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition">
-                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                    </a>
                 </div>
             </div>
+            @if($isFailed)
+                <div class="flex items-start gap-2 px-6 pb-3 -mt-1">
+                    <svg class="h-4 w-4 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                    <pre class="text-xs text-red-700 whitespace-pre-wrap font-mono leading-relaxed">{{ $release->build_error }}</pre>
+                </div>
+            @endif
         @endforeach
         <form id="delete-releases-form" method="POST" action="{{ route('sites.releases.delete', $site) }}" class="hidden" data-confirm="Delete selected releases? This cannot be undone.">
             @csrf

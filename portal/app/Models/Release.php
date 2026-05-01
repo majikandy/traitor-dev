@@ -10,7 +10,12 @@ class Release extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['site_id', 'version', 'preview_token', 'preview_shared', 'notes', 'created_at'];
+    protected $fillable = ['site_id', 'version', 'preview_token', 'preview_shared', 'notes', 'build_error', 'created_at'];
+
+    public function failed(): bool
+    {
+        return $this->build_error !== null;
+    }
 
     protected $casts = [
         'created_at'     => 'datetime',

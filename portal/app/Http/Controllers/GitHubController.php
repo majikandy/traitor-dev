@@ -313,6 +313,20 @@ class GitHubController extends Controller
                     try { $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'success', 'Release v' . $release->version . ' created'); } catch (\Throwable) {}
                     $results[$site->slug] = ['version' => $release->version];
                 } catch (\Throwable $e) {
+                    // Record the failure as a release so it's visible in the portal.
+                    try {
+                        $site->refresh();
+                        $failedVersion = $site->current_release + 1;
+                        \App\Models\Release::create([
+                            'site_id'     => $site->id,
+                            'version'     => $failedVersion,
+                            'notes'       => substr($sha, 0, 7) . ': ' . $commitTitle,
+                            'build_error' => $e->getMessage(),
+                            'created_at'  => now(),
+                        ]);
+                        $site->update(['current_release' => $failedVersion]);
+                    } catch (\Throwable) {}
+
                     try { $this->github->setCommitStatus($installationId, $repoFullName, $sha, 'failure', 'Release failed: ' . $e->getMessage()); } catch (\Throwable) {}
                     $results[$site->slug] = ['error' => $e->getMessage()];
                 }
