@@ -197,33 +197,35 @@ class SiteService
             $phpConstraint = $manifest['require']['php'] ?? null;
 
             if ($phpConstraint && preg_match('/(\d+)\.(\d+)/', $phpConstraint, $m)) {
-                $major = $m[1];
-                $minor = $m[2];
-                $bin   = $this->findExecutable("php{$major}.{$minor}", [
-                    "/opt/cpanel/ea-php{$major}{$minor}/root/usr/bin/php",
-                    "/usr/local/php{$major}{$minor}/bin/php",
-                    "/usr/bin/php{$major}.{$minor}",
-                    "/usr/local/bin/php{$major}.{$minor}",
+                $reqMajor = (int) $m[1];
+                $reqMinor = (int) $m[2];
+
+                // Current PHP satisfies the minimum — use it directly
+                if (PHP_MAJOR_VERSION > $reqMajor || (PHP_MAJOR_VERSION === $reqMajor && PHP_MINOR_VERSION >= $reqMinor)) {
+                    return PHP_BINARY;
+                }
+
+                // Current PHP is too old — look for the required version
+                $bin = $this->findExecutable("php{$reqMajor}.{$reqMinor}", [
+                    "/opt/cpanel/ea-php{$reqMajor}{$reqMinor}/root/usr/bin/php",
+                    "/usr/local/php{$reqMajor}{$reqMinor}/bin/php",
+                    "/usr/bin/php{$reqMajor}.{$reqMinor}",
+                    "/usr/local/bin/php{$reqMajor}.{$reqMinor}",
                 ]);
 
-                if ($bin !== "php{$major}.{$minor}") {
+                if ($bin !== "php{$reqMajor}.{$reqMinor}") {
                     return $bin;
                 }
 
-                // Required version not found — fail loudly with an actionable message
-                $serverVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
                 throw new \RuntimeException(
-                    "This site requires PHP {$major}.{$minor} (from composer.json) " .
-                    "but only PHP {$serverVersion} is available on this server. " .
-                    "Ask your host to install PHP {$major}.{$minor}."
+                    "This site requires PHP {$reqMajor}.{$reqMinor} (from composer.json) " .
+                    "but only PHP " . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . " is available on this server. " .
+                    "Ask your host to install PHP {$reqMajor}.{$reqMinor}."
                 );
             }
         }
 
-        return $this->findExecutable('php', [
-            '/usr/local/bin/php',
-            '/usr/bin/php',
-        ]);
+        return PHP_BINARY;
     }
 
     private function findExecutable(string $name, array $candidates): string
