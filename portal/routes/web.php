@@ -100,6 +100,9 @@ Route::middleware(['auth', 'auth.method'])->group(function () {
     Route::get('/sites/{site}/artisan', [SiteController::class, 'artisanCommands'])->name('sites.artisan.commands');
     Route::post('/sites/{site}/artisan', [SiteController::class, 'artisanRun'])->name('sites.artisan.run');
     Route::post('/sites/{site}/restart', [SiteController::class, 'restart'])->name('sites.restart');
+    Route::post('/sites/{site}/admin-access', [SiteController::class, 'saveAdminAccess'])->name('sites.admin-access.save');
+    Route::delete('/sites/{site}/admin-access', [SiteController::class, 'removeAdminAccess'])->name('sites.admin-access.remove');
+    Route::get('/sites/{site}/admin', [SiteController::class, 'openAdmin'])->name('sites.admin.open');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
     Route::get('/team', [UsersController::class, 'index'])->name('team.index');

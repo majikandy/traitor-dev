@@ -134,6 +134,38 @@ class SiteController extends Controller
         return back()->with('success', '.env saved and config cache cleared.');
     }
 
+    public function saveAdminAccess(Request $request, Site $site)
+    {
+        $request->validate([
+            'admin_url'    => ['required', 'url', 'max:500'],
+            'admin_secret' => ['required', 'string', 'min:16'],
+        ]);
+
+        $site->update([
+            'admin_url'          => rtrim($request->admin_url, '/'),
+            'admin_token_secret' => $request->admin_secret,
+        ]);
+
+        return back()->with('success', 'Admin access configured.');
+    }
+
+    public function removeAdminAccess(Site $site)
+    {
+        $site->update(['admin_url' => null, 'admin_token_secret' => null]);
+
+        return back()->with('success', 'Admin access removed.');
+    }
+
+    public function openAdmin(Site $site)
+    {
+        abort_unless($site->admin_url && $site->admin_token_secret, 404);
+
+        $window = (int) floor(time() / 30);
+        $token  = hash_hmac('sha256', $window, $site->admin_token_secret);
+
+        return redirect($site->admin_url . '?token=' . $token);
+    }
+
     public function restart(Site $site)
     {
         abort_unless($site->type === 'laravel', 404);

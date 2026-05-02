@@ -738,6 +738,9 @@ if (window.innerWidth < 768) { setView('mobile'); }
 @include('sites._zip-panel', ['startOpen' => false])
 @endif
 
+{{-- Admin Access --}}
+@include('sites._admin-access-panel')
+
 {{-- Domain --}}
 <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
     <div class="flex items-center gap-3 mb-4">
