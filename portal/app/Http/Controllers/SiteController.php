@@ -72,7 +72,12 @@ class SiteController extends Controller
             return response()->json([]);
         }
 
-        $env    = $this->artisanEnv();
+        $env = $this->artisanEnv();
+
+        // Clear the autoload/config cache first so newly added commands always appear.
+        \Illuminate\Support\Facades\Process::path($livePath)->env($env)->timeout(30)
+            ->run('php artisan optimize:clear 2>&1');
+
         $result = \Illuminate\Support\Facades\Process::path($livePath)->env($env)->timeout(30)
             ->run('php artisan list --format=json 2>&1');
 
